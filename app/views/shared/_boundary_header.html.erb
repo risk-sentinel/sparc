@@ -6,7 +6,7 @@
       document - the document being shown (SSP/SAP/SAR/POAM/Profile/CDEF)
 %>
 <% ab = document.try(:authorization_boundary) %>
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the page header's breadcrumb names
+<%# 1.18.0-rf #1304 — the page header's breadcrumb names
     the boundary; the warning for a document with none stays. %>
 <% if ab && shell_nav? %>
 <% elsif ab %>

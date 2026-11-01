@@ -8,10 +8,13 @@
 # disappeared from the screen users land on. Only one of five was caught, and
 # only by accident, through an unrelated spec.
 #
-# So each screen asserts the same things: both views render, both show the same
-# records, the view choice round-trips and is remembered, search narrows, and —
-# the important one — every action reachable in one view is reachable in the
-# other.
+# So each screen asserts the same things: every view renders, every view shows
+# the same records, the view choice round-trips and is remembered, search
+# narrows, and — the important one — every action reachable in one view is
+# reachable in the others.
+#
+# 1.18.0-rf #1299/#1297: three views — Cards, List (the shared row,
+# shared/_collection_row) and Table (each screen's table).
 #
 # Usage:
 #
@@ -20,7 +23,7 @@
 #     screen: :ssp_documents,
 #     create: -> { create(:ssp_document, name: "Findable Widget") },
 #     search_term: "Findable",
-#     actions: %w[View Delete]            # markers present in BOTH views
+#     actions: %w[View Delete]            # markers present in EVERY view
 #
 # `actions` are substrings matched against the rendered body — a route, a
 # Stimulus hook, or button text. Route fragments are the most durable.
@@ -35,34 +38,42 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
     response.body
   end
 
-  def with_view(url, mode)
-    separator = url.include?("?") ? "&" : "?"
-    body_at("#{url}#{separator}view=#{mode}")
-  end
+  def with_param(url, param) = "#{url}#{url.include?('?') ? '&' : '?'}#{param}"
+
+  def with_view(url, mode) = body_at(with_param(url, "view=#{mode}"))
+
+  def views = %w[card list table]
 
   describe "view modes" do
     it "renders cards by default" do
       expect(body_at(screen_path)).to include("sparc-item-card")
     end
 
-    it "renders a table when asked for a list" do
+    it "renders rows when asked for a list" do
       body = with_view(screen_path, "list")
 
-      expect(body).to include("<table")
+      expect(body).to include('data-testid="collection-row"')
       expect(body).not_to include("sparc-item-card")
+    end
+
+    it "renders the screen's table when asked for a table" do
+      body = with_view(screen_path, "table")
+
+      expect(body).to include("<table")
+      expect(body).not_to include("sparc-item-card", 'data-testid="collection-row"')
     end
 
     it "offers a way to switch between them" do
       body = body_at(screen_path)
 
       expect(body).to include('role="radiogroup"')
-      expect(body).to include("view=list")
+      expect(body).to include("view=list", "view=table")
     end
 
     it "remembers an explicit choice for the next visit" do
-      with_view(screen_path, "list")
+      with_view(screen_path, "table")
 
-      expect(cookies["sparc_view_#{screen}"]).to eq("list")
+      expect(cookies["sparc_view_#{screen}"]).to eq("table")
       expect(body_at(screen_path)).to include("<table")
     end
 
@@ -75,12 +86,11 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
   end
 
   describe "the records themselves" do
-    it "shows the same records in both views" do
+    it "shows the same records in every view" do
       identifier = record.try(:name).presence || record.try(:title).to_s
       skip "no name or title to assert on" if identifier.blank?
 
-      expect(with_view(screen_path, "card")).to include(ERB::Util.html_escape(identifier))
-      expect(with_view(screen_path, "list")).to include(ERB::Util.html_escape(identifier))
+      views.each { |mode| expect(with_view(screen_path, mode)).to include(ERB::Util.html_escape(identifier)), mode }
     end
 
     it "reports how many there are" do
@@ -92,7 +102,7 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
   if search_term
     describe "search" do
       it "keeps a record that matches" do
-        expect(body_at("#{screen_path}?q=#{CGI.escape(search_term)}"))
+        expect(body_at(with_param(screen_path, "q=#{CGI.escape(search_term)}")))
           .to include(ERB::Util.html_escape(search_term))
       end
 
@@ -102,15 +112,15 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
       # check would be asserting something the screen never promised. The count
       # still has teeth — a search that was ignored reports a match, not none.
       it "drops one that does not" do
-        expect(body_at("#{screen_path}?q=zzz-no-such-record-zzz"))
+        expect(body_at(with_param(screen_path, "q=zzz-no-such-record-zzz")))
           .to match(/No .* match the current filters\./)
       end
 
       # Searching is not a request to change how results are drawn.
       it "keeps the chosen view" do
-        with_view(screen_path, "list")
+        with_view(screen_path, "table")
 
-        expect(body_at("#{screen_path}?q=#{CGI.escape(search_term)}")).to include("<table")
+        expect(body_at(with_param(screen_path, "q=#{CGI.escape(search_term)}"))).to include("<table")
       end
     end
   end
@@ -118,9 +128,8 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
   if actions.any?
     describe "action parity" do
       actions.each do |marker|
-        it "offers #{marker} in both views" do
-          expect(with_view(screen_path, "card")).to include(marker), "card view is missing #{marker}"
-          expect(with_view(screen_path, "list")).to include(marker), "list view is missing #{marker}"
+        it "offers #{marker} in every view" do
+          views.each { |mode| expect(with_view(screen_path, mode)).to include(marker), "#{mode} view is missing #{marker}" }
         end
       end
     end
@@ -132,22 +141,22 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
   # view. That is exactly what happened on both screens that offer it.
   if bulk_select
     describe "bulk selection" do
-      it "can select an individual item in both views" do
-        %w[card list].each do |mode|
+      it "can select an individual item in every view" do
+        views.each do |mode|
           expect(with_view(screen_path, mode)).to include('data-bulk-select-target="row"'),
             "#{mode} view has nothing to select"
         end
       end
 
-      it "can select all in both views" do
-        %w[card list].each do |mode|
+      it "can select all in every view" do
+        views.each do |mode|
           expect(with_view(screen_path, mode)).to include('data-bulk-select-target="selectAll"'),
             "#{mode} view cannot select all"
         end
       end
 
-      it "wires the selection to the bulk form in both views" do
-        %w[card list].each do |mode|
+      it "wires the selection to the bulk form in every view" do
+        views.each do |mode|
           expect(with_view(screen_path, mode)).to match(/form="\w+BulkForm"/),
             "#{mode} view's checkbox is not wired to the bulk form"
         end
@@ -159,7 +168,7 @@ RSpec.shared_examples "a collection screen" do |path:, screen:, create:, search_
       # does nothing when clicked — which is exactly what happened when the
       # card grid's select-all first moved into the shared toolbar.
       it "puts every bulk-select target inside the controller that binds them" do
-        %w[card list].each do |mode|
+        views.each do |mode|
           body = with_view(screen_path, mode)
           scope = body[/<div[^>]*data-controller="bulk-select"[^>]*>.*/m].to_s
 

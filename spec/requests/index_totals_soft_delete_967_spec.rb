@@ -26,15 +26,17 @@ RSpec.describe "Index summary tiles exclude soft-deleted documents (#967)", type
 
   before { sign_in_as(user) }
 
-  # Pull the tile values out of the rendered page by LABEL rather than by
-  # position — the screens do not share a tile order, and a positional index
-  # would silently read the wrong tile if one screen gained a tile.
+  # Pull the totals out of the rendered page by LABEL rather than by position —
+  # the screens do not share an order, and a positional index would silently
+  # read the wrong total if one screen gained one. Since 1.18.0-rf the totals
+  # are the page header's summary line (`<strong>count</strong> label`), not a
+  # banner of tiles.
   def tile_value(label)
-    pairs = response.body.scan(
-      %r{sparc-hero-tile-count">\s*([\d,]+)\s*</div>\s*<div class="sparc-hero-tile-label">\s*([^<]+?)\s*</div>}m
-    )
+    pairs = Nokogiri::HTML(response.body).css("[data-testid=page-header-summary] li").map do |li|
+      [ li.at_css("strong").text.strip, li.text.sub(li.at_css("strong").text, "").squish ]
+    end
     found = pairs.find { |_count, tile_label| tile_label == label }
-    raise "tile #{label.inspect} not found; tiles present: #{pairs.map(&:last).inspect}" if found.nil?
+    raise "total #{label.inspect} not found; totals present: #{pairs.map(&:last).inspect}" if found.nil?
 
     found.first.delete(",").to_i
   end

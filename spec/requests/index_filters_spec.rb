@@ -44,8 +44,9 @@ RSpec.describe "Index screen filters", type: :request do
     },
     "evidence" => {
       path: :evidences_path,
-      setup: -> { [ create(:evidence, status: "draft"), create(:evidence, :collected) ] },
-      facet: "status"
+      # 1.18.0-rf #1299 — status is the screen's status tabs, not a dropdown.
+      setup: -> { [ create(:evidence, source: "scanner-a"), create(:evidence, source: "scanner-b") ] },
+      facet: "source"
     }
   }.freeze
 
@@ -103,7 +104,7 @@ RSpec.describe "Index screen filters", type: :request do
 
   # The value each screen's chosen facet is filtered on.
   def filter_value(config)
-    { "oscal_version" => "1.1.2", "baseline_level" => "LOW", "status" => "draft" }
+    { "oscal_version" => "1.1.2", "baseline_level" => "LOW", "source" => "scanner-a" }
       .fetch(config[:facet])
   end
 
@@ -116,15 +117,20 @@ RSpec.describe "Index screen filters", type: :request do
     it "is not offered at all" do
       # One distinct value is not a choice. Rendering the dropdown anyway
       # invites a user to filter by the only thing there is.
-      create(:poam_document, oscal_version: "1.1.2", lifecycle_status: "in_progress")
-      create(:poam_document, oscal_version: "1.1.2", lifecycle_status: "published")
+      create(:poam_document, oscal_version: "1.1.2", poam_version: "1.0", lifecycle_status: "in_progress")
+      create(:poam_document, oscal_version: "1.1.2", poam_version: "2.0", lifecycle_status: "published")
 
       get poam_documents_path
 
       expect(response.body).not_to include('name="oscal_version"'),
         "oscal_version is uniform across the corpus and must not be offered"
-      expect(response.body).to include('name="lifecycle_status"'),
-        "lifecycle_status has two values and must still be offered"
+      expect(response.body).to include('name="poam_version"'),
+        "poam_version has two values and must still be offered"
+      # 1.18.0-rf #1299 — lifecycle is offered as the status tabs, so it is
+      # not repeated as a dropdown.
+      expect(response.body).not_to include('name="lifecycle_status"')
+      tabs = Nokogiri::HTML(response.body).css("[data-testid=status-tab]").map { _1["href"] }
+      expect(tabs).to include(poam_documents_path(lifecycle_status: "in_progress"), poam_documents_path(lifecycle_status: "published"))
     end
   end
 end

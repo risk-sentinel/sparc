@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# 1.18.0-rf #1304 — what a document page's header shows under SPARC_NAV_SHELL,
+# 1.18.0-rf #1304 — what a document page's header shows,
 # one definition for every document page: the breadcrumb back to its
 # boundary and list, and its lifecycle and approval chips.
 #

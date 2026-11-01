@@ -3,9 +3,9 @@
     Order: header (name, status, key ATO facts, description), the multiple-SSP
     warning, Boundary Completeness, Artifact Summary, Environments &
     Components, Personnel Roster, Evidence, Back Matter (#1249), Leveraged
-    Authorizations, Metadata sync status. Under SPARC_NAV_SHELL (1.18.0-rf
-    #1301) the header and the Artifact Summary are the boundary home above
-    the same sections.
+    Authorizations, Metadata sync status. Since 1.18.0-rf (#1301) the
+    header and the Artifact Summary are the boundary home above the same
+    sections.
 
     Every section after the warning is a shared/_collapsible_section with a
     count in its header. Defaults: Completeness open while the boundary is
@@ -18,54 +18,10 @@
 <% may_edit = can_edit_boundary?(boundary) %>
 <div data-controller="collapse-memory" data-collapse-memory-key-value="boundary-page">
 
-<%# 1.18.0-rf #1301 — under SPARC_NAV_SHELL the header and the Artifact
+<%# 1.18.0-rf #1301 — the header and the Artifact
     Summary are the boundary home (authorization_boundaries/_home). %>
-<% if shell_nav? %>
   <%= render "authorization_boundaries/home", boundary: boundary, home: @home, readiness: @readiness,
         may_edit: may_edit, personnel: @personnel %>
-<% else %>
-<%# ── Header ─────────────────────────────────────────────────── %>
-<header class="mb-3">
-  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-    <div class="sparc-minw-0">
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <h2 class="mb-0"><%= boundary.name %></h2>
-        <span class="sparc-status sparc-status--<%= ab_status_variant(boundary.status) %>" data-boundary-status>
-          <%= boundary.status.titleize %>
-        </span>
-      </div>
-      <%# #1180 — the boundary UUID, the identifier the federation key grammar
-          keys objects on and sparc-horizon joins against. %>
-      <%= render "shared/uuid_badge", uuid: boundary.uuid, label: "UUID", name: "boundary UUID" %>
-      <p class="text-body-secondary mt-2 mb-1"><%= boundary.description.presence || "No description." %></p>
-      <% if boundary.authorization_boundary_description.present? %>
-        <p class="text-body-secondary small mb-1">
-          <strong>Authorization boundary:</strong> <%= boundary.authorization_boundary_description %>
-        </p>
-      <% end %>
-      <% ao = boundary.authorizing_official.presence ||
-              @personnel.find { |p| p.role_label.to_s.casecmp?("Authorizing Official") }&.name %>
-      <dl class="sparc-boundary-facts mt-2 mb-0">
-        <div><dt>Authorization status</dt><dd data-boundary-fact="authorization_status"><%= boundary.authorization_status.presence || "—" %></dd></div>
-        <div><dt>Next decision</dt><dd data-boundary-fact="next_decision"><%= next_decision_badge(boundary) %></dd></div>
-        <div><dt>Authorizing official</dt><dd data-boundary-fact="authorizing_official"><%= ao.presence || "—" %></dd></div>
-      </dl>
-    </div>
-
-    <% if signed_in? %>
-      <div class="d-flex gap-2 align-items-start flex-shrink-0">
-        <% if may_edit %>
-          <%= link_to "Build ATO Package", ato_wizard_authorization_boundary_path(boundary),
-                class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
-                data: { boundary_action: "build_ato_package" } %>
-        <% end %>
-
-        <%= render "authorization_boundaries/more_menu", boundary: boundary, may_edit: may_edit %>
-      </div>
-    <% end %>
-  </div>
-</header>
-<% end %>
 
 <% if @linked_ssps.size > 1 %>
   <%# More than one SSP claims this boundary; the SSP tile below shows only
@@ -87,63 +43,6 @@
 <%= render "readiness", readiness: @readiness, boundary: boundary %>
 
 <%# ── Artifact Summary (the home's document list under the shell) ── %>
-<% unless shell_nav? %>
-<% single_artifacts = [
-     { label: "SSP", doc: boundary.ssp_document,
-       index: attach_document_authorization_boundary_path(boundary, type: "ssp") },
-     { label: "SAP", doc: boundary.sap_document,
-       index: attach_document_authorization_boundary_path(boundary, type: "sap") },
-     { label: "SAR", doc: boundary.sar_document,
-       index: attach_document_authorization_boundary_path(boundary, type: "sar") }
-   ] %>
-<% poam_count = @summary[:poam_count].to_i %>
-<%= render layout: "shared/collapsible_section",
-           locals: { id: "boundary-artifacts", title: "Artifact Summary", open: true,
-                     count: single_artifacts.count { |a| a[:doc] } + poam_count } do %>
-  <%# #770 bug 4 — every tile is the same size and a clickable link. Single
-      artifacts (SSP/SAP/SAR) link to the document when present, else to the
-      attach screen; POA&Ms (many) show a count and link to the index.
-      #929 — "Add…" leads to a screen that attaches a document to THIS boundary. %>
-  <div class="row row-cols-2 row-cols-md-4 g-3">
-    <% single_artifacts.each do |a| %>
-      <div class="col">
-        <%= link_to (a[:doc] ? polymorphic_path(a[:doc]) : a[:index]),
-              class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-          <div class="sparc-hero-tile sparc-hero-tile--on-light">
-            <div class="sparc-hero-tile-label"><%= a[:label] %></div>
-            <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-              <% if a[:doc] %>
-                <%= a[:doc].name %>
-              <% else %>
-                <span class="text-body-secondary">Add…</span>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-    <div class="col">
-      <%# #929 — POA&Ms are many, so the tile keeps its count and its link to
-          the index. With none attached it leads somewhere that can attach one. %>
-      <%= link_to (poam_count.zero? ?
-                    attach_document_authorization_boundary_path(boundary, type: "poam") :
-                    BoundaryScopedList.path(:poam, boundary)), # #1250 — keeps the boundary
-            class: "sparc-hero-tile-link d-block text-decoration-none" do %>
-        <div class="sparc-hero-tile sparc-hero-tile--on-light">
-          <div class="sparc-hero-tile-label">POA&amp;Ms</div>
-          <div class="sparc-hero-tile-count" style="font-size: 1rem;">
-            <% if poam_count.zero? %>
-              <span class="text-body-secondary">Add…</span>
-            <% else %>
-              <%= poam_count %>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-<% end %>
-<% end %>
 
 <%# ── Environments & Components ────────────────────────────── %>
 <%= render layout: "shared/collapsible_section",

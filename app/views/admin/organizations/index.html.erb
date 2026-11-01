@@ -1,44 +1,7 @@
-<%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared header and toolbar. %>
-<% if SparcConfig.nav_shell? %>
+<%# 1.18.0-rf #1303 — the shared header and toolbar. %>
   <%= render "admin/list_header", title: "Organizations", label: "organizations", count: @pagy.count,
         primary: { label: "New organization", look: "positive solid", path: new_admin_organization_path },
         status_tabs: @status_tabs, placeholder: "Search by name, contact, or email…" %>
-<% else %>
-<div class="d-flex justify-content-between align-items-center my-4">
-  <h1 class="h3 fw-bold mb-0">Organization Management</h1>
-  <div class="d-flex align-items-center gap-2">
-    <span class="badge text-bg-secondary"><%= @pagy.count %> organizations</span>
-    <%= link_to "New Organization", new_admin_organization_path, class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm fw-semibold" %>
-  </div>
-</div>
-
-<%# ── Search / Filter ──────────────────────────────────── %>
-<div class="card mb-3">
-  <div class="card-body py-2">
-    <%= form_tag admin_organizations_path, method: :get, class: "row g-2 align-items-end" do %>
-      <div class="col-md-5">
-        <input type="text" name="q" value="<%= params[:q] %>" class="form-control form-control-sm"
-               aria-label="Search organizations"
-               placeholder="Search by name, contact, or email...">
-      </div>
-      <div class="col-md-3">
-        <select name="status" aria-label="Filter by status" class="form-select form-select-sm">
-          <option value="">All statuses</option>
-          <% %w[active inactive].each do |s| %>
-            <option value="<%= s %>" <%= "selected" if params[:status] == s %>><%= s.capitalize %></option>
-          <% end %>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100">Search</button>
-      </div>
-      <div class="col-md-2">
-        <%= link_to "Clear", admin_organizations_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm w-100" %>
-      </div>
-    <% end %>
-  </div>
-</div>
-<% end %>
 
 <div class="card sparc-list-card">
   <div class="table-responsive">
@@ -87,10 +50,4 @@
 </div>
 
 <%# ── Pagination ──────────────────────────────────────── %>
-<% if SparcConfig.nav_shell? %>
   <%= render "shared/collection_pagination", pagy: @pagy, label: "organizations" %>
-<% elsif @pagy.pages > 1 %>
-  <div class="mt-3 text-center">
-    <%== @pagy.series_nav %>
-  </div>
-<% end %>

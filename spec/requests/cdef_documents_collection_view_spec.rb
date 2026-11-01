@@ -29,16 +29,24 @@ RSpec.describe "CdefDocuments collection view", type: :request do
       expect(response.body).to include("Alpha CDEF")
     end
 
-    it "renders the table when the URL asks for a list" do
+    # 1.18.0-rf #1299 — three views: list draws the shared rows, table the table.
+    it "renders the rows when the URL asks for a list" do
       get cdef_documents_path(view: "list")
 
+      expect(response.body).to include('data-testid="collection-row"')
+      expect(response.body).not_to include("sparc-item-card", "<table")
+    end
+
+    it "renders the table when the URL asks for a table" do
+      get cdef_documents_path(view: "table")
+
       expect(response.body).to include("<table")
-      expect(response.body).not_to include("sparc-item-card")
+      expect(response.body).not_to include("sparc-item-card", 'data-testid="collection-row"')
     end
 
     it "remembers an explicit choice for next time" do
-      get cdef_documents_path(view: "list")
-      expect(cookies["sparc_view_cdef_documents"]).to eq("list")
+      get cdef_documents_path(view: "table")
+      expect(cookies["sparc_view_cdef_documents"]).to eq("table")
 
       get cdef_documents_path
       expect(response.body).to include("<table")
@@ -46,7 +54,7 @@ RSpec.describe "CdefDocuments collection view", type: :request do
 
     # Searching is not a request to change how the results are drawn.
     it "keeps a stored preference across a plain visit and a search" do
-      get cdef_documents_path(view: "list")
+      get cdef_documents_path(view: "table")
 
       get cdef_documents_path(q: "Alpha")
       expect(response.body).to include("<table")

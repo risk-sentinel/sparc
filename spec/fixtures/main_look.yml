@@ -1,0 +1,509 @@
+# main's look, recorded 2026-10-31 by rendering the switched-off view at 0a325d0f
+# (main's markup) before #1297 removed it: each screen's buttons and their
+# sparc-action intent/variant, and the classic home page's inventory tiles and
+# counts. The colours are the product's (owner, 2026-10-31) and the home tiles
+# stay (owner rule); spec/requests/button_colours_match_main_spec.rb and
+# spec/requests/org_layout_shell_spec.rb hold the new navigation to this.
+# Screens: list paths, "boundary" (a boundary's page) and document types.
+---
+button_colours:
+  "/ssp_documents":
+    Create New SSP:
+    - sparc-action--positive sparc-action--solid
+    Upload File:
+    - sparc-action--info sparc-action--solid
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Enrich:
+    - sparc-action--info sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/sap_documents":
+    Create New:
+    - sparc-action--positive sparc-action--solid
+    Upload File:
+    - sparc-action--info sparc-action--solid
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/sar_documents":
+    Create from Wizard:
+    - sparc-action--accent sparc-action--outline
+    Upload New:
+    - sparc-action--info sparc-action--solid
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Enrich:
+    - sparc-action--info sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/poam_documents":
+    Create New:
+    - sparc-action--positive sparc-action--solid
+    Upload File:
+    - sparc-action--info sparc-action--solid
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/profile_documents":
+    Upload New:
+    - sparc-action--info sparc-action--solid
+    Create from Catalog:
+    - sparc-action--positive sparc-action--solid
+    Create from Profile:
+    - sparc-action--positive sparc-action--solid
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Copy:
+    - sparc-action--info sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/cdef_documents":
+    Refresh from AWS Labs:
+    - sparc-action--caution sparc-action--solid
+    Terraform Wizard:
+    - sparc-action--accent sparc-action--outline
+    Create New:
+    - sparc-action--positive sparc-action--solid
+    Upload File:
+    - sparc-action--info sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Refresh Now:
+    - sparc-action--caution sparc-action--solid
+    Delete (0 selected):
+    - sparc-action--danger sparc-action--outline
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Copy:
+    - sparc-action--info sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/control_catalogs":
+    Import from File:
+    - sparc-action--info sparc-action--solid
+    New Catalog:
+    - sparc-action--positive sparc-action--solid
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/evidences":
+    Add Evidence:
+    - sparc-action--positive sparc-action--solid
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+    View:
+    - sparc-action--neutral sparc-action--outline
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Delete:
+    - sparc-action--danger sparc-action--outline
+  "/control_mappings":
+    New Mapping:
+    - sparc-action--positive sparc-action--solid
+    Create your first mapping:
+    - sparc-action--positive sparc-action--solid
+  "/converters":
+    Import STIG:
+    - sparc-action--info sparc-action--solid
+    Import JSON:
+    - sparc-action--info sparc-action--solid
+    New Converter:
+    - sparc-action--positive sparc-action--solid
+    Import from JSON:
+    - sparc-action--info sparc-action--solid
+    Create from scratch:
+    - sparc-action--positive sparc-action--solid
+  "/review_queue": {}
+  "/promotion_queue": {}
+  "/federation_peers":
+    New Peer:
+    - sparc-action--positive sparc-action--solid
+  "/authoritative_sources":
+    Add source:
+    - sparc-action--positive sparc-action--solid
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+  "/leveraged_poam_documents": {}
+  "/admin/users":
+    New User:
+    - sparc-action--positive sparc-action--solid
+    Search:
+    - sparc-action--ghost sparc-action--neutral
+    Clear:
+    - sparc-action--ghost sparc-action--neutral
+    View:
+    - sparc-action--neutral sparc-action--outline
+  "/admin/roles":
+    New Role:
+    - sparc-action--positive sparc-action--solid
+  "/admin/service_accounts":
+    Search:
+    - sparc-action--ghost sparc-action--neutral
+  "/admin/organizations":
+    New Organization:
+    - sparc-action--positive sparc-action--solid
+    Search:
+    - sparc-action--ghost sparc-action--neutral
+    Clear:
+    - sparc-action--ghost sparc-action--neutral
+  "/admin/authorization_boundaries":
+    New Auth Boundary:
+    - sparc-action--positive sparc-action--solid
+    Manage:
+    - sparc-action--neutral sparc-action--outline
+  "/admin/remediation_timelines":
+    Save:
+    - sparc-action--primary sparc-action--solid
+  "/admin/audit_logs":
+    Export CSV:
+    - sparc-action--info sparc-action--outline
+    Filter:
+    - sparc-action--ghost sparc-action--neutral
+    Clear:
+    - sparc-action--ghost sparc-action--neutral
+  "/admin/idp_grants":
+    Apply:
+    - sparc-action--primary sparc-action--solid
+  "/admin/data_migrations":
+    Refresh:
+    - sparc-action--caution sparc-action--solid
+  "/admin/reconciliation": {}
+  "/":
+    View:
+    - sparc-action--neutral sparc-action--outline
+    New:
+    - sparc-action--positive sparc-action--solid
+  boundary:
+    Build ATO Package:
+    - sparc-action--primary sparc-action--solid
+    More:
+    - sparc-action--neutral sparc-action--outline
+    Add Environment:
+    - sparc-action--positive sparc-action--solid
+    Add Member:
+    - sparc-action--positive sparc-action--solid
+    Add Evidence:
+    - sparc-action--positive sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+    Add Leveraged Authorization:
+    - sparc-action--positive sparc-action--solid
+  ssp:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Enrich:
+    - sparc-action--info sparc-action--outline
+    Back:
+    - sparc-action--ghost sparc-action--neutral
+    Enrich SSP:
+    - sparc-action--info sparc-action--outline
+    "✕ Clear Filter":
+    - sparc-action--ghost sparc-action--neutral
+    Expand All:
+    - sparc-action--ghost sparc-action--neutral
+    Collapse All:
+    - sparc-action--ghost sparc-action--neutral
+    Create & Link:
+    - sparc-action--positive sparc-action--solid
+    Add Reference:
+    - sparc-action--positive sparc-action--solid
+    Save Changes:
+    - sparc-action--primary sparc-action--solid
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  sap:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Back:
+    - sparc-action--ghost sparc-action--neutral
+    Expand All:
+    - sparc-action--ghost sparc-action--neutral
+    Collapse All:
+    - sparc-action--ghost sparc-action--neutral
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  sar:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Enrich:
+    - sparc-action--info sparc-action--outline
+    Back:
+    - sparc-action--ghost sparc-action--neutral
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  poam:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Add Item:
+    - sparc-action--positive sparc-action--solid
+    Add Risk:
+    - sparc-action--positive sparc-action--solid
+    Add Remediation:
+    - sparc-action--positive sparc-action--solid
+    Add Observation:
+    - sparc-action--positive sparc-action--solid
+    Add Finding:
+    - sparc-action--positive sparc-action--solid
+    Add Component:
+    - sparc-action--positive sparc-action--solid
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Findings Triage:
+    - sparc-action--neutral sparc-action--outline
+    All POA&Ms:
+    - sparc-action--ghost sparc-action--neutral
+    Add First Item:
+    - sparc-action--positive sparc-action--solid
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  cdef:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Submit for review:
+    - sparc-action--primary sparc-action--solid
+    Add:
+    - sparc-action--outline sparc-action--primary
+    Copy:
+    - sparc-action--info sparc-action--outline
+    Bulk Apply Converter:
+    - sparc-action--primary sparc-action--solid
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Back:
+    - sparc-action--ghost sparc-action--neutral
+    Populate from Profile:
+    - sparc-action--primary sparc-action--solid
+    Update Scope:
+    - sparc-action--primary sparc-action--solid
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  profile:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Save:
+    - sparc-action--primary sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Submit for review:
+    - sparc-action--primary sparc-action--solid
+    Copy:
+    - sparc-action--info sparc-action--outline
+    Add Control:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    Back:
+    - sparc-action--ghost sparc-action--neutral
+    Set priority:
+    - sparc-action--primary sparc-action--solid
+    Clear selection:
+    - sparc-action--ghost sparc-action--neutral
+    Expand All:
+    - sparc-action--ghost sparc-action--neutral
+    Collapse All:
+    - sparc-action--ghost sparc-action--neutral
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  catalog:
+    Submit for review:
+    - sparc-action--primary sparc-action--solid
+    Import / Refresh:
+    - sparc-action--info sparc-action--solid
+    Edit Catalog:
+    - sparc-action--outline sparc-action--primary
+    Add Family:
+    - sparc-action--positive sparc-action--solid
+    Publish:
+    - sparc-action--positive sparc-action--solid
+    Cancel:
+    - sparc-action--ghost sparc-action--neutral
+    Confirm & Publish:
+    - sparc-action--positive sparc-action--solid
+    Export OSCAL:
+    - sparc-action--info sparc-action--outline
+    All Catalogs:
+    - sparc-action--ghost sparc-action--neutral
+    Re-validate:
+    - sparc-action--info sparc-action--outline
+    Pre-fill from my profile:
+    - sparc-action--primary sparc-action--solid
+    Add Role:
+    - sparc-action--positive sparc-action--solid
+    Add Party:
+    - sparc-action--positive sparc-action--solid
+    Add Revision:
+    - sparc-action--positive sparc-action--solid
+    Save Metadata:
+    - sparc-action--primary sparc-action--solid
+    Add Resource:
+    - sparc-action--positive sparc-action--solid
+  evidence:
+    Edit:
+    - sparc-action--outline sparc-action--primary
+    Attest:
+    - sparc-action--primary sparc-action--solid
+    Download File:
+    - sparc-action--info sparc-action--outline
+    Add Attestation:
+    - sparc-action--positive sparc-action--solid
+home:
+  tiles:
+  - control_catalogs
+  - families
+  - controls
+  - profile_documents
+  - control_mappings
+  - ssp_documents
+  - cdef_documents
+  - converters
+  - sap_documents
+  - evidences
+  - sar_documents
+  - poam_documents
+  - organizations
+  - authorization_boundaries
+  counts:
+  - control_catalogs
+  - profile_documents
+  - control_mappings
+  - ssp_documents
+  - cdef_documents
+  - converters
+  - sap_documents
+  - evidences
+  - sar_documents
+  - poam_documents
+  - organizations
+  - authorization_boundaries

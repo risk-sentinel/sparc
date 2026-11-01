@@ -1,7 +1,6 @@
-"""The organization layout in a real browser (1.18.0-rf, SPARC_NAV_SHELL).
+"""The organization layout in a real browser (1.18.0-rf).
 
-Posture-gated ("nav_shell"): reported as UNPROVEN when the stack has the switch
-off. Every control is clicked, followed by a CSP check, and must change what
+Every control is clicked, followed by a CSP check, and must change what
 the page shows: the Boundaries tab opens the repository-style list; a boundary
 opens with its own tabs; its POA&Ms tab opens the list filtered to it, with the
 Boundary filter on that boundary; the organization breadcrumb returns to the
@@ -38,14 +37,11 @@ def _current(page, bar):
     return page.locator(f"{bar} [aria-current=page]").get_attribute("data-tab")
 
 
-@pytest.mark.posture("nav_shell")
 def test_overview_boundaries_and_inside_a_boundary(authed_page):
     page = authed_page
     record_csp(page)
 
     _open(page, "/")
-    if page.locator(ORG_TABS).count() == 0:
-        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no organization layout")
     assert _current(page, ORG_TABS) == "overview"
     assert page.locator("[data-testid=org-lane]").count() == 4
     assert page.locator("[data-home-inventory]").count() == 1
@@ -91,14 +87,11 @@ def test_overview_boundaries_and_inside_a_boundary(authed_page):
     assert_no_csp_violations(page, during="organization layout")
 
 
-@pytest.mark.posture("nav_shell")
 def test_overview_numbers_open_what_they_count(authed_page):
     """#1302 — the header's counts, Waiting on you and every lane count are links."""
     page = authed_page
     record_csp(page)
     _open(page, "/")
-    if page.locator(ORG_TABS).count() == 0:
-        pytest.skip("SPARC_NAV_SHELL is off on this stack, so there is no organization layout")
 
     targets = [("[data-testid=org-meta-boundaries]", "/authorization_boundaries")]
     people = page.locator("a[data-testid=org-meta-people]")

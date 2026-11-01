@@ -110,10 +110,11 @@ RSpec.describe "Help drawer (#880)", type: :request do
       expect(frame["src"]).to be_nil
     end
 
-    it "wires the navbar trigger to the drawer with no inline handler" do
-      trigger = doc.css("a.sparc-nav-btn").find { |a| a["data-action"].to_s.include?("help-drawer#open") }
+    # The trigger is the header Help menu's "Help for this page" (1.18.0-rf #1295).
+    it "wires the header's help trigger to the drawer with no inline handler" do
+      trigger = doc.css("[data-testid=shell-help] a").find { |a| a["data-action"].to_s.include?("help-drawer#open") }
 
-      expect(trigger).to be_present, "the navbar ? must open the drawer"
+      expect(trigger).to be_present, "the header's Help for this page must open the drawer"
       expect(trigger.attributes.keys.grep(/\Aon/i)).to be_empty,
         "an inline handler would be blocked outright — CSP has no 'unsafe-inline'"
     end
@@ -137,7 +138,7 @@ RSpec.describe "Help drawer (#880)", type: :request do
 
       doc = Nokogiri::HTML(response.body)
       expect(doc.at_css("#sparc-help-drawer")).to be_nil
-      expect(doc.css("a.sparc-nav-btn").select { |a| a["href"].to_s.include?("/help") }).to be_empty
+      expect(doc.css("[data-testid=shell-help] a").select { |a| a["data-action"].to_s.include?("help-drawer#open") }).to be_empty
     end
   end
 end

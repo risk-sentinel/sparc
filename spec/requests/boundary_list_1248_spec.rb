@@ -41,7 +41,7 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
     it "puts the description in the name's tooltip, not a column of its own" do
       boundary("Tooltip Sys", description: "Payroll processing for HQ")
 
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
 
       headers = page.css("thead th").map { |th| th.text.squish }
       expect(headers).to include("Name", "Status", "Members", "Environments", "Actions")
@@ -54,11 +54,11 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
     it "shows Organization only when the visible boundaries span more than one" do
       boundary("Alpha One")
       boundary("Alpha Two")
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(page.css("thead th").map { |th| th.text.squish }).not_to include("Organization")
 
       boundary("Bravo One", org: org_b)
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
       expect(page.css("thead th").map { |th| th.text.squish }).to include("Organization")
       expect(page.text).to include("Agency Bravo")
     end
@@ -66,13 +66,13 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
     it "offers View only on each row, and keeps bulk delete for an administrator" do
       b = boundary("Row Actions Sys")
 
-      get authorization_boundaries_path(view: "list")
+      get authorization_boundaries_path(classic: 1, view: "table")
 
       expect(response.body).not_to include(edit_authorization_boundary_path(b))
       expect(page.at_css("form[action='#{authorization_boundary_path(b)}']")).to be_nil
       expect(page.at_css("form[action='#{bulk_destroy_authorization_boundaries_path}']")).to be_present
 
-      get authorization_boundaries_path(view: "card")
+      get authorization_boundaries_path(classic: 1, view: "card")
       expect(response.body).not_to include(edit_authorization_boundary_path(b))
       expect(page.at_css("form[action='#{authorization_boundary_path(b)}']")).to be_nil
     end
@@ -88,7 +88,7 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
       boundary("Unset Sys")
 
       %w[list card].each do |view|
-        get authorization_boundaries_path(view: view)
+        get authorization_boundaries_path(classic: 1, view: view)
         states = page.css("[data-next-decision]").map { |el| el["data-next-decision"] }
         expect(states).to include("overdue", "due_soon", "scheduled", "none"), view
         expect(page.at_css("[data-next-decision='overdue']")["class"]).to include("sparc-status--danger")
@@ -114,18 +114,18 @@ RSpec.describe "Authorization boundary list (#1248)", type: :request do
     end
 
     it "sorts ascending and descending, with empty dates last either way" do
-      get authorization_boundaries_path(view: "list", sort: "next_decision")
+      get authorization_boundaries_path(classic: 1, view: "table", sort: "next_decision")
       expect(row_names).to eq([ "A Sys", "B Sys", "C Sys" ])
       expect(page.at_css("th[aria-sort='ascending']")).to be_present
       # The header now offers the other direction.
       expect(page.at_css("a[data-sort-column='next_decision']")["href"]).to include("sort=-next_decision")
 
-      get authorization_boundaries_path(view: "list", sort: "-next_decision")
+      get authorization_boundaries_path(classic: 1, view: "table", sort: "-next_decision")
       expect(row_names).to eq([ "B Sys", "A Sys", "C Sys" ])
     end
 
     it "ignores a sort that is not on the allow-list" do
-      get authorization_boundaries_path(view: "list", sort: "name; drop table users")
+      get authorization_boundaries_path(classic: 1, view: "table", sort: "name; drop table users")
 
       expect(response).to have_http_status(:ok)
       expect(page.at_css("th[aria-sort='none']")).to be_present

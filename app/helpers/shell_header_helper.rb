@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# 1.18.0-rf #1295 — the header's menus under SPARC_NAV_SHELL. Each entry is
+# 1.18.0-rf #1295 — the header's menus. Each entry is
 # shown exactly when its screen admits the viewer, through the predicates
 # today's menus already use; nothing here decides access on its own.
 #

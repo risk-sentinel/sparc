@@ -1,13 +1,14 @@
 """UI smoke: the homepage's count badges (v1.17.2, #1243).
 
 The thin inventory tiles above the layer cards are shown (restored after #1243
-removed them by mistake), each a link to its list, and each card carries a count badge that links to
-the same page as its View button, scoped to what the user may see. Every badge
-is clicked here, in Chrome, with zero CSP violations.
+removed them by mistake), each a link to its list, and each card carries a
+count that links to the same page as its title, scoped to what the user may
+see. Every count is clicked here, in Chrome, with zero CSP violations.
 
-Selectors verified against app/views/home/index.html.erb
-(`[data-home-inventory]`, `a[data-home-tile]`, `.sparc-inventory-name`, `a[data-home-count]`,
-`.sparc-section-card`).
+Since 1.18.0-rf the cards are the Overview's boxes. Selectors verified against
+app/views/home/_org_overview.html.erb and app/views/home/_inventory.html.erb
+(`[data-home-inventory]`, `a[data-home-tile]`, `.sparc-inventory-name`,
+`a[data-home-count]`, `[data-testid=org-box]`).
 """
 
 from __future__ import annotations
@@ -63,14 +64,11 @@ def test_inventory_shows_and_each_badge_opens_its_list(authed_page, base_url):
     assert len(badges) >= 11, f"expected a badge on every layer card, found {badges}"
 
     for key, href in badges:
-        # The classic card's "View", or (SPARC_NAV_SHELL, 1.18.0-rf) the
-        # Overview box's title link: either way the card's own way in.
-        card = page.locator(".sparc-section-card, [data-testid=org-box]").filter(
+        # The Overview box's title link (1.18.0-rf): the box's own way in.
+        card = page.locator("[data-testid=org-box]").filter(
             has=page.locator(f"a[data-home-count='{key}']")
         )
-        view = card.locator(".sparc-lane-box__title").or_(
-            card.get_by_role("link", name="View", exact=True)
-        )
+        view = card.locator(".sparc-lane-box__title")
         assert view.get_attribute("href") == href, f"{key}: badge and View lead to different pages"
 
     for key, href in badges:
@@ -116,6 +114,6 @@ def test_non_admin_sees_no_organizations_card(user_authed_page, base_url):
     assert page.locator("a[data-home-count='organizations']").count() == 0
     labels = page.locator("[data-home-inventory] .sparc-inventory-name").all_text_contents()
     assert "Auth Boundaries" in labels and "Organizations" not in labels, labels
-    assert page.locator(".sparc-section-card a[href^='/admin/organizations']").count() == 0
+    assert page.locator("[data-testid=org-box] a[href^='/admin/organizations']").count() == 0
     assert page.locator("a[data-home-count='authorization_boundaries']").count() == 1
     assert_no_csp_violations(page, during="the homepage as a non-administrator")

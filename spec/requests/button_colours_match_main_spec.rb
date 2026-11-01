@@ -4,28 +4,31 @@ require "rails_helper"
 
 # 1.18.0-rf — the colours are the product's (owner, 2026-10-31: "the colors are
 # copyright pending and need to stay as the CSS colors from main"). The new
-# navigation changes layout, never colour: every button a screen draws under
-# SPARC_NAV_SHELL keeps the sparc-action intent and variant the same button
-# has with the switch off, which is main's look.
+# navigation changes layout, never colour: every button a screen draws keeps
+# the sparc-action intent and variant the same button has on main.
 #
-# Each screen is rendered both ways; buttons are matched by label within the
-# page body (not the top bar), and only buttons drawn both ways are compared.
+# Main's look is spec/fixtures/main_look.yml, recorded from the switched-off
+# view before #1297 removed it. Buttons are matched by label within the page
+# body (not the top bar); a button main does not draw is not compared.
 RSpec.describe "Button colours match main", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:boundary) { create(:authorization_boundary, name: "Colour ATO") }
 
+  # The fixture's document screens, keyed as it keys them.
   def documents
     ssp = create(:ssp_document, authorization_boundary: boundary, status: "completed", lifecycle_status: "in_progress")
     create(:ssp_control, ssp_document: ssp, control_id: "ac-1")
-    [ ssp,
-      create(:sap_document, authorization_boundary: boundary, status: "completed"),
-      create(:sar_document, authorization_boundary: boundary, status: "completed"),
-      create(:poam_document, authorization_boundary: boundary, status: "completed"),
-      create(:cdef_document, status: "completed"),
-      create(:profile_document, status: "completed"),
-      create(:control_catalog, status: "completed", lifecycle_status: "in_progress"),
-      create(:evidence, authorization_boundary: boundary) ]
+    { "ssp" => ssp,
+      "sap" => create(:sap_document, authorization_boundary: boundary, status: "completed"),
+      "sar" => create(:sar_document, authorization_boundary: boundary, status: "completed"),
+      "poam" => create(:poam_document, authorization_boundary: boundary, status: "completed"),
+      "cdef" => create(:cdef_document, status: "completed"),
+      "profile" => create(:profile_document, status: "completed"),
+      "catalog" => create(:control_catalog, status: "completed", lifecycle_status: "in_progress"),
+      "evidence" => create(:evidence, authorization_boundary: boundary) }
   end
+
+  def main_look = YAML.load_file(Rails.root.join("spec/fixtures/main_look.yml")).fetch("button_colours")
 
   def lists = %w[
     /ssp_documents /sap_documents /sar_documents /poam_documents /profile_documents /cdef_documents /control_catalogs
@@ -47,8 +50,7 @@ RSpec.describe "Button colours match main", type: :request do
   def main_looks = { "More actions" => [ "sparc-action--neutral sparc-action--outline" ] }
 
   # label => [the button's sparc-action intent/variant classes, ...]
-  def buttons(path, shell)
-    allow(SparcConfig).to receive(:nav_shell?).and_return(shell)
+  def buttons(path)
     get path
     follow_redirect! while response.redirect?
     page = Nokogiri::HTML(response.body)
@@ -67,18 +69,19 @@ RSpec.describe "Button colours match main", type: :request do
   end
 
   it "draws every shared button in main's colours on every screen" do
-    paths = lists + [ authorization_boundary_path(boundary) ] + documents.map { polymorphic_path(_1) }
+    screens = lists.to_h { [ _1, _1 ] }.merge("boundary" => authorization_boundary_path(boundary))
+                   .merge(documents.transform_values { polymorphic_path(_1) })
+    expect(screens.keys).to match_array(main_look.keys)
     compared = 0
-    drift = paths.flat_map do |path|
-      main = buttons(path, false)
-      shell = buttons(path, true)
-      shell.filter_map do |label, looks|
+    drift = screens.flat_map do |key, path|
+      main = main_look.fetch(key)
+      buttons(path).filter_map do |label, looks|
         main_label = renamed.fetch(label, label)
         expected = main[main_label] || main_looks[label]
         next unless expected
 
         compared += 1
-        "#{path} #{label}: main #{expected.uniq} now #{looks.uniq}" unless expected.uniq.sort == looks.uniq.sort
+        "#{key} #{label}: main #{expected.uniq} now #{looks.uniq}" unless expected.uniq.sort == looks.uniq.sort
       end
     end
 

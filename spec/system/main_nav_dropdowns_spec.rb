@@ -33,38 +33,33 @@ RSpec.describe "Header nav dropdowns", type: :system do
     visit "/"
   end
 
-  # The shared driver runs at 1280x1024, and #1042 moved the navbar to
-  # `navbar-expand-xxl` — so below 1400px the nav LINKS collapse into the
-  # hamburger and `click_button "Implementation"` finds nothing visible.
-  #
-  # These examples are about the toggles being native <button> elements that
-  # answer the Space key (#974), not about the breakpoint, so they are given a
-  # viewport where the bar is expanded. Resized per-example rather than by
-  # changing the global driver, which every other system spec shares.
-  #
-  # The collapsed path is not dropped — it is asserted separately below.
+  # 1.18.0-rf #1297 — the header is the shell header (shared/_shell_header):
+  # Create, Library and Help are its menus. It does not collapse behind a
+  # hamburger; below 768px the labels hide and the menus open full width.
   def resize(width, height = 1024)
     page.driver.browser.manage.window.resize_to(width, height)
   end
 
-  # Toggle label => an item that must become visible once it is open. A local,
+  def header = find("[data-testid=shell-header]")
+
+  # Toggle label => a link that must become visible once it is open. A local,
   # not a constant: a constant assigned inside a describe block lands on Object
   # and leaks into every other spec in the run.
   menus = {
-    "Implementation" => "System Security Plans",
-    "Assessment"     => "Assessment Plans",
-    "Enterprise"     => "Organizations"
+    "Create"  => "/ssp_documents/new",
+    "Library" => "/control_catalogs",
+    "Help"    => "/help"
   }
 
-  menus.each do |toggle, entry|
+  menus.each do |toggle, href|
     it "opens #{toggle} on click and reveals its entries" do
       resize(1440)
       # click_button matches <button> and <input type=submit> only. An
       # `<a role="button">` fails here, which is the regression this catches.
-      click_button toggle
+      header.click_button toggle
 
-      expect(page).to have_link(entry, visible: true, wait: 3),
-        "#{toggle} did not open, or #{entry.inspect} is missing from it"
+      expect(header).to have_css("a[href='#{href}']", visible: true, wait: 3),
+        "#{toggle} did not open, or its #{href} entry is missing"
     end
   end
 
@@ -72,40 +67,30 @@ RSpec.describe "Header nav dropdowns", type: :system do
   # scrolls the page instead of activating the control.
   it "opens a menu with the keyboard alone, no mouse" do
     resize(1440)
-    toggle = find_button("Assessment")
-    toggle.send_keys(:space)
+    header.find_button("Library").send_keys(:space)
 
-    expect(page).to have_link("Assessment Plans", visible: true, wait: 3),
-      "the Assessment toggle did not respond to the Space key — it is not a native button"
+    expect(header).to have_css("a[href='/control_catalogs']", visible: true, wait: 3),
+      "the Library toggle did not respond to the Space key — it is not a native button"
   end
 
-  # #1042 — the other half of the breakpoint. Below 1400px the links live behind
-  # the hamburger, and the whole point of that change is that they are HIDDEN,
-  # not LOST. Without this, the suite above could be satisfied by a navbar that
-  # simply deletes its links at laptop widths.
-  it "reaches the same menus through the hamburger below the expand breakpoint" do
-    resize(1280)
+  # Hidden labels are fine at a phone's width; unreachable menus are not.
+  it "reaches the same menus on a phone" do
+    resize(390, 844)
 
-    expect(page).not_to have_button("Implementation", visible: true, wait: 2),
-      "at 1280px the bar should be collapsed, so the nav links are behind the toggler"
-
-    find("button.navbar-toggler").click
-
-    expect(page).to have_button("Implementation", visible: true, wait: 3),
-      "opening the hamburger must reveal the nav links — hidden is fine, unreachable is not"
-
-    click_button "Implementation"
-    expect(page).to have_link("System Security Plans", visible: true, wait: 3),
-      "the dropdown must still open once the hamburger has revealed it"
+    header.click_button "Library"
+    expect(header).to have_css("a[href='/control_catalogs']", visible: true, wait: 3),
+      "the Library menu must still open at a phone's width"
   end
 
-  # The persistent controls are the reason the group sits OUTSIDE the collapse.
-  it "keeps Help, the theme toggle and the account menu visible when collapsed" do
-    resize(1280)
+  # The persistent controls stay in the bar at every width.
+  it "keeps Help, the theme toggle and the account menu visible on a phone" do
+    resize(390, 844)
 
-    expect(page).to have_css("a.sparc-nav-btn[href*='/help']", visible: true),
+    expect(header).to have_button("Help", visible: true),
       "Help must stay one click at every width — #880 built the drawer for mid-task lookups"
-    expect(page).to have_css("[data-controller='theme'] button", visible: true),
-      "the theme toggle must stay reachable without opening the hamburger"
+    expect(header).to have_css("[data-controller='theme'] button", visible: true),
+      "the theme toggle must stay reachable at every width"
+    expect(header).to have_css("button.sparc-nav-user", visible: true),
+      "the account menu must stay reachable at every width"
   end
 end

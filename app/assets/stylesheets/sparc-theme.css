@@ -527,34 +527,6 @@ code {
   color: #fff !important;
 }
 
-/* OSCAL layer accent borders on active/hover */
-.sparc-nav-controls:hover,
-.sparc-nav-controls.show {
-  border-bottom-color: var(--sparc-layer-controls-on-navy);
-}
-.sparc-nav-implementation:hover,
-.sparc-nav-implementation.show {
-  border-bottom-color: var(--sparc-layer-implementation-on-navy);
-}
-.sparc-nav-assessment:hover,
-.sparc-nav-assessment.show {
-  border-bottom-color: var(--sparc-layer-assessment-on-navy);
-}
-.sparc-nav-boundaries:hover,
-.sparc-nav-boundaries.show {
-  border-bottom-color: var(--sparc-layer-enterprise-on-navy);
-}
-
-/* Vertical separator between nav sections */
-.sparc-nav-separator {
-  display: inline-block;
-  width: 1px;
-  height: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  vertical-align: middle;
-  margin: 0 0.25rem;
-}
-
 /* Theme toggle button (compact) */
 .sparc-nav-theme-btn {
   padding: 0.3rem 0.6rem !important;
@@ -619,22 +591,6 @@ code {
   pointer-events: none;
 }
 
-.sparc-dropdown-header-controls {
-  color: var(--sparc-layer-controls);
-}
-
-.sparc-dropdown-header-implementation {
-  color: var(--sparc-layer-implementation);
-}
-
-.sparc-dropdown-header-assessment {
-  color: var(--sparc-layer-assessment);
-}
-
-.sparc-dropdown-header-boundaries {
-  color: var(--sparc-layer-enterprise);
-}
-
 /* #1289 — Lucide icons (IconHelper#icon), drawn from the sprite the layouts
    render once per page. The sprite itself takes no space; its symbols are only
    ever drawn through <use>. Icons size to the text around them and stroke in
@@ -666,11 +622,6 @@ code {
 :root:not([data-bs-theme="dark"]) .sparc-theme-icon-sun {
   display: none;
 }
-
-/* #1288 — a boundary's documents in the sidebar tree, dotted by the layer
-   they belong to (implementation, then assessment), on the page surface. */
-.sparc-layer-dot--implementation { background: var(--sparc-layer-implementation); }
-.sparc-layer-dot--assessment { background: var(--sparc-layer-assessment); }
 
 /* #1289 — the home page tiles: the item's menu icon, large, in its layer colour. */
 .sparc-tile-icon { width: 2rem; height: 2rem; vertical-align: middle; }
@@ -1244,14 +1195,6 @@ a.link-purple { color: var(--sparc-purple); }
   font-weight: 600;
   padding: 0.12rem 0.45rem;
   border-radius: 4px;
-}
-
-.sparc-creation-badge {
-  background: rgba(255, 255, 255, 0.12);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.68rem;
-  font-weight: 600;
 }
 
 .sparc-enriched-badge {
@@ -2224,17 +2167,10 @@ a.link-purple { color: var(--sparc-purple); }
   font-family: monospace;
 }
 
-.sparc-text-success-bold {
-  color: #19743f;  /* WCAG AA: was #2ecc71 (~2.8:1) */
-  font-weight: 600;
-}
-
 .sparc-text-warning-bold {
   color: #8a5000;  /* WCAG AA: was #f39c12 (~1.9:1) */
   font-weight: 600;
 }
-
-[data-bs-theme="dark"] .sparc-text-success-bold { color: #68d391; }
 [data-bs-theme="dark"] .sparc-text-warning-bold { color: #f6ad55; }
 
 /* ── Family Selector (profile create / manage controls) ────────── */
@@ -2583,172 +2519,8 @@ a.link-purple { color: var(--sparc-purple); }
   cursor: default;
 }
 
-/* ─── Sidebar Navigation ────────────────────────────────────────────── */
-.sparc-sidebar {
-  /* #951 — 288px, up from the original 220px. At 220px an organization or
-     boundary name of any real length wrapped to two or three lines, which made
-     the tree taller than the names justified and pushed the sections below it
-     further down the pane. There is desktop room to spare, and `.sparc-main-content`
-     carries `min-width: 0` so the content column absorbs the difference. */
-  width: 288px;
-  min-width: 288px;
-  background: var(--sparc-bg);
-  border-right: 1px solid var(--sparc-border);
-  color: var(--sparc-text);
-  font-size: 1.05rem;
-  flex-shrink: 0;
-  /* #951 — the sidebar scrolls in its OWN pane.
-     This was `min-height`, which lets the element grow with its content, so
-     `overflow-y: auto` never had anything to overflow and the whole document
-     scrolled instead. With a long organization tree that pushed the Compliance
-     Library, Resources and Help sections off the bottom of the page. A fixed
-     `height` bounds the box so the overflow engages, and `sticky` keeps it in
-     view while the main content scrolls independently. */
-  height: calc(100vh - 56px);
-  position: sticky;
-  top: 56px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.sparc-sidebar-header {
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid var(--sparc-border);
-}
-
-.sparc-sidebar-body {
-  padding: 0;
-}
-
 .sparc-main-content {
   min-width: 0;
-}
-
-@media (max-width: 991.98px) {
-  .sparc-sidebar {
-    display: none;
-  }
-}
-
-.sparc-sidebar-section {
-  padding: 0.25rem 0;
-}
-
-.sparc-sidebar-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  border: none;
-  background: transparent;
-  color: var(--sparc-text);
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.sparc-sidebar-toggle:hover {
-  background: var(--sparc-hover-bg, rgba(255,255,255,0.08));
-}
-
-[data-bs-theme="light"] .sparc-sidebar-toggle:hover {
-  background: rgba(0,0,0,0.05);
-}
-
-.sparc-sidebar-toggle::before {
-  content: "\25B6";
-  font-size: 0.55rem;
-  transition: transform 0.2s;
-  flex-shrink: 0;
-}
-
-.sparc-sidebar-toggle[aria-expanded="true"]::before {
-  transform: rotate(90deg);
-}
-
-.sparc-sidebar-indent-1 {
-  padding-left: 1.5rem;
-  font-weight: 500;
-  font-size: 0.95rem;
-}
-
-.sparc-sidebar-indent-2 {
-  padding-left: 2.25rem;
-  font-weight: 400;
-  font-size: 0.9rem;
-}
-
-.sparc-sidebar-icon {
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-/* #951 — a boundary row is a chevron plus a link, not one big toggle.
-   The name navigates to the boundary; the toggle only expands its documents. */
-.sparc-sidebar-boundary-row {
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.sparc-sidebar-boundary-toggle {
-  flex: 0 0 auto;
-  width: auto;
-  padding-right: 0.25rem;
-}
-
-.sparc-sidebar-boundary-link {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--sparc-text);
-  text-decoration: none;
-  font-size: 1.05rem;
-  padding: 0.3rem 0.4rem 0.3rem 0;
-  overflow-wrap: anywhere;
-}
-
-.sparc-sidebar-boundary-link:hover,
-.sparc-sidebar-boundary-link:focus-visible {
-  color: var(--sparc-accent, #4da3ff);
-  text-decoration: underline;
-}
-
-.sparc-sidebar-leaves {
-  list-style: none;
-  margin: 0;
-  padding: 0.15rem 0 0.35rem 0;
-}
-
-.sparc-sidebar-leaf {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 1rem 0.3rem 3.25rem;
-  color: var(--sparc-text);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: background 0.15s;
-}
-
-.sparc-sidebar-leaf:hover {
-  background: var(--sparc-hover-bg, rgba(255,255,255,0.08));
-  color: var(--sparc-primary);
-  text-decoration: none;
-}
-
-[data-bs-theme="light"] .sparc-sidebar-leaf:hover {
-  background: rgba(0,0,0,0.05);
-}
-
-.sparc-sidebar-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 /* ── Environment / rules header bar (#682) ─────────────────────────────────
@@ -3407,19 +3179,8 @@ a.link-purple { color: var(--sparc-purple); }
    --------------------------------------------------------------------------
    What the navigation refactor's screens are built from. No new palette:
    colour comes from the layer tokens (--sparc-layer-*) and the #950 intents
-   (--sparc-i-*), whose pairs are measured in spec/quality/. Nothing renders
-   these until the shell does (phases 3-4); /shell_preview shows each one when
-   SPARC_NAV_SHELL is on.
+   (--sparc-i-*), whose pairs are measured in spec/quality/.
    ========================================================================== */
-
-/* Joined buttons (GitHub's button group): the existing .sparc-action roles and
-   sizes, sharing borders instead of a gap. */
-.sparc-action-group { display: inline-flex; align-items: stretch; }
-.sparc-action-group > .sparc-action { border-radius: 0; }
-.sparc-action-group > .sparc-action + .sparc-action { margin-left: -1px; }
-.sparc-action-group > .sparc-action:first-child { border-radius: 0.375rem 0 0 0.375rem; }
-.sparc-action-group > .sparc-action:last-child { border-radius: 0 0.375rem 0.375rem 0; }
-.sparc-action-group > .sparc-action:focus-visible { position: relative; z-index: 1; }
 
 /* A count on a tab or navigation item. Tabular figures keep a row of counts
    from shifting as numbers change. Body text on a faint neutral fill. */
@@ -3883,7 +3644,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-filter-link__label { min-width: 0; overflow-wrap: anywhere; }
 .sparc-filter-link .sparc-counter { margin-left: auto; }
 
-/* 1.18.0-rf #1299 — collection screens under SPARC_NAV_SHELL. */
+/* 1.18.0-rf #1299 — collection screens. */
 
 /* Status tabs: a filter, so the current one carries aria-current="true". */
 .sparc-tab[aria-current="true"] {
@@ -3973,11 +3734,10 @@ a.link-purple { color: var(--sparc-purple); }
   box-shadow: 0 0 0 1px var(--sparc-border-soft);
   font-weight: 650;
 }
-/* 1.18.0-rf — the page frame (owner-approved 10-31): under SPARC_NAV_SHELL a
+/* 1.18.0-rf — the page frame (owner-approved 10-31): a
    list screen has no outer box. The header, the left column and the tabs sit
    on the page; cards sit on the page; rows and tables each get one box with
-   no inner padding. `.sparc-list-card` marks a list's outer container (a
-   `.card` in the switch-off view, which keeps its look). */
+   no inner padding. `.sparc-list-card` marks a list's outer container. */
 .sparc-shell .sparc-list-card {
   background: none;
   border: 0;
@@ -4188,10 +3948,6 @@ a.link-purple { color: var(--sparc-purple); }
 }
 .sparc-collection-pagination .pagy a[aria-disabled="true"]:not([aria-current]) { opacity: 0.55; pointer-events: none; }
 .sparc-collection-pagination .pagy a:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
-
-/* /shell_preview only: the icon grid. */
-.sparc-preview-icon { width: 7.5rem; }
-.sparc-preview-icon .sparc-icon { width: 1.5rem; height: 1.5rem; color: var(--bs-body-color); }
 
 /* ==========================================================================
    #1047 utility layer — the replacement for inline `style=`
@@ -4726,7 +4482,6 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mr-035 { margin-right: 0.35rem; }
 .sparc-p-025-075 { padding: 0.25rem 0.75rem; }
 .sparc-pl-125r { padding-left: 1.25rem; }
-.sparc-ls-008 { letter-spacing: 0.08rem; }
 .sparc-logo-300 { height: 300px; width: auto; }
 .sparc-w-4pct { width: 4%; }
 .sparc-mb-015 { margin-bottom: 0.15rem; }
@@ -4798,7 +4553,6 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-mono { font-family: monospace; }
 .sparc-pre-line { white-space: pre-line; }
 .sparc-color-white-45 { color: rgba(255, 255, 255, 0.45); }
-.sparc-color-white-70 { color: rgba(255, 255, 255, 0.7); }
 .sparc-minw-6r { min-width: 6rem; }
 .sparc-p-085-1r { padding: 0.85rem 1rem; }
 .sparc-p-1r { padding: 1rem; }

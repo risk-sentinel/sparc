@@ -1,6 +1,6 @@
 """Navigation regression checks for the 1.18.0-rf shell (#1307).
 
-Posture-gated ("nav_shell"). End to end, the way a person uses it:
+End to end, the way a person uses it:
 
   * Nothing reachable before is lost. Every link the classic header and sidebar
     offered on v1.17.5 (nav_inventory.json) is found on the shell's home page or
@@ -30,10 +30,10 @@ import pytest
 from playwright.sync_api import expect
 
 from _api_setup import create_boundary, create_ssp, delete_doc
-from helpers import SHELL_HEADER, assert_no_csp_violations, nav_shell_on, record_csp
+from helpers import SHELL_HEADER, assert_no_csp_violations, record_csp
 from nav_inventory_paths import POSTURES, REMOVED, condition_for, normalize_path
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 # Tags every link and form on the page with data-navreg-id and returns each
 # one's href, whether it opens a new tab, and whether it sits in the shell's
@@ -73,8 +73,6 @@ def _open(page, path):
     assert resp is not None and resp.ok, f"{path} returned {resp and resp.status}"
     page.wait_for_load_state("networkidle")
     assert "/login" not in page.url, f"the smoke session is not signed in: {page.url}"
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack")
 
 
 def _first_boundary_path(page):

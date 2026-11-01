@@ -140,13 +140,13 @@ RSpec.describe "Public Controls-layer access (#974)", type: :request do
     # Navigation stays where a user expects it. #974 changes VISIBILITY only —
     # an entry is offered when the visitor can reach it — and never relocates an
     # item to make it reachable. Component definitions and converters live in
-    # the Implementation menu and stay there.
+    # the Library menu (1.18.0-rf #1295; the classic Implementation menu went
+    # in #1297) and stay there.
     it "offers the readable entries in their native menu" do
       get control_catalogs_path
 
-      expect(response.body).to include(cdef_documents_path)
-      expect(response.body).to include(converters_path)
-      expect(response.body).to include("Implementation")
+      library = Nokogiri::HTML(response.body).css("[data-testid=shell-library-item]").to_h { [ _1["data-item"], _1["href"] ] }
+      expect(library).to include("cdef_documents" => cdef_documents_path, "converters" => converters_path)
     end
 
     # The same menu must not advertise what this visitor cannot open.

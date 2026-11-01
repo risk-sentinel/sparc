@@ -45,10 +45,9 @@
   has_filters   = [active_status, active_impact].any?(&:present?)
 %>
 
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+<%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header): Add Item as the main action, the other adds
     and Findings Triage beside it. %>
-<% if shell_nav? %>
   <%= render "shared/document_header", document: @poam_document, type: :poam, version: @poam_document.poam_version,
         rename: { update_path: update_metadata_poam_document_path(@poam_document), version_field: :poam_version },
         meta: [ pluralize(@total_items, "item") ],
@@ -64,7 +63,6 @@
         export: "POA&M", publish: signed_in? && @poam_document.draft?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Risk", "#poam-risk-matrix" ] if @heatmap_data.any?), [ "Items", "#poam-items" ],
                     [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
-<% end %>
 
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
@@ -72,69 +70,6 @@
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-gradient-header sparc-doc-hero" id="doc-overview">
-<% unless shell_nav? %>
-
-  <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
-    <div>
-      <div class="sparc-header-subtitle">Plan of Action &amp; Milestones</div>
-
-      <%# ── View mode ── %>
-      <div id="doc-meta-view" data-doc-meta-target="view">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 class="sparc-header-title"><%= @poam_document.name %></h2>
-          <% if @poam_document.poam_version.present? %>
-            <span class="sparc-version-badge">v<%= @poam_document.poam_version %></span>
-          <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
-        </div>
-        <%# #1180 — the document's own UUID, under the name, in the same
-            treatment every other screen uses. Copyable: this is the
-            identifier the federation key grammar keys objects on. %>
-        <div class="mt-1">
-          <%= render "shared/uuid_badge", uuid: @poam_document.uuid, name: "document UUID" %>
-        </div>
-      </div>
-
-      <%# ── Edit mode (hidden) ── %>
-      <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
-        <%= render "shared/document_name_form", document: @poam_document,
-              update_path: update_metadata_poam_document_path(@poam_document),
-              version_field: :poam_version %>
-      </div>
-    </div>
-
-    <%# ── Action buttons ── %>
-    <div class="d-flex gap-2 flex-wrap">
-      <%= link_to "+ Add Item", new_poam_document_poam_item_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <%= link_to "+ Add Risk", new_poam_document_poam_risk_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <%= link_to "+ Add Remediation", new_poam_document_poam_remediation_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <%= link_to "+ Add Observation", new_poam_document_poam_observation_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <%= link_to "+ Add Finding", new_poam_document_poam_finding_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <%= link_to "+ Add Component", new_poam_document_poam_local_component_path(@poam_document), class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <% if signed_in? && @poam_document.draft? %>
-        <%= render "shared/publish_button", document: @poam_document,
-              publish_path: publish_poam_document_path(@poam_document),
-              check_path: publish_check_poam_document_path(@poam_document) %>
-      <% end %>
-      <%= render "shared/oscal_export_dropdown",
-            validate_path: validate_oscal_export_poam_document_path(@poam_document),
-            download_json_path: download_oscal_validated_poam_document_path(@poam_document),
-            download_yaml_path: download_yaml_poam_document_path(@poam_document),
-            download_xml_path: download_xml_poam_document_path(@poam_document),
-            fallback_json_path: download_oscal_unvalidated_poam_document_path(@poam_document),
-            document_type: "POA&M" %>
-      <%# #447 — jump to findings triage for this POA&M's boundary. #1246: named
-          for the screen it opens. %>
-      <% if @poam_document.authorization_boundary %>
-        <%= link_to "Findings Triage",
-              triage_authorization_boundary_path(@poam_document.authorization_boundary),
-              class: "sparc-action sparc-action--neutral sparc-action--outline" %>
-      <% end %>
-      <%= link_to "&#8592; All POA&Ms".html_safe, poam_documents_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  </div>
-
-<% end %>
   <%# ── Summary stats ── %>
   <div class="sparc-poam-hero-tiles">
     <div class="sparc-hero-tile rounded-3">

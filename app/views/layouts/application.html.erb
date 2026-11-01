@@ -73,13 +73,13 @@
       never reaches Rails (edge WAF block, proxy 413, transport failure) has no
       controller to set a flash, so the feedback has to come from the client. %>
   <%# 1.18.0-rf — sparc-shell marks the new navigation, so the page frame's
-      styles apply under SPARC_NAV_SHELL only. %>
-  <body data-controller="video-easter-egg details-arrow submit-feedback help-drawer" <%= tag.attributes(class: ("sparc-shell" if shell_nav?)) %>>
+      styles apply. %>
+  <body data-controller="video-easter-egg details-arrow submit-feedback help-drawer" class="sparc-shell">
     <%# #1289 — the icon sprite, once per page; IconHelper#icon draws from it. %>
     <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
     <%= render "shared/main_nav" %>
-    <%# 1.18.0-rf — the organization layout's tab bar, behind SPARC_NAV_SHELL. %>
+    <%# 1.18.0-rf — the organization layout's tab bar. %>
     <%= render "shared/shell_tabs" if shell_nav? %>
 
     <%# ── Flash notifications (fixed top-right overlay) ────────
@@ -107,21 +107,11 @@
       </div>
     <% end %>
 
-    <%# 1.18.0-rf #1296 — behind SPARC_NAV_SHELL there is no left sidebar: its
+    <%# 1.18.0-rf — there is no left sidebar (#1297 retired it): its
         organization/boundary tree is the header's switcher (#1291) and the
         Boundaries tab, its Compliance Library the header's Library menu, and
-        its Resources and Help & Guides the header's Help menu (#1295). The
-        sidebar stays for the switch-off view until #1297. %>
-    <% if signed_in? && !SparcConfig.nav_shell? %>
-      <div class="d-flex">
-        <%= render "shared/sidebar" %>
-        <div class="sparc-main-content flex-grow-1">
-          <div class="container">
-            <%= yield %>
-          </div>
-        </div>
-      </div>
-    <% elsif shell_nav? && admin_settings_page? %>
+        its Resources and Help & Guides the header's Help menu (#1295). %>
+    <% if shell_nav? && admin_settings_page? %>
       <%# 1.18.0-rf #1303 — an admin screen, with the settings menu beside it. %>
       <div class="container">
         <%= render layout: "admin/settings_frame" do %><%= yield %><% end %>

@@ -18,16 +18,15 @@
     search       — false to hide the search box
     extra        — safe HTML placed on the left of the toggle row, for
                    screen-specific controls like select-all
-    status_tabs  — a StatusTabs (#1299; drawn under SPARC_NAV_SHELL only)
+    status_tabs  — a StatusTabs (#1299; drawn)
 
-  1.18.0-rf #1299, under SPARC_NAV_SHELL: status tabs with counts lead; the
+  1.18.0-rf #1299: status tabs with counts lead; the
   filter form moves into the list's left column when the list sits in
   shared/_boundary_filter_layout; a tab's own filter is not repeated as a
   dropdown or a token, since the selected tab already says it.
 %>
 <% label = local_assigns.fetch(:label, "results") %>
-<% shell = SparcConfig.nav_shell? %>
-<% tabs = shell ? local_assigns[:status_tabs] : nil %>
+<% tabs = local_assigns[:status_tabs] %>
 <% tab_keys = tabs ? tabs.keys.map(&:to_s) : [] %>
 <% filter_fields = Array(local_assigns[:filter_fields]).reject { |f| tab_keys.include?(f[:key].to_s) } %>
 <% facets = local_assigns[:facets]&.reject { |f| tab_keys.include?(f[:key].to_s) } %>
@@ -53,7 +52,7 @@
     what is currently applied. Keeps the top-to-bottom reading order intact:
     how to narrow, what IS narrowed, then how it is drawn. %>
 <% if filter_fields.present? %>
-  <% if shell && @collection_side_open %>
+  <% if @collection_side_open %>
     <% content_for :collection_side, render("shared/collection_filter_form", fields: filter_fields, stacked: true) %>
   <% else %>
     <%= render "shared/collection_filter_form", fields: filter_fields %>

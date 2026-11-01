@@ -47,9 +47,8 @@
 
 <div data-controller="doc-meta inline-edit">
 
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+<%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header); Enrich beside it. %>
-<% if shell_nav? %>
   <%= render "shared/document_header", document: @sar_document, type: :sar, version: @sar_document.sar_version,
         rename: { update_path: update_metadata_sar_document_path(@sar_document), version_field: :sar_version },
         title_extra: (tag.span("OSCAL Enriched", class: "sparc-enriched-badge") if @sar_document.enriched?),
@@ -62,7 +61,6 @@
         export: "SAR", publish: signed_in? && @sar_document.draft?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Results", "#heatmapSection" ] if @heatmap_families.any?), [ "Tests", "#controlsContainer" ],
                     [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
-<% end %>
 
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
@@ -70,94 +68,6 @@
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-dashboard-header" id="doc-overview">
-<% unless shell_nav? %>
-
-  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap sparc-gap-1r">
-    <div>
-      <div class="sparc-header-subtitle">Security Assessment Results</div>
-
-      <div id="doc-meta-view" data-doc-meta-target="view">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 class="sparc-header-title"><%= @sar_document.name %></h2>
-          <% if @sar_document.sar_version.present? %>
-            <span class="sparc-version-badge">v<%= @sar_document.sar_version %></span>
-          <% end %>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
-        </div>
-        <%# #1180 — the document's own UUID, under the name, in the same
-            treatment every other screen uses. Copyable: this is the
-            identifier the federation key grammar keys objects on. %>
-        <div class="mt-1">
-          <%= render "shared/uuid_badge", uuid: @sar_document.uuid, name: "document UUID" %>
-        </div>
-      </div>
-
-      <div class="sparc-d-none" id="doc-meta-edit" data-doc-meta-target="edit">
-        <%= render "shared/document_name_form", document: @sar_document,
-              update_path: update_metadata_sar_document_path(@sar_document),
-              version_field: :sar_version %>
-      </div>
-
-      <div class="sparc-header-meta">
-        <%= @sar_document.original_filename %>
-        &nbsp;&bull;&nbsp;
-        <span class="sparc-text-success-bold"><%= @sar_document.status %></span>
-        &nbsp;&bull;&nbsp; <%= @total_controls %> tests
-        <% if @sections.size > 1 %>&nbsp;&bull;&nbsp; <%= @sections.size %> sections<% end %>
-        <% if @assets.any? %>&nbsp;&bull;&nbsp; <%= @assets.size %> assets<% end %>
-        <% if @sar_document.creation_method.present? %>
-          &nbsp;&bull;&nbsp;
-          <span class="sparc-creation-badge">
-            <%# #479: legacy "excel" rows display as "Import" — the underlying
-                creation_method value is preserved but no longer surfaced as
-                "Excel" in the UI. %>
-            <%= { "excel" => "Import", "wizard" => "Wizard", "oscal_import" => "OSCAL Import" }[@sar_document.creation_method] || @sar_document.creation_method %>
-          </span>
-        <% end %>
-        <% if @sar_document.enriched? %>
-          &nbsp;
-          <span class="sparc-enriched-badge">OSCAL Enriched</span>
-        <% end %>
-      </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2 sparc-flex-shrink-0">
-      <% if signed_in? && @sar_document.draft? %>
-        <%= render "shared/publish_button", document: @sar_document,
-              publish_path: publish_sar_document_path(@sar_document),
-              check_path: publish_check_sar_document_path(@sar_document) %>
-      <% end %>
-      <%# #479: Excel download route still exists (download_excel_sar_document_path)
-          for API consumers but is no longer surfaced in the UI dropdown. %>
-      <%= render "shared/oscal_export_dropdown",
-            validate_path: validate_oscal_export_sar_document_path(@sar_document),
-            download_json_path: download_oscal_validated_sar_document_path(@sar_document),
-            download_yaml_path: download_yaml_sar_document_path(@sar_document),
-            download_xml_path: download_xml_sar_document_path(@sar_document),
-            fallback_json_path: download_oscal_unvalidated_sar_document_path(@sar_document),
-            document_type: "SAR" %>
-      <%# #1093 — this used to be wrapped in `unless @sar_document.enriched?`, so
-          the only route to /enrich disappeared the moment the document WAS
-          enriched. The screen was reachable exactly once, and after the first
-          save the only way back was to type the URL. That is backwards for a
-          screen whose whole purpose is iterative: #1090 had just added
-          Statement, Impact and Likelihood to that form, and no already-enriched
-          SAR could reach them.
-
-          ssp_documents/show has offered a route in BOTH states all along — an
-          Enrich action in the bar and an Edit link into the same screen once
-          enriched. SAR had the first half and not the second.
-
-          SAME PLACEMENT, same action bar, same position. Only the visibility and
-          the label change with state. %>
-      <%= link_to (@sar_document.enriched? ? "&#9998; Edit Enrichment" : "&#x2728; Enrich").html_safe,
-            enrich_sar_document_path(@sar_document),
-            class: "sparc-action sparc-action--info sparc-action--outline" %>
-      <%= link_to "&#8592; Back".html_safe, sar_documents_path,
-            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  </div>
-
-<% end %>
   <div class="d-flex align-items-center flex-wrap sparc-gap-15r">
     <div class="sparc-score-cell">
       <div class="sparc-score sparc-accent-text <%= accent_class(score_color) %>"><%= pass_pct %>%</div>

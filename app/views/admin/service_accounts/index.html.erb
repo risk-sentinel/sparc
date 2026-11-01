@@ -1,35 +1,9 @@
 <div class="container-fluid py-4">
-  <%# 1.18.0-rf #1303 — under SPARC_NAV_SHELL, the shared header and toolbar. %>
-  <% if SparcConfig.nav_shell? %>
+  <%# 1.18.0-rf #1303 — the shared header and toolbar. %>
     <%= render "admin/list_header", title: "Service accounts", label: "service accounts", count: @pagy.count,
           subtitle: "API-only accounts for pipelines, CI/CD, and integrations",
           primary: { label: "New service account", look: "positive solid", path: new_admin_service_account_path },
           status_tabs: @status_tabs, placeholder: "Search by name or email…" %>
-  <% else %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Service Accounts</h2>
-      <p class="text-muted mb-0">API-only accounts for pipelines, CI/CD, and integrations</p>
-    </div>
-    <%= link_to new_admin_service_account_path, class: "btn btn-success" do %>
-      <i class="bi bi-plus-circle"></i> New Service Account
-    <% end %>
-  </div>
-
-  <% if params[:q].present? %>
-    <div class="mb-3">
-      <span class="text-muted">Showing results for "<%= params[:q] %>"</span>
-      <%= link_to "Clear", admin_service_accounts_path, class: "ms-2 text-decoration-none" %>
-    </div>
-  <% end %>
-
-  <%= form_tag admin_service_accounts_path, method: :get, class: "mb-4" do %>
-    <div class="input-group" style="max-width: 400px;">
-      <%= text_field_tag :q, params[:q], class: "form-control", placeholder: "Search by name or email..." %>
-      <button type="submit" class="sparc-action sparc-action--neutral sparc-action--ghost">Search</button>
-    </div>
-  <% end %>
-  <% end %>
 
   <div class="card sparc-list-card sparc-card">
     <div class="table-responsive">

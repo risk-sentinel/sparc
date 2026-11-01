@@ -2,12 +2,11 @@
 
 require "rails_helper"
 
-# 1.18.0-rf — the page frame (owner-approved 10-31): under SPARC_NAV_SHELL
+# 1.18.0-rf — the page frame (owner-approved 10-31):
 # every list screen has the settings screens' frame. The header, the left
-# column and the tabs sit on the page with no outer box; the list's totals,
-# a banner in the switch-off view, are one line under the title; on a list
-# with a left column the header sits beside it. With the switch off the
-# screens draw what they drew before.
+# column and the tabs sit on the page with no outer box; the list's totals
+# are one line under the title; on a list with a left column the header sits
+# beside it.
 RSpec.describe "Page frame", type: :request do
   let(:admin) { create(:user, :admin) }
 
@@ -15,7 +14,6 @@ RSpec.describe "Page frame", type: :request do
 
   def summary = page.css("[data-testid=page-header-summary] li").map { _1.text.squish }
 
-  def banner = page.css(".sparc-hero-tile").map { _1.text.squish }
 
   # Lists that show totals, and the ones with a left column.
   def document_lists = {
@@ -35,8 +33,8 @@ RSpec.describe "Page frame", type: :request do
     create(:ssp_document, authorization_boundary: create(:authorization_boundary))
   end
 
-  context "with SPARC_NAV_SHELL on" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  context "in the 1.18.0-rf navigation" do
+    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
     it "marks the page as the new navigation" do
       get ssp_documents_path
@@ -53,14 +51,11 @@ RSpec.describe "Page frame", type: :request do
       end
     end
 
-    it "shows the same totals the banner showed" do
+    it "shows the totals the banner showed, as one line" do
       get ssp_documents_path
-      shell = summary
-
-      allow(SparcConfig).to receive(:nav_shell?).and_return(false)
-      get ssp_documents_path
-      expect(shell).to eq(banner)
-      expect(shell.first).to eq("1 SSP Documents")
+      expect(summary.map { _1.sub(/\A[\d,]+( of [\d,]+)? /, "") })
+        .to eq([ "SSP Documents", "Total Controls", "Responses answered", "Completed" ])
+      expect(summary.first).to eq("#{SspDocument.count} SSP Documents")
     end
 
     it "puts the header beside the left column, not above it" do
@@ -91,19 +86,6 @@ RSpec.describe "Page frame", type: :request do
       allow(SparcConfig).to receive(:aws_labs_cdef_enabled?).and_return(true)
       get cdef_documents_path
       expect(page.at_css("[data-testid=page-header] + [data-testid=aws-labs-refresh-status]")).to be_present
-    end
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: false) }
-
-    it "keeps the banner and the classic header, with no shell marker" do
-      document_lists.each_key do |list|
-        get "/#{list}"
-        expect(page.css(".sparc-gradient-header").size).to eq(1), list
-        expect(page.at_css("[data-testid=page-header]")).to be_nil, list
-      end
-      expect(page.at_css("body")["class"]).to be_nil
     end
   end
 end

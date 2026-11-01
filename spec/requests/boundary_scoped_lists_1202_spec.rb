@@ -146,13 +146,14 @@ RSpec.describe "Boundary-scoped document lists (#1202)", type: :request do
     end
   end
 
-  describe "the sidebar links come from the same definition" do
+  # The classic sidebar's boundary links are the boundary's own tab bar since
+  # 1.18.0-rf (#1296, #1297).
+  describe "the boundary tab bar's links come from the same definition" do
     before { sign_in_as(admin) }
 
     it "links each document type to its boundary-scoped list, exactly as before" do
-      # The sidebar lists boundaries under their organization.
       boundary_a.update!(organization: create(:organization))
-      get "/"
+      get authorization_boundary_path(boundary_a)
 
       {
         cdef: "/cdef_documents", ssp: "/ssp_documents", sap: "/sap_documents",

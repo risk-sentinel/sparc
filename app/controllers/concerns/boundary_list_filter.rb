@@ -26,8 +26,8 @@
 # A list controller declares its type with `boundary_list :ssp` (a
 # BoundaryScopedList type) and calls `build_boundary_filter(scope)` with the
 # relation it lists BEFORE narrowing by boundary. The view wraps the list in
-# shared/_boundary_filter_layout. Only with SPARC_NAV_SHELL on; otherwise
-# `boundary_filter` is nil and every list renders as before.
+# shared/_boundary_filter_layout. A list that does not declare a type has no
+# `boundary_filter` (nil) and renders without the filter column.
 #
 # NIST SP 800-53 Rev 5:
 #   AC-3 Access Enforcement — counts and names only what the user may list;
@@ -67,8 +67,6 @@ module BoundaryListFilter
     end
   end
 
-  def self.enabled? = SparcConfig.nav_shell?
-
   private
 
   def boundary_filter = @boundary_filter
@@ -88,7 +86,7 @@ module BoundaryListFilter
 
   # `scope`: the list's permission-scoped relation, before boundary narrowing.
   def build_boundary_filter(scope)
-    return unless BoundaryListFilter.enabled? && boundary_list_type
+    return unless boundary_list_type
 
     type = boundary_list_type
     value = params[BoundaryScopedList::PARAM].to_s

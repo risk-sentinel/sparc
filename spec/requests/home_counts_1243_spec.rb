@@ -39,7 +39,10 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       sar_documents: :sar_document, poam_documents: :poam_document }
   end
 
-  def card_new_links = page.css(".sparc-section-card a").select { |a| a.text.strip == "New" }.map { |a| a["href"] }
+  # 1.18.0-rf #1297 — the cards are the Overview's boxes (home/_org_overview).
+  def cards = page.css("[data-testid=org-box]")
+
+  def card_new_links = cards.css("a.sparc-lane-box__new").map { |a| a["href"] }
 
   # The inventory above the cards, as { label => count text }.
   def inventory
@@ -144,23 +147,26 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(card_new_links).to contain_exactly(new_ssp_document_path, new_control_catalog_path)
     end
 
-    it "lays every card out the same way: icon, count, title, buttons" do
+    it "lays every card out the same way: icon, title, New, then the count" do
       create(:control_catalog)
       get root_path
 
-      page.css(".sparc-section-card .card-body").each do |body|
-        kinds = body.element_children.map do |el|
-          if el["class"].to_s.include?("sparc-count-badge") then :count
-          elsif el.name == "h5" then :title
-          elsif el.css("a.sparc-action").any? then :buttons
-          else :icon
+      cards.each do |card|
+        head, count = card.element_children
+        kinds = head.element_children.map do |el|
+          if el.name == "svg" then :icon
+          elsif el["class"].to_s.include?("sparc-lane-box__new") then :new
+          elsif el["class"].to_s.include?("sparc-lane-box__title") then :title
+          else el.name.to_sym
           end
         end
-        expect(kinds).to eq(%i[icon count title buttons]), body.at_css("h5")&.text
+        expect(kinds - [ :new ]).to eq(%i[icon title]), card["data-box"]
+        expect(count["data-home-count"]).to eq(card["data-box"]), card["data-box"]
+        expect(card.element_children.size).to eq(2), card["data-box"]
       end
       # Families and controls are the tiles' to show; no card carries a breakdown.
-      expect(page.css(".sparc-section-card .card-body").size).to eq(11) # every card this user is offered
-      expect(page.css(".sparc-section-card").text).not_to include("families")
+      expect(cards.size).to eq(11) # every card this user is offered
+      expect(cards.text).not_to include("families")
     end
   end
 
@@ -174,7 +180,10 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       expect(badge(:evidences).text).to eq("4")
       expect(badge(:organizations).text).to eq(Organization.count.to_s)
       expect(badge(:organizations)["href"]).to eq(admin_organizations_path)
-      expect(card_new_links.size).to eq(12)
+      # 1.18.0-rf: the twelve homepage cards, plus Federation Peers (the
+      # Overview's Enterprise box; its create action takes back_matter.federate).
+      expect(card_new_links.size).to eq(13)
+      expect(card_new_links).to include(new_federation_peer_path)
     end
 
     it "sees the full inventory, Organizations included, at instance totals" do

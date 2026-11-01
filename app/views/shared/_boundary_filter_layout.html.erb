@@ -2,12 +2,12 @@
     Wrap the list's toolbar, records and pagination in
     `render layout: "shared/boundary_filter_layout" do … end`.
 
-    With no filter (SPARC_NAV_SHELL off, or a list that declares none) the
-    block renders exactly as before. The filter is built by the controller
+    With no filter (a list that declares none) the block renders on its own.
+    The filter is built by the controller
     (BoundaryListFilter), which counts and names only boundaries the user can
     reach; a URL naming any other boundary shows an empty list and is never
     named here. %>
-<%# 1.18.0-rf #1299 — under SPARC_NAV_SHELL the list's other filters join the
+<%# 1.18.0-rf #1299 — the list's other filters join the
     Boundary filter in the left column: the toolbar inside the block hands its
     filter form over through `content_for :collection_side`, so the block is
     rendered first and the column after. %>

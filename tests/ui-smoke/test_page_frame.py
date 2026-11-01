@@ -1,6 +1,6 @@
 """The page frame in a real browser (1.18.0-rf, owner-approved 10-31).
 
-Posture-gated ("nav_shell"). Under SPARC_NAV_SHELL every list screen has the
+Every list screen has the
 settings screens' frame:
   - the list's outer container draws no box (no padding, border or fill);
   - on a list with a left column, the page header starts level with it;
@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import pytest
 
-from helpers import assert_no_csp_violations, nav_shell_on, record_csp
+from helpers import assert_no_csp_violations, record_csp
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 SCREENS = [("sap", "/sap_documents?view=table"), ("users", "/admin/users")]
 
@@ -28,8 +28,6 @@ def _open(page, path):
     resp = page.goto(path)
     assert resp is not None and resp.ok, f"{path} returned {resp and resp.status}"
     page.wait_for_load_state("networkidle")
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack")
 
 
 @pytest.mark.parametrize(("label", "path"), SCREENS, ids=[s[0] for s in SCREENS])

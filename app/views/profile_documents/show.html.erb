@@ -35,7 +35,7 @@
 <% catalog_card = catalog_changeable &&
                   (@profile_document.control_catalog.blank? || @profile_document.catalog_confirmation_pending? ||
                    params[:change_catalog].present?) %>
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+<%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header), first on the page: the source catalog under
     the name; the copies and the control actions beside it. The review panel
     stays under the name. %>

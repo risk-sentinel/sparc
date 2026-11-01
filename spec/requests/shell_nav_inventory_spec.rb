@@ -16,7 +16,6 @@ require "rails_helper"
 #   * every path the shell's NAVIGATION offers (header and tab bar) was
 #     recorded, or is in `added` — a deliberate, reviewed addition.
 #
-# The classic header with the switch off is pinned by nav_inventory_spec.rb.
 #
 # NIST SP 800-53 Rev 5: AC-3, AC-6 (a viewer is offered only what they may open).
 RSpec.describe "Shell navigation inventory (1.18.0-rf #1296)", type: :request do
@@ -86,7 +85,7 @@ RSpec.describe "Shell navigation inventory (1.18.0-rf #1296)", type: :request do
 
   def shell_for(posture)
     allow(SparcConfig).to receive_messages(any_auth_enabled?: posture[:auth], enable_local_login?: posture[:auth],
-                                           public_catalogs?: posture[:public], fido2_enabled?: true, nav_shell?: true)
+                                           public_catalogs?: posture[:public], fido2_enabled?: true)
     sign_in_as(public_send(posture[:user])) if posture[:user]
 
     shell_pages(posture).each_with_object({ reach: Set.new, nav: Set.new }) do |path, acc|

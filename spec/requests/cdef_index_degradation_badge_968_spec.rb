@@ -49,7 +49,8 @@ RSpec.describe "CdefDocuments component-index degradation badge (#968)", type: :
       degraded = degrade!(create(:cdef_document, name: "Degraded CDEF", status: "completed"))
       create(:cdef_document, name: "Clean CDEF", status: "completed")
 
-      get cdef_documents_path(view: "list")
+      # 1.18.0-rf #1299 — the table (main's "list"); cards never carried it.
+      get cdef_documents_path(view: "table")
 
       expect(response.body).to include("cdef-index-degraded")
       # exactly one row carries the marker — the degraded one

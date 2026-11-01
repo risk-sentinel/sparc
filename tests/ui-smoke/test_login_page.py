@@ -81,20 +81,17 @@ def test_controls_dropdown_visibility_matches_access_for_guest(page):
 
     page.goto("/login")
     page.wait_for_load_state("networkidle")
-    # The classic header's Controls dropdown, or (SPARC_NAV_SHELL on) the shell
-    # header's Library menu entry for catalogs.
-    controls = page.locator(
-        ".sparc-nav-controls, [data-testid=shell-library-item][data-item=control_catalogs]"
-    )
+    # The header's Library menu entry for catalogs (#1295).
+    controls = page.locator("[data-testid=shell-library-item][data-item=control_catalogs]")
 
     if gated:
         assert controls.count() == 0, (
-            "Controls dropdown is visible to an unauthenticated guest even "
+            "the Library menu offers catalogs to an unauthenticated guest even "
             "though catalog reads are gated (#726 regression)"
         )
     else:
         assert controls.count() > 0, (
-            "catalog reads are public but the Controls dropdown is missing "
+            "catalog reads are public but the Library menu has no catalogs "
             "for a guest (nav should match access)"
         )
 

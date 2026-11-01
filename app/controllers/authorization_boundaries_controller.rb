@@ -39,9 +39,9 @@ class AuthorizationBoundariesController < ApplicationController
     @show_organization = scope.reorder(nil).where.not(organization_id: nil)
                               .distinct.count(:organization_id) > 1
 
-    # 1.18.0-rf — the Boundaries tab (SPARC_NAV_SHELL): filters in the left
+    # 1.18.0-rf — the Boundaries tab: filters in the left
     # column, counted on the visible set before any filter applies.
-    scope = filter_boundary_tab(scope) if SparcConfig.nav_shell?
+    scope = filter_boundary_tab(scope)
 
     # #672 — filter listed rows; the tiles above keep showing totals.
     scope = scope.search_text(params[:q])
@@ -54,7 +54,7 @@ class AuthorizationBoundariesController < ApplicationController
     # #888 — cards by default, remembered per screen, and paginated.
     @view_mode = resolve_view_mode(:authorization_boundaries)
     @pagy, @authorization_boundaries = paginate_collection(scope)
-    load_boundary_tab_rows if SparcConfig.nav_shell?
+    load_boundary_tab_rows
   end
 
   def show

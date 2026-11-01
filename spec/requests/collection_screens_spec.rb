@@ -79,9 +79,12 @@ RSpec.describe "Collection screens", type: :request do
       actions: %w[View]
   end
 
+  # 1.18.0-rf — /authorization_boundaries is the organization's Boundaries tab;
+  # the collection screen, with administrators' bulk delete, is a click away
+  # at ?classic=1 (org_layout_shell_spec.rb pins the link).
   describe "Authorization boundaries" do
     it_behaves_like "a collection screen",
-      path: -> { authorization_boundaries_path },
+      path: -> { authorization_boundaries_path(classic: 1) },
       screen: :authorization_boundaries,
       create: -> { create(:authorization_boundary, name: "Findable Widget") },
       search_term: "Findable",

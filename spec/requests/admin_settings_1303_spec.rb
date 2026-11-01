@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1303 — administration under SPARC_NAV_SHELL: the Settings tab
+# 1.18.0-rf #1303 — administration: the Settings tab
 # opens a settings page listing every admin screen; each admin screen shows
 # that menu beside it and the shared page header; the admin lists get the
 # shared search and status tabs (service accounts are paginated). Who may
@@ -24,8 +24,8 @@ RSpec.describe "Admin settings (#1303)", type: :request do
     "reconciliation" => "/admin/reconciliation", "data_migrations" => "/admin/data_migrations"
   }
 
-  context "with SPARC_NAV_SHELL on" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  context "in the 1.18.0-rf navigation" do
+    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
     describe "the settings page" do
       before { sign_in_as(admin) }
@@ -140,29 +140,6 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         get admin_settings_path
         expect(response).to redirect_to(login_path)
       end
-    end
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    before do
-      allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: false)
-      sign_in_as(admin)
-    end
-
-    it "has no settings page, menu or shared header" do
-      get admin_settings_path
-      expect(response).to have_http_status(:not_found)
-
-      get admin_users_path
-      expect(menu).to be_nil
-      expect(page.at_css("h1").text).to eq("User Management")
-      expect(page.at_css("[data-testid=status-tabs]")).to be_nil
-    end
-
-    it "still filters users by status as before" do
-      create(:user, email: "gone@example.com", status: "deactivated")
-      get admin_users_path(status: "active")
-      expect(response.body).not_to include("gone@example.com")
     end
   end
 end

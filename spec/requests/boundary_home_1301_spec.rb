@@ -2,12 +2,12 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1301 — the boundary page under SPARC_NAV_SHELL is a home for the
+# 1.18.0-rf #1301 — the boundary page is a home for the
 # boundary: the page header with every header action, the latest activity,
 # one row per document, the weekly activity (scan runs and validations
 # included), readiness as the API reports it, and an About column with the
 # facts, tags and what needs attention. The sections below stay, so no action
-# the page had is lost. With the switch off the page is as before.
+# the page had is lost.
 RSpec.describe "Boundary home (#1301)", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:baseline) do
@@ -28,12 +28,12 @@ RSpec.describe "Boundary home (#1301)", type: :request do
 
   def attention(key) = page.at_css("[data-testid=boundary-attention] [data-attention='#{key}']")
 
-  def shell(on) = allow(SparcConfig).to(receive_messages(any_auth_enabled?: true, nav_shell?: on))
+  def shell = allow(SparcConfig).to(receive_messages(any_auth_enabled?: true))
 
   before { sign_in_as(admin) }
 
-  context "with SPARC_NAV_SHELL on" do
-    before { shell(true) }
+  context "in the 1.18.0-rf navigation" do
+    before { shell }
 
     describe "the header" do
       it "is the page header: the name as h1, its status, Build ATO Package and the More menu" do
@@ -156,44 +156,55 @@ RSpec.describe "Boundary home (#1301)", type: :request do
     end
 
     describe "nothing is lost" do
-      # The 28-action inventory: every link and form on the switch-off page is
-      # on the new one. Hash-only links (in-page jumps) are not actions.
+      # The inventory: the 34 links and forms the classic boundary page offered
+      # (recorded 2026-10-31 before #1297 removed that view), each still on the
+      # page. Hash-only links (in-page jumps) are not actions.
       def actions
-        root = page.at_css(".sparc-main-content > .container") || page.at_css("body > .container")
+        root = page.at_css("body > .container")
         links = root.css("a[href]").map { _1["href"] }.reject { _1.start_with?("#") }
         forms = root.css("form[action]").map { |f| [ f["action"], f.at_css("input[name=_method]")&.[]("value") || f["method"] ].join(" ") }
         (links + forms).to_set
       end
 
-      it "keeps every action the page had" do
-        create(:ssp_document, authorization_boundary: boundary)
-        create(:sap_document, authorization_boundary: boundary)
+      def guide = "https://github.com/risk-sentinel/sparc/wiki/Adopting-OSCAL"
+
+      it "keeps every action the classic page had" do
+        ssp = create(:ssp_document, authorization_boundary: boundary)
+        sap = create(:sap_document, authorization_boundary: boundary)
         create(:poam_document, authorization_boundary: boundary)
-        create(:boundary, authorization_boundary: boundary)
-        create(:authorization_boundary_membership, authorization_boundary: boundary, role: "isso", user_name: "Sam Isso")
-        create(:evidence, authorization_boundary: boundary)
-        create(:leveraged_authorization, leveraging_boundary: boundary)
-
-        shell(false)
+        environment = create(:boundary, authorization_boundary: boundary)
+        member = create(:authorization_boundary_membership, authorization_boundary: boundary, role: "isso", user_name: "Sam Isso")
+        evidence = create(:evidence, authorization_boundary: boundary)
+        leveraged = create(:leveraged_authorization, leveraging_boundary: boundary)
         get authorization_boundary_path(boundary)
-        classic = actions
-        expect(classic.size).to be >= 20
 
-        shell(true)
-        get authorization_boundary_path(boundary)
-        expect(classic - actions).to be_empty
+        b = boundary
+        classic = [
+          authorization_boundaries_path, authorization_boundary_path(leveraged.leveraged_boundary),
+          authorization_boundary_path(b, anchor: "boundary-back-matter"),
+          ato_wizard_authorization_boundary_path(b), attach_document_authorization_boundary_path(b, type: "sar"),
+          download_ato_package_authorization_boundary_path(b), edit_authorization_boundary_path(b),
+          triage_authorization_boundary_path(b),
+          new_authorization_boundary_boundary_path(b), edit_authorization_boundary_boundary_path(b, environment),
+          "#{authorization_boundary_boundary_path(b, environment)} delete",
+          new_authorization_boundary_leveraged_authorization_path(b),
+          "#{authorization_boundary_leveraged_authorization_path(b, leveraged)} delete",
+          "#{populate_authorization_boundary_leveraged_authorization_path(b, leveraged)} post",
+          new_authorization_boundary_membership_path(b), edit_authorization_boundary_membership_path(b, member),
+          "#{authorization_boundary_membership_path(b, member)} delete",
+          "#{authorization_boundary_back_matter_resources_path(b)} post",
+          new_cdef_coverage_path(authorization_boundary_id: b.id), evidence_path(evidence),
+          new_evidence_path(authorization_boundary_id: b.id), poam_documents_path(authorization_boundary_id: b.id),
+          sap_document_path(sap), ssp_document_path(ssp),
+          enrich_ssp_document_path(ssp, anchor: "components-container"), enrich_ssp_document_path(ssp, anchor: "info-types-container"),
+          guide
+        ] + %w[1-who-is-on-the-team-and-what-are-their-roles 2-what-makes-up-the-boundary 3-what-is-the-classification
+               4-which-documents-become-back-matter 5-do-you-already-have-an-ssp 6-what-are-you-leveraging
+               9-how-will-you-provide-evidence].map { "#{guide}##{_1}" }
+
+        expect(classic.size).to eq(34)
+        expect(classic.to_set - actions).to be_empty
       end
-    end
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    before { shell(false) }
-
-    it "draws the page as before" do
-      get authorization_boundary_path(boundary)
-      expect(home).to be_nil
-      expect(page.at_css("header h2").text).to eq("Home Sys")
-      expect(page.at_css("#boundary-artifacts")).to be_present
     end
   end
 end

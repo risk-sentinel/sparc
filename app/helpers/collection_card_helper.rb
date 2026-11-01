@@ -103,11 +103,9 @@ module CollectionCardHelper
 
   # 1.18.0-rf #1299 — how a view mode is drawn: :cards, :rows or :table.
   #
-  # Rows exist only under SPARC_NAV_SHELL. With the switch off, `list` and
-  # `table` both draw the screen's table — what `list` has always meant — so
-  # turning the switch off never shows anyone a layout they did not choose.
+  # `list` draws rows; `table` draws the screen's table.
   # 1.18.0-rf — a list table's date and time. One line ("2026-08-19 12:13"), as
-  # on main; under SPARC_NAV_SHELL the time sits small under the date
+  # on main; the time sits small under the date
   # (CSS, .sparc-stamp), so wide tables fit beside the left column.
   def collection_timestamp(time)
     return "\u2014" if time.blank?
@@ -120,7 +118,7 @@ module CollectionCardHelper
   def collection_layout(mode)
     case mode&.to_sym
     when :card then :cards
-    when :list then SparcConfig.nav_shell? ? :rows : :table
+    when :list then :rows
     else :table
     end
   end

@@ -223,12 +223,15 @@ RSpec.describe "Boundary-scoped cdef.approve (#1275)", type: :request do
       expect(response.body).not_to include(draft.name)
 
       sign_in_as(policy_manager)
-      get review_queue_index_path(view: "list")
+      get review_queue_index_path(view: "table")
       row = Nokogiri::HTML(response.body).css("tr").find { _1.text.include?(draft.name) }
       expect(row.at_css("[data-testid=review-scope-request]").text).to eq("Approving makes it available instance-wide")
 
-      get review_queue_index_path(view: "card")
-      expect(response.body).to include("Approving makes it available instance-wide")
+      # 1.18.0-rf #1299 — the list's rows and the cards say it too.
+      %w[list card].each do |mode|
+        get review_queue_index_path(view: mode)
+        expect(response.body).to include("Approving makes it available instance-wide"), mode
+      end
     end
 
     it "is held to the two wider scopes by the database" do

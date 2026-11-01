@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1300 — the Component Definitions list under SPARC_NAV_SHELL:
+# 1.18.0-rf #1300 — the Component Definitions list:
 # source tabs, the source line, what a CDEF applies to, the controls it
 # covers and their families, family / applies-to filters, and — only when the
 # list is filtered to a boundary with a resolved baseline — coverage of that
@@ -48,7 +48,7 @@ RSpec.describe "Component Definitions list (#1300)", type: :request do
   def names = page.css("[data-testid=collection-row] .sparc-collection-row__title").map { _1.text.squish }
 
   before do
-    allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true)
+    allow(SparcConfig).to receive_messages(any_auth_enabled?: true)
     sign_in_as(admin)
   end
 

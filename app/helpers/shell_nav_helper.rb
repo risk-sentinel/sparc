@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# 1.18.0-rf — the organization layout's navigation (owner, 2026-10-29), behind
-# SPARC_NAV_SHELL. Two tab bars under the header:
+# 1.18.0-rf — the organization layout's navigation (owner, 2026-10-29). Two tab
+# bars under the header:
 #
 #   organization  Overview, Boundaries, the document types by layer, and the
 #                 admin screens (People, Settings)
@@ -33,7 +33,7 @@ module ShellNavHelper
                                        "leveraged_poam_documents" => :leveraged).freeze
 
   def shell_nav?
-    SparcConfig.nav_shell? && (!SparcConfig.any_auth_enabled? || signed_in?)
+    !SparcConfig.any_auth_enabled? || signed_in?
   end
 
   # The boundary the page is inside is ShellContext#shell_boundary (a helper

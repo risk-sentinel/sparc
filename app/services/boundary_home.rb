@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# 1.18.0-rf #1301 — what the boundary page shows above its sections under
-# SPARC_NAV_SHELL: one row per document, the latest activity, the facts in the
+# 1.18.0-rf #1301 — what the boundary page shows above its sections: one row
+# per document, the latest activity, the facts in the
 # About column and what needs attention. Read-only; the controller has
 # already admitted the viewer to the boundary.
 #

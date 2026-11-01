@@ -1,7 +1,6 @@
 """Status tabs, list rows and side filters in a real browser (1.18.0-rf #1299, #1300).
 
-Posture-gated ("nav_shell"): reported as UNPROVEN when the stack has the switch
-off. On each list with tabs, every tab is clicked (each click followed by a CSP
+On each list with tabs, every tab is clicked (each click followed by a CSP
 check) and must:
   - select itself (aria-current) and put its filter in the URL;
   - keep the view mode and page size;
@@ -18,9 +17,9 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from playwright.sync_api import expect
 
-from helpers import assert_no_csp_violations, click_and_assert_clean, nav_shell_on, record_csp
+from helpers import assert_no_csp_violations, click_and_assert_clean, record_csp
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 TABS = "[data-testid=status-tabs] [data-testid=status-tab]"
 ROW = "[data-testid=collection-row]"
@@ -44,8 +43,6 @@ def _open(page, path):
     resp = page.goto(path)
     assert resp is not None and resp.ok, f"{path} returned {resp and resp.status}"
     page.wait_for_load_state("networkidle")
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack")
 
 
 @pytest.mark.parametrize(("label", "path"), TABBED, ids=[t[0] for t in TABBED])

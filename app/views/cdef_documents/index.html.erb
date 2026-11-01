@@ -3,17 +3,16 @@
   [@controls_count, "Total Controls"],
   [@completed_count, "Completed"]
 ] %>
-<%= render "shared/section_summary", tiles: summary unless SparcConfig.nav_shell? %>
 
 <% if @cdef_documents.any? { |d| d.processing? || d.pending? } %>
   <div data-controller="auto-refresh" data-auto-refresh-interval-value="10000" hidden></div>
 <% end %>
 
 <div class="card sparc-list-card sparc-ofx-auto">
-  <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
+  <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
   <%# #1268 — what the last AWS Labs refresh did, for whoever may start one.
-      Read from the refresh's own audit events (AwsLabsRefreshStatus). Under
-      SPARC_NAV_SHELL it sits under the page header. %>
+      Read from the refresh's own audit events (AwsLabsRefreshStatus). It sits
+      under the page header. %>
   <% refresh_status_line = capture do %>
     <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
       <% refresh_status = AwsLabsRefreshStatus.current %>
@@ -24,7 +23,6 @@
     <% end %>
   <% end %>
   <% header = nil %>
-  <% if SparcConfig.nav_shell? %>
     <% refresh_button = capture do %>
       <% if signed_in? && can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
         <button type="button" class="sparc-action sparc-action--caution sparc-action--solid"
@@ -39,42 +37,7 @@
           extra: refresh_button.presence %>
     <%= refresh_status_line %>
     <% end %>
-  <% else %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Component Definitions</h2>
-    <% if signed_in? %>
-      <div class="d-flex gap-2 sparc-btn-action-row">
-        <%# #488: manual trigger for AwsLabsCdefRefreshJob, gated on the
-            converters.write permission (same RBAC bucket as the DISA CCI
-            "Refresh Now" button). Button + modal are hidden entirely when
-            the feature flag is off — no point teasing operators with a
-            button that would just flash an error. %>
-        <% if can_write_converters? && SparcConfig.aws_labs_cdef_enabled? %>
-          <button type="button" class="sparc-action sparc-action--caution sparc-action--solid"
-                  data-bs-toggle="modal" data-bs-target="#refreshAwsLabsModal">
-            Refresh from AWS Labs
-          </button>
-        <% end %>
-        <%# #904 — the other direction into the coverage wizard. Its primary home
-            is the boundary screen (that is where the question is asked), but
-            someone standing in the CDEF library asking "what are we missing?"
-            should not have to go find a boundary first. %>
-        <%# The wizard role (#950). The label used to wrap onto two lines via a
-            <span><br></span> because it is far longer than its neighbours —
-            but `.sparc-action` is `white-space: nowrap`, and a wrapped button
-            stretched the whole row to 52px. One line, shorter label. %>
-        <%= link_to "Terraform Wizard", new_cdef_coverage_path,
-              class: "sparc-action sparc-action--accent sparc-action--outline" %>
-        <%# Create New offers every way in (upload, author, from a profile);
-            Upload File is the import page on its own. %>
-        <%= link_to "Create New", new_cdef_document_path, class: "sparc-action sparc-action--positive sparc-action--solid" %>
-        <%= link_to "Upload File", new_cdef_document_path(only: "upload"), class: "sparc-action sparc-action--info sparc-action--solid" %>
-      </div>
-    <% end %>
-  </div>
-  <% end %>
 
-  <%= refresh_status_line unless SparcConfig.nav_shell? %>
 
   <%# #488 — Refresh from AWS Labs confirmation modal (matches the DISA
       CCI confirmation modal pattern from app/views/converters/show.html.erb). %>
@@ -139,11 +102,7 @@
         <% summary = (@component_summaries || {})[doc.id] || CdefComponent.empty_summary %>
         <%# 1.18.0-rf #1300 — under the shell: source, applies to, controls
             covered, families and baseline coverage (CdefBrowserHelper). %>
-        <% shell_slots = if SparcConfig.nav_shell?
-             cdef_shell_slots(doc, summary, (@listing_facts || {})[doc.id] || CdefControl.empty_listing_facts, @coverage&.[](doc.id))
-           else
-             {}
-           end %>
+        <% shell_slots = cdef_shell_slots(doc, summary, (@listing_facts || {})[doc.id] || CdefControl.empty_listing_facts, @coverage&.[](doc.id)) %>
         <%= render collection_item_partial(@view_mode), **{
               title: cdef_display_name(doc),
               url: cdef_document_path(doc),

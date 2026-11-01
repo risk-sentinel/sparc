@@ -2,8 +2,7 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1302 — the rest of the organization Overview (the home page under
-# SPARC_NAV_SHELL): the people count, "Waiting on you" for approvers, every
+# 1.18.0-rf #1302 — the rest of the organization Overview (the home page): the people count, "Waiting on you" for approvers, every
 # number linking to the list it counts, and the Overview's counts equal to the
 # organization tabs' (both from BoundaryNavCounts).
 RSpec.describe "Organization Overview (#1302)", type: :request do
@@ -11,7 +10,7 @@ RSpec.describe "Organization Overview (#1302)", type: :request do
 
   def page = Nokogiri::HTML(response.body)
 
-  before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
   describe "the header" do
     it "counts the one organization's people for a member, without a link to a screen they cannot open" do

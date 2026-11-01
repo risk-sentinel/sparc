@@ -1,6 +1,6 @@
 """The boundary home in a real browser (1.18.0-rf #1301).
 
-Posture-gated ("nav_shell"). On a boundary created through the API (and
+On a boundary created through the API (and
 deleted afterwards), each clicked with zero CSP violations:
   - the page header's More menu opens;
   - each document row's link (the Add… links lead to the attach screen);
@@ -19,9 +19,9 @@ import pytest
 from playwright.sync_api import expect
 
 from _api_setup import create_boundary, delete_doc
-from helpers import assert_no_csp_violations, nav_shell_on, record_csp
+from helpers import assert_no_csp_violations, record_csp
 
-pytestmark = [pytest.mark.authenticated, pytest.mark.posture("nav_shell")]
+pytestmark = pytest.mark.authenticated
 
 
 @pytest.fixture
@@ -39,8 +39,6 @@ def _open(page, base_url, slug, width=1280):
     resp = page.goto(f"{base_url}/authorization_boundaries/{slug}")
     assert resp is not None and resp.ok
     page.wait_for_load_state("domcontentloaded")
-    if not nav_shell_on(page):
-        pytest.skip("SPARC_NAV_SHELL is off on this stack")
     expect(page.get_by_test_id("boundary-home")).to_be_visible()
 
 

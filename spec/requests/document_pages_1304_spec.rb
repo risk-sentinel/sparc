@@ -2,13 +2,12 @@
 
 require "rails_helper"
 
-# 1.18.0-rf #1304 — the document pages under SPARC_NAV_SHELL share one header
+# 1.18.0-rf #1304 — the document pages share one header
 # (shared/_document_header over shared/_page_header): a breadcrumb back to
 # the boundary and list, the name as the one h1, lifecycle and approval
 # chips, the name renamed in place as before, the export menu and Publish
 # beside the page's own actions, and a sticky row of links to the page's
-# sections, each of which exists on the page. With the switch off the pages
-# are as before.
+# sections, each of which exists on the page.
 RSpec.describe "Document pages (#1304)", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:boundary) { create(:authorization_boundary, name: "Doc ATO") }
@@ -40,8 +39,8 @@ RSpec.describe "Document pages (#1304)", type: :request do
 
   before { sign_in_as(admin) }
 
-  context "with SPARC_NAV_SHELL on" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: true) }
+  context "in the 1.18.0-rf navigation" do
+    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true) }
 
     it "gives every document page the header: one h1, a breadcrumb ending in the document, chips" do
       documents.each do |type, record|
@@ -134,19 +133,6 @@ RSpec.describe "Document pages (#1304)", type: :request do
 
       expect(crumbs).to eq([ [ "Leveraged POA&Ms", leveraged_poam_documents_path ], [ "Provider POAM", nil ] ])
       expect(header.text).to include("Inherited from Provider ATO")
-    end
-  end
-
-  context "with SPARC_NAV_SHELL off" do
-    before { allow(SparcConfig).to receive_messages(any_auth_enabled?: true, nav_shell?: false) }
-
-    it "draws every document page as before" do
-      documents.each do |type, record|
-        open(record)
-        expect(header).to be_nil, type.to_s
-        expect(page.at_css("[data-testid=section-links]")).to be_nil, type.to_s
-        expect(page.at_css("h2")).to be_present, type.to_s
-      end
     end
   end
 end

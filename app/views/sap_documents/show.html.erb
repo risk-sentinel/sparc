@@ -30,10 +30,9 @@
 
 <div data-controller="doc-meta family-toggle heatmap-chip">
 
-<%# 1.18.0-rf #1304 — under SPARC_NAV_SHELL the shared document header
+<%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header): the assessment type beside the name; the SSP,
     baseline and dates under it. %>
-<% if shell_nav? %>
   <% sap_type = tag.span(@sap_document.assessment_type&.titleize || "Initial", class: "sparc-tag-outline sparc-status--#{type_variant}") %>
   <% sap_description = (tag.p(truncate(@sap_document.description, length: 200), class: "text-body-secondary small mt-2 mb-0 sparc-maxw-600") if
                           @sap_document.description.present?) %>
@@ -48,7 +47,6 @@
         export: "Assessment Plan", publish: signed_in? && @sap_document.draft?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Families", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
                     [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
-<% end %>
 
 <%# ── #911: catalog lineage. Discovered by looking, not by being
      refused mid-edit. Renders nothing when reconciled. %>
@@ -56,73 +54,6 @@
 
 <%# ── HEADER DASHBOARD ──────────────────────────────────────────── %>
 <div class="sparc-gradient-header sparc-doc-hero" id="doc-overview">
-<% unless shell_nav? %>
-
-  <div class="d-flex justify-content-between align-items-start mb-4 gap-3 flex-wrap">
-    <div>
-      <div class="sparc-header-subtitle">OSCAL Security Assessment Plan</div>
-
-      <%# ── View mode ── %>
-      <div id="doc-meta-view" data-doc-meta-target="view">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h2 class="sparc-header-title"><%= @sap_document.name %></h2>
-          <% if @sap_document.sap_version.present? %>
-            <span class="sparc-version-badge">v<%= @sap_document.sap_version %></span>
-          <% end %>
-          <span class="sparc-tag-outline sparc-status--<%= type_variant %>">
-            <%= @sap_document.assessment_type&.titleize || "Initial" %>
-          </span>
-          <button type="button" data-action="doc-meta#toggle" class="sparc-action sparc-action--primary sparc-action--outline">Edit</button>
-        </div>
-      </div>
-
-      <%# ── Edit mode (hidden) ── %>
-      <div id="doc-meta-edit" data-doc-meta-target="edit" class="sparc-d-none">
-        <%= render "shared/document_name_form", document: @sap_document,
-              update_path: update_metadata_sap_document_path(@sap_document),
-              version_field: :sap_version %>
-      </div>
-
-      <div class="sparc-header-meta">
-        <% if @sap_document.ssp_document.present? %>
-          SSP: <span class="sparc-color-white-70"><%= @sap_document.ssp_document.name %></span>
-          &nbsp;&bull;&nbsp;
-        <% end %>
-        <% if @sap_document.profile_document.present? %>
-          Profile: <span class="sparc-color-white-70"><%= @sap_document.profile_document.name %></span>
-          &nbsp;&bull;&nbsp;
-        <% end %>
-        <%= @total_controls %> controls
-        <% if @sap_document.assessment_start.present? %>
-          &nbsp;&bull;&nbsp; <%= @sap_document.assessment_start.strftime("%b %d, %Y") %>
-          <% if @sap_document.assessment_end.present? %>
-            &ndash; <%= @sap_document.assessment_end.strftime("%b %d, %Y") %>
-          <% end %>
-        <% end %>
-      </div>
-      <% if @sap_document.description.present? %>
-        <div class="sparc-fs-082 sparc-color-white-45 sparc-mt-04 sparc-maxw-600"><%= truncate(@sap_document.description, length: 200) %></div>
-      <% end %>
-    </div>
-    <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
-      <% if signed_in? && @sap_document.draft? %>
-        <%= render "shared/publish_button", document: @sap_document,
-              publish_path: publish_sap_document_path(@sap_document),
-              check_path: publish_check_sap_document_path(@sap_document) %>
-      <% end %>
-      <%= render "shared/oscal_export_dropdown",
-            validate_path: validate_oscal_export_sap_document_path(@sap_document),
-            download_json_path: download_oscal_validated_sap_document_path(@sap_document),
-            download_yaml_path: download_yaml_sap_document_path(@sap_document),
-            download_xml_path: download_xml_sap_document_path(@sap_document),
-            fallback_json_path: download_oscal_unvalidated_sap_document_path(@sap_document),
-            document_type: "Assessment Plan" %>
-      <%= link_to "&#8592; Back".html_safe, sap_documents_path,
-            class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  </div>
-
-<% end %>
   <%# ── Summary chips ── %>
   <div class="d-flex align-items-center gap-4 flex-wrap">
     <div class="text-center flex-shrink-0 sparc-minw-80px">

@@ -1,14 +1,8 @@
 <div class="card sparc-list-card">
   <div class="card-body">
-    <%# 1.18.0-rf #1299/#1298 — under SPARC_NAV_SHELL, the shared page header. %>
-    <% if SparcConfig.nav_shell? %>
+    <%# 1.18.0-rf #1299/#1298 — the shared page header. %>
       <%= render "shared/page_header", title: "Promotion Queue",
             subtitle: "Pending requests to promote a back-matter resource into the authoritative tier. Only items you are authorized to approve appear here." %>
-    <% else %>
-    <h2 class="mb-1">Promotion Queue</h2>
-    <p class="text-body-secondary">Pending requests to promote a back-matter resource into the
-      authoritative tier. Only items you are authorized to approve appear here.</p>
-    <% end %>
 
     <%= render "shared/collection_toolbar",
           label: "pending promotions", placeholder: "Search pending promotions…",
