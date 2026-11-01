@@ -92,6 +92,12 @@ def _create(
 class TestCrudContract(CrudContract):
     PARAM_KEY = "catalog_control"
     IDENTIFIER = "identifier"
+    # Search for the created control rather than page for it: the first
+    # catalog's first family can hold more than a page (NIST's Rev 5 AC family
+    # has 221 controls), and which catalog comes first is the index's order to
+    # decide (published first since 1.18.0-rf).
+    INDEX_SEARCH_PARAM = "q"
+    INDEX_SEARCH_FIELD = "control_id"
 
     def _catalog_and_family(self, admin_client):
         if getattr(self, "_cached", None):

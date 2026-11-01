@@ -21,6 +21,8 @@ Control catalogs represent collections of security controls such as NIST SP 800-
 
 Returns a paginated list of control catalogs. Available to all authenticated users.
 
+Ordered published first, then in progress, then started (`lifecycle_status`); newest first within each group.
+
 #### Path Parameters
 
 None.

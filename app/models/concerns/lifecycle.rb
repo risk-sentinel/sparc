@@ -18,6 +18,11 @@ module Lifecycle
 
     scope :draft, -> { where(lifecycle_status: %w[started in_progress]) }
     scope :published_lifecycle, -> { where(lifecycle_status: "published") }
+    # 1.18.0-rf (owner, 11-01) — the catalog and baseline lists show published
+    # documents first, then drafts (in progress, then started; a record with no
+    # lifecycle last). The caller's own order breaks ties. One definition the
+    # screens and Api::V1 both read.
+    scope :published_first, -> { in_order_of(:lifecycle_status, LIFECYCLE_STATUSES.reverse, filter: false) }
   end
 
   def published_lifecycle?

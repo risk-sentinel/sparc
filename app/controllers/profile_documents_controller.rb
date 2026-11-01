@@ -51,7 +51,7 @@ class ProfileDocumentsController < ApplicationController
   PRIORITY_ORDER = ProfileControl::PRIORITIES
 
   def index
-    scope = ProfileDocument.order(created_at: :desc)
+    scope = ProfileDocument.published_first.order(created_at: :desc)
     @total_count = scope.count
     # #967 — see ssp_documents_controller. Measured +10 on a demo instance.
     @controls_count = ProfileControl.where(profile_document_id: scope.reorder(nil).select(:id)).count

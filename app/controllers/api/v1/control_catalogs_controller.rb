@@ -27,7 +27,7 @@ class Api::V1::ControlCatalogsController < Api::V1::BaseController
 
   # GET /api/v1/control_catalogs
   def index
-    scope = ControlCatalog.order(created_at: :desc)
+    scope = ControlCatalog.published_first.order(created_at: :desc)
     # `name` is not a facet on the index screen (free-text search covers it
     # there), so it stays here rather than moving into the query object — this
     # endpoint has always accepted it and dropping it would break callers.
