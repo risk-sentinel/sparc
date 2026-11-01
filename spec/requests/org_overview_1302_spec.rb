@@ -84,7 +84,7 @@ RSpec.describe "Organization Overview (#1302)", type: :request do
       page.css("[data-testid=org-lane]").each do |lane|
         accent, heading = expected.fetch(lane["data-layer"])
         expect(lane["class"].split).to include(accent), lane["data-layer"]
-        expect(lane.at_css(".sparc-lane__title")["class"].split).to include(heading), lane["data-layer"]
+        expect(lane.at_css(".sparc-home-layer__title")["class"].split).to include(heading), lane["data-layer"]
       end
       expect(page.css("[data-testid=org-lane]").map { _1["data-layer"] }).to eq(expected.keys)
     end

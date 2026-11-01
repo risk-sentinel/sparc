@@ -7,45 +7,42 @@
     counted only for someone the admin screen admits. %>
 <%
   inventory_groups = [
-    { label: "CONTROLS", accent: "sparc-accent--blue", badge: "sparc-status--info", tiles: [
+    { label: "Controls", accent: "sparc-accent--blue", heading: "sparc-heading-controls", tiles: [
         [:control_catalogs, @counts[:control_catalogs], "Catalogs", control_catalogs_path],
         [:families, @family_count, "Families", control_catalogs_path],
         [:controls, @control_count, "Controls", control_catalogs_path],
         [:profile_documents, @counts[:profile_documents], "Baselines", profile_documents_path],
         [:control_mappings, @counts[:control_mappings], "Mappings", control_mappings_path]] },
-    { label: "IMPLEMENTATION", accent: "sparc-accent--green", badge: "sparc-status--success", tiles: [
+    { label: "Implementation", accent: "sparc-accent--green", heading: "sparc-heading-implementation", tiles: [
         [:ssp_documents, @counts[:ssp_documents], "SSPs", ssp_documents_path],
         [:cdef_documents, @counts[:cdef_documents], "CDEFs", cdef_documents_path],
         [:converters, @counts[:converters], "Converters", converters_path]] },
-    { label: "ASSESSMENT", accent: "sparc-accent--carrot", badge: "sparc-status--orange", tiles: [
+    { label: "Assessment", accent: "sparc-accent--carrot", heading: "sparc-heading-assessment", tiles: [
         [:sap_documents, @counts[:sap_documents], "SAPs", sap_documents_path],
         [:evidences, @counts[:evidences], "Evidence", evidences_path],
         [:sar_documents, @counts[:sar_documents], "SARs", sar_documents_path],
         [:poam_documents, @counts[:poam_documents], "POA&Ms", poam_documents_path]] },
-    { label: "ENTERPRISE", accent: "sparc-accent--purple", badge: "sparc-status--purple", tiles: [
+    { label: "Enterprise", accent: "sparc-accent--purple", heading: "sparc-heading-enterprise", tiles: [
         ([:organizations, @counts[:organizations], "Organizations", admin_organizations_path] if @counts.key?(:organizations)),
         [:authorization_boundaries, @counts[:authorization_boundaries], "Auth Boundaries", authorization_boundaries_path]].compact }
   ]
 %>
-<nav class="card sparc-gradient-header sparc-inventory mb-3 sparc-br-05r" data-home-inventory aria-label="Inventory">
-  <div class="d-flex flex-wrap justify-content-center gap-2">
-    <% inventory_groups.each do |g| %>
-      <div class="sparc-home-group sparc-inventory-group <%= g[:accent] %>">
-        <div class="text-center sparc-inventory-heading">
-          <span class="badge <%= g[:badge] %> sparc-ls-005"><%= g[:label] %></span>
-        </div>
-        <%# Wraps rather than overflowing: five Controls tiles are 324px, wider
-            than a 320px phone (measured, 1.18.0-rf #1295). %>
-        <div class="d-flex flex-wrap justify-content-center gap-1">
-          <% g[:tiles].each do |key, count, label, path| %>
-            <%= link_to path, class: "sparc-inventory-tile", data: { home_tile: key },
-                  title: "Open #{label}", "aria-label": "#{number_with_delimiter(count)} #{label}: open the list" do %>
-              <span class="sparc-inventory-count"><%= number_with_delimiter(count) %></span>
-              <span class="sparc-inventory-name"><%= label %></span>
-            <% end %>
+<%# 1.18.0-rf — the command-center home (owner, 2026-10-31, concept A): one flat
+    card per layer, its accent along the top and main's heading colour, in
+    place of the gradient banner. Every tile, count and link is the banner's. %>
+<nav class="sparc-home-strip" data-home-inventory aria-label="Inventory">
+  <% inventory_groups.each do |g| %>
+    <section class="sparc-home-strip__card <%= g[:accent] %>" aria-label="<%= g[:label] %>">
+      <h2 class="sparc-home-strip__title <%= g[:heading] %>"><%= g[:label] %></h2>
+      <div class="sparc-home-strip__nums">
+        <% g[:tiles].each do |key, count, label, path| %>
+          <%= link_to path, class: "sparc-inventory-tile", data: { home_tile: key },
+                title: "Open #{label}", "aria-label": "#{number_with_delimiter(count)} #{label}: open the list" do %>
+            <span class="sparc-inventory-count"><%= number_with_delimiter(count) %></span>
+            <span class="sparc-inventory-name"><%= label %></span>
           <% end %>
-        </div>
+        <% end %>
       </div>
-    <% end %>
-  </div>
+    </section>
+  <% end %>
 </nav>

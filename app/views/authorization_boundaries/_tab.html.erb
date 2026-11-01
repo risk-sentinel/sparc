@@ -87,13 +87,7 @@
               <li>Updated <%= time_ago_in_words(ab.updated_at) %> ago</li>
             </ul>
           </div>
-          <% weeks = @activity.fetch(ab.id) %>
-          <svg class="sparc-sparkline" width="140" height="32" viewBox="0 0 140 32" role="img"
-               aria-label="Documentation activity for <%= ab.name %>: <%= weeks.sum %> changes in the last <%= weeks.size %> weeks"
-               data-testid="boundary-sparkline" data-total="<%= weeks.sum %>">
-            <polyline points="<%= sparkline_points(weeks) %>" fill="none" stroke="currentColor" stroke-width="1.6"
-                      stroke-linejoin="round" stroke-linecap="round"></polyline>
-          </svg>
+          <%= render "authorization_boundaries/sparkline", boundary: ab, weeks: @activity.fetch(ab.id) %>
         </article>
       <% end %>
     </section>

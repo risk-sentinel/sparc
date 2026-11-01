@@ -1,0 +1,11 @@
+<%# 1.18.0-rf — a boundary's weekly documentation activity (BoundaryActivity),
+    one definition for the Boundaries tab and the Overview's rail.
+    Locals: boundary, weeks (counts, oldest first), width / height (optional). %>
+<% width = local_assigns.fetch(:width, 140) %>
+<% height = local_assigns.fetch(:height, 32) %>
+<svg class="sparc-sparkline" width="<%= width %>" height="<%= height %>" viewBox="0 0 <%= width %> <%= height %>" role="img"
+     aria-label="Documentation activity for <%= boundary.name %>: <%= weeks.sum %> changes in the last <%= weeks.size %> weeks"
+     data-testid="boundary-sparkline" data-total="<%= weeks.sum %>">
+  <polyline points="<%= sparkline_points(weeks, width: width, height: height) %>" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linejoin="round" stroke-linecap="round"></polyline>
+</svg>
