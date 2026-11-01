@@ -21,14 +21,12 @@ Requires SPARC_SMOKE_SA_TOKEN (and SPARC_SMOKE_USER_TOKEN for the member check).
 
 from __future__ import annotations
 
-import json
-import re
-from pathlib import Path
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import urlparse
 
 import pytest
 
 from helpers import assert_no_csp_violations, record_csp, require_classic_header
+from nav_inventory_paths import BOUNDARY, POSTURES, condition_for, normalize_path
 
 pytestmark = [pytest.mark.authenticated, pytest.mark.posture("classic_nav")]
 
@@ -40,8 +38,6 @@ def _classic_header(request):
     require_classic_header(request.getfixturevalue(name))
 
 
-POSTURES = json.loads((Path(__file__).parent / "nav_inventory.json").read_text())["postures"]
-BOUNDARY = ":boundary"
 GUIDE_LABEL = "(each user guide)"
 SIGNED_IN = ("signed_in_member", "signed_in_admin")
 
@@ -121,30 +117,6 @@ REVEAL_JS = r"""
   return chain.length;
 }
 """
-
-
-def normalize_path(href: str) -> str:
-    if re.match(r"^https?://", href):
-        return href
-    url = urlparse(href)
-    path = re.sub(
-        r"^/authorization_boundaries/[^/]+", f"/authorization_boundaries/{BOUNDARY}", url.path
-    )
-    path = re.sub(r"^/help/[^/]+$", "/help/:guide", path)
-    if not url.query:
-        return path
-    query = dict(parse_qsl(url.query, keep_blank_values=True))
-    if "authorization_boundary_id" in query:
-        query["authorization_boundary_id"] = BOUNDARY
-    return path + "?" + "&".join(f"{k}={v}" for k, v in sorted(query.items()))
-
-
-def condition_for(path: str) -> str | None:
-    if re.match(r"^https?://", path):
-        return "resources"
-    if BOUNDARY in path:
-        return "boundary"
-    return "fido2" if path == "/webauthn_credentials" else None
 
 
 def key(entry: dict) -> tuple[str, str, str]:
