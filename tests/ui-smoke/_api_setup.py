@@ -281,7 +281,7 @@ def ssp_roles(ssp_slug: Any) -> dict[str, Any]:
         return r.json()
 
 
-def create_evidence(title: str | None = None) -> dict[str, Any]:
+def create_evidence(title: str | None = None, boundary_id: Any = None) -> dict[str, Any]:
     """Evidence submitted by the smoke service account (#934).
 
     Collection provenance is never sent — the server stamps `collected_at`,
@@ -294,18 +294,23 @@ def create_evidence(title: str | None = None) -> dict[str, Any]:
     rules live on the model, so they apply to the API exactly as they do to the
     form — a rule enforced only on the form was the defect #947 was filed about.
     So the record and its artefact are sent together, multipart.
+
+    `boundary_id` files it under that boundary; without one it is instance-wide.
     """
+    data = {
+        "evidence[title]": title or _name("evidence"),
+        "evidence[description]": "ui-smoke",
+        "evidence[evidence_type]": "artifact",
+        "evidence[status]": "collected",
+        "evidence[source]": "ui-smoke",
+        "evidence[control_ids]": "ac-2",
+    }
+    if boundary_id is not None:
+        data["evidence[authorization_boundary_id]"] = str(boundary_id)
     with _client() as c:
         r = c.post(
             "/api/v1/evidences",
-            data={
-                "evidence[title]": title or _name("evidence"),
-                "evidence[description]": "ui-smoke",
-                "evidence[evidence_type]": "artifact",
-                "evidence[status]": "collected",
-                "evidence[source]": "ui-smoke",
-                "evidence[control_ids]": "ac-2",
-            },
+            data=data,
             files={"evidence[file]": ("evidence.txt", b"ui-smoke artifact", "text/plain")},
         )
         r.raise_for_status()
