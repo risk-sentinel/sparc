@@ -62,7 +62,7 @@
       <div class="row row-cols-1 row-cols-md-2 g-3" data-controller="ssp-profile-sync">
         <div class="col">
           <div class="form-group">
-            <label for="sap_document_ssp_document_id">System Security Plan (SSP)</label><%= field_help "The system being assessed — links this plan to the SSP whose controls it will test." %>
+            <label for="ssp-select">System Security Plan (SSP)</label><%= field_help "The system being assessed — links this plan to the SSP whose controls it will test." %>
             <%# #946 — preselect on render, so a form arriving with an SSP
                 already chosen shows it rather than resetting to blank. %>
             <%= f.select :ssp_document_id,
@@ -78,7 +78,7 @@
         </div>
         <div class="col">
           <div class="form-group">
-            <label for="sap_document_profile_document_id">Baseline Profile</label><%= field_help "The baseline that decides which controls are in scope for this assessment." %>
+            <label for="profile-select">Baseline Profile</label><%= field_help "The baseline that decides which controls are in scope for this assessment." %>
             <%# #946 — the baseline the selected SSP records, filled server-side.
                 The Stimulus sync still handles later changes. %>
             <%= f.select :profile_document_id,

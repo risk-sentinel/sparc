@@ -312,7 +312,8 @@ export default class PublishModalController extends Controller {
     this.close()
     const metadataSection = document.querySelector("[data-oscal-metadata-section]")
     if (metadataSection) {
-      metadataSection.scrollIntoView({ behavior: "smooth", block: "start" })
+      // #1306 — no smooth scroll when the system asks for less motion.
+      metadataSection.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })
       // Open the details element if collapsed
       const details = metadataSection.closest("details")
       if (details) details.open = true

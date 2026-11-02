@@ -38,14 +38,15 @@
 
   <body class="d-flex flex-column min-vh-100"
         data-controller="video-easter-egg<% if @consent_banner_content.present? %> consent-banner<% end %>">
+    <%= render "shared/skip_link" %>
     <%# #1289 — the icon sprite, once per page; IconHelper#icon draws from it. %>
     <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
     <%# ── Navbar (same as application layout) ── %>
     <%= render "shared/main_nav" %>
 
-    <%# ── Main content area ── %>
-    <div class="container-fluid p-3 p-md-4 sparc-maxw-1100">
+    <%# ── Main content area (#1306: the <main> landmark, the skip link's target) ── %>
+    <main id="main-content" class="container-fluid p-3 p-md-4 sparc-maxw-1100" tabindex="-1">
 
       <%# ── Top row: Welcome + Login ── %>
       <div class="row g-4 align-items-center mt-2">
@@ -155,7 +156,7 @@
         </div>
       </div>
 
-    </div>
+    </main>
 
     <%# ── Consent Banner Modal ── %>
     <% if @consent_banner_content.present? %>

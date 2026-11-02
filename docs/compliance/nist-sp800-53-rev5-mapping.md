@@ -587,10 +587,19 @@ hex and future palette changes stay AA by construction. The login consent-banner
 items (#602 -- amber heading contrast, `.btn-outline-secondary`,
 `#consentBannerBody` keyboard focus) are resolved.
 
-> ¹ Local-verification status. The committed `a11y_baseline.json` still reflects
-> the pre-v1.8.6 production capture; the authoritative prod re-capture (and
-> baseline shrink) happens post-deploy, after which the Layer 2 ratchet enforces
-> the cleared state. Net-new regressions are blocked per-PR by Layer 1 today.
+> ¹ Local-verification status, re-measured 2026-11-02 (1.18.0-rf #1306). Until
+> then `a11y_baseline.json` still held the pre-v1.8.6 capture (1,503 entries):
+> a capture only ever added to the file, so fixed problems stayed on record.
+> Measured in real Chromium on every audited page (81), in both themes: the light
+> theme has **1** violation (color-contrast, one label on New Baseline) and the
+> dark theme **113**, all color-contrast -- 107 of them white text on the success,
+> primary and danger badges (2.1:1, 2.5:1, 3.5:1) on the API reference, service
+> accounts, data migrations and catalog pages. Colour values are owner-held, so
+> these are recorded and reported, not recoloured. Unlabelled selects and a nested
+> interactive control were fixed in #1306; a capture now replaces each page's
+> entry, and every audit runs in both themes. Keyboard-only use (skip link to
+> `<main>`, visible focus at every header stop) and reduced motion are checked
+> by `tests/ui-smoke/test_keyboard_1306.py`.
 
 > Note: Section 508 / WCAG is a distinct legal standard, not a NIST SP 800-53
 > control -- it is documented here for authorization-package completeness, not

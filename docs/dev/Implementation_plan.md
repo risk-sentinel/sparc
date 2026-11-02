@@ -342,6 +342,17 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
   on the screen and in `Api::V1`, show published documents first, then in
   progress, then started (`Lifecycle.published_first`); each list keeps its
   own order inside a group.
+- **Accessibility (#1306, plan approved 2026-11-02):** re-measured every audited
+  page in Chrome, light and dark: the light theme had 6 problems, not the
+  1,503 the baseline listed (a capture only ever added to it). Fixed: a "Jump
+  to page content" skip link and `<main id="main-content">` on every layout,
+  labels on four dropdowns, Re-validate out of the Data Quality card's
+  `<summary>`, and no motion when the system asks for less (spinners aside).
+  `a11y.py` audits both themes and a capture replaces a page's entry;
+  `test_keyboard_1306.py` walks the app by keyboard. Left: 1 light and 113
+  dark colour-contrast findings (mostly white on the success, primary and
+  danger badges in dark), reported to the owner; colours are not changed.
+  The screen-reader check by hand is #1324 (no milestone).
 
 ---
 

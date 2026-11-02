@@ -16,7 +16,9 @@
       <%# #888 — search moved to the shared box above, on `q`, like every other
           collection screen. Keeping a second `q` input here would have put two
           fields of the same name on one page and three controls named "Clear". %>
+      <%# #1306 — each filter is named for screen readers. %>
       <div class="col-md-4">
+        <%= f.label :scope, "Scope", class: "visually-hidden" %>
         <%= f.select :scope,
                      options_for_select([
                        [ "All visible", "" ],
@@ -26,6 +28,7 @@
                      {}, class: "form-select" %>
       </div>
       <div class="col-md-2">
+        <%= f.label :rel, "Relationship", class: "visually-hidden" %>
         <%= f.select :rel,
                      options_for_select([ [ "Any rel", "" ] ] +
                                         BackMatterResource::REL_VALUES.map { |r| [ r, r ] },

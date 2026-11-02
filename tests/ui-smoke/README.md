@@ -217,25 +217,35 @@ revoke/rotate from the same admin page.
 
 `test_accessibility.py` runs axe-core against the login page and the core
 authenticated pages, scoped to **WCAG 2.1 A + AA** (the Section 508 conformance
-bar). It uses **baseline + ratchet**: existing violations are recorded in
-`a11y_baseline.json` (per page, fingerprinted by rule + CSS target) and pass;
-only **new** violations fail. A page with no baseline entry yet is skipped until
-its baseline is captured.
+bar). Every page is audited twice, in the light and the dark theme (#1306); a
+dark-theme finding is recorded with a `dark:` prefix. It uses **baseline +
+ratchet**: existing violations are recorded in `a11y_baseline.json` (per page,
+fingerprinted by rule + CSS target) and pass; only **new** violations fail. A
+page with no baseline entry yet is skipped until its baseline is captured.
 
 ```bash
 # Enforce (default) — fails on NEW violations only:
-uv run pytest test_accessibility.py --browser chromium --browser firefox
+uv run pytest test_accessibility.py --browser chromium
 
-# Capture/refresh the baseline (e.g. after fixing debt, or to add the
-# authenticated pages — needs SPARC_SMOKE_SA_TOKEN), then commit the file:
+# Capture/refresh the baseline, then commit the file:
 UPDATE_A11Y_BASELINE=1 SPARC_SMOKE_SA_TOKEN=sparc_sa_... \
-  uv run pytest test_accessibility.py --browser chromium --browser firefox
+  uv run pytest test_accessibility.py --browser chromium
 ```
 
-The login baseline (5 violations: 4 color-contrast + 1 aria-allowed-role) is
-committed; the authenticated pages' baseline is captured on the first CI run
-with the token, then committed. Burn the baseline down over time — each fix is a
-line removed from `a11y_baseline.json`.
+A capture **replaces** each page's entry with what that run finds; a second
+audit of the same page in the same run (another browser) adds to it. Until
+#1306 a capture only ever added, so fixed problems stayed on record: the file
+listed 1,503 violations when the pages had 6 (light theme, 2026-11-02).
+
+Run a capture over **every** file that audits pages, not one test, or the pages
+it skips keep their old entries:
+`test_accessibility.py test_admin_settings_1303.py test_help_drawer_880.py
+test_org_layout.py test_shell_header.py`.
+
+`test_keyboard_1306.py` uses the app with the keyboard only (skip link, the
+header, a list, a document, its Export menu, the theme switch), checking at
+every stop that focus is on screen and drawn; and checks that nothing animates
+when the system asks for reduced motion.
 
 ## CI
 
