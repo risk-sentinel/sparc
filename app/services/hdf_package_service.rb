@@ -23,11 +23,12 @@ class HdfPackageService
     payload = {
       "format"       => "sparc-hdf-package/v1",
       "generated_by" => "SPARC #{SparcConfig.version}",
-      "boundary"     => { "slug" => @boundary.slug, "uuid" => @boundary.uuid, "name" => @boundary.name },
-      "amendments"   => HdfAmendmentExportService.new(@boundary).export(verify: false),
-      "findings"     => findings_summary,
-      "dispositions" => dispositions_summary
+      "boundary"     => { "slug" => @boundary.slug, "uuid" => @boundary.uuid, "name" => @boundary.name }
     }
+    amendments = verified_amendments
+    payload["amendments"] = amendments if amendments
+    payload["findings"] = findings_summary
+    payload["dispositions"] = dispositions_summary
     encoded = Base64.urlsafe_encode64(JSON.generate(payload))
     {
       "payload"         => payload,
@@ -38,6 +39,19 @@ class HdfPackageService
   end
 
   private
+
+  # #1325 — amendments ride the package only when `hdf amend verify` accepts
+  # them. A signed bundle must not carry a document hdf rejects, so nothing to
+  # export, an unexportable disposition, or a failed (or impossible) verify
+  # leaves the key out.
+  def verified_amendments
+    HdfAmendmentExportService.new(@boundary).export(verify: true)
+  rescue HdfAmendmentExportService::NoDispositions
+    nil
+  rescue HdfAmendmentExportService::UnexportableDisposition, HdfRunner::Error, SystemCallError => e
+    Rails.logger.warn("[HdfPackage] amendments left out for boundary #{@boundary.uuid}: #{e.message}")
+    nil
+  end
 
   def findings_summary
     @boundary.scanner_findings.current.order(:control_id).map do |f|

@@ -58,6 +58,14 @@ RSpec.describe "Api::V1::HdfAmendments", type: :request do
     expect(JSON.parse(response.body)["error"]).to match(/verification failed/i)
   end
 
+  # #1325
+  it "returns 422 'No dispositions to export' for a boundary with none" do
+    empty = create(:authorization_boundary)
+    get api_v1_authorization_boundary_hdf_amendments_path(empty), headers: admin_headers
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(JSON.parse(response.body)).to eq("error" => "No dispositions to export")
+  end
+
   it "forbids a member without evidence.read" do
     get path, headers: member_headers
     expect(response).to have_http_status(:forbidden)

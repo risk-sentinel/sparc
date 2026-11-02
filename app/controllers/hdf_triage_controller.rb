@@ -39,6 +39,7 @@ class HdfTriageController < ApplicationController
     @cdef_documents = @boundary.respond_to?(:cdef_documents) ? @boundary.cdef_documents.order(:name) : CdefDocument.order(:name)
     @scanner_scopes = ScanRun::SCANNER_SCOPES
     @lifecycle_statuses = ScannerFinding::LIFECYCLE_STATUSES
+    @amendments_exportable = HdfAmendmentExportService.new(@boundary).any_to_export?
     @re_failed_count = @boundary.scanner_findings.current.where(lifecycle_status: "re_failed").count
     @can_approve = current_user&.instance_administrator? ||
                    current_user&.has_permission?("amendment.approve", authorization_boundary_id: @boundary.id)
@@ -127,6 +128,9 @@ class HdfTriageController < ApplicationController
     send_data JSON.pretty_generate(doc),
               filename: "#{@boundary.slug || @boundary.uuid}-amendments.hdf.json",
               type: "application/json", disposition: "attachment"
+  rescue HdfAmendmentExportService::NoDispositions,
+         HdfAmendmentExportService::UnexportableDisposition => e
+    redirect_to triage_path, error: e.message
   end
 
   private

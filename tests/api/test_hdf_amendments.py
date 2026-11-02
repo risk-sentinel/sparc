@@ -25,7 +25,7 @@ from typing import Any
 import httpx
 import pytest
 
-from _hdf_triage_flow import BOUNDARIES_PATH, delete_boundary, triaged_boundary
+from _hdf_triage_flow import BOUNDARIES_PATH, create_boundary, delete_boundary, triaged_boundary
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.findings, pytest.mark.phase2]
@@ -143,6 +143,23 @@ class TestVerifyToggle:
             "skipping verification changed the document, so the two modes do not "
             "agree about what is being exported"
         )
+
+
+@pytest.mark.validation
+class TestNothingToExport:
+    def test_a_boundary_with_no_dispositions_is_refused_plainly(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """#1325 — hdf requires at least one override, so an empty document
+        never verifies. The answer was "document is invalid", which sent a
+        reader looking for bad data; there is simply nothing to export."""
+        boundary = create_boundary(admin_client, "hdf-amendments-empty")
+        try:
+            response = admin_client.get(_path(boundary["id"]))
+            assert_error_envelope(response, expected_status=422)
+            assert response.json()["error"] == "No dispositions to export", response.text
+        finally:
+            delete_boundary(admin_client, boundary)
 
 
 @pytest.mark.validation

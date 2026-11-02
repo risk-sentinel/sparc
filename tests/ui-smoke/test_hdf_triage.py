@@ -15,7 +15,9 @@ import json
 import tempfile
 
 import pytest
+from playwright.sync_api import expect
 
+from _api_setup import create_boundary, delete_doc
 from helpers import assert_no_csp_violations, first_show_href, record_csp
 
 HDF_SAMPLE = {
@@ -90,7 +92,9 @@ def test_triage_page_loads_and_ingests(authed_page, base_url):
     heading = page.get_by_role("heading", name="Findings Triage")
     assert heading.count() == 1, "triage heading not rendered"
     assert page.locator("input[type='file']").count() > 0, "ingest upload form missing"
-    assert page.get_by_role("link", name="Download Amendments").count() > 0, "export link missing"
+    # #1325 — a link when there is something to export, a disabled control
+    # saying so when there is not; either way the control is there.
+    assert page.get_by_test_id("triage-download-amendments").count() == 1, "export control missing"
 
     # Ingest a finding through the browser (set the file input + submit).
     with tempfile.NamedTemporaryFile("w", suffix=".hdf.json", delete=False) as f:
@@ -199,3 +203,29 @@ def test_disposition_form_stimulus_hint(authed_page, base_url):
     assert "PoamFinding" in hint.inner_text(), "Stimulus hint did not update for kind=poam"
 
     assert_no_csp_violations(page, during="HDF triage disposition form")
+
+
+def test_amendments_download_is_disabled_with_nothing_to_export(authed_page, base_url):
+    """#1325 — a boundary with no dispositions has nothing to export: the
+    download is shown disabled and says so, rather than handing out a document
+    hdf rejects. A stale link to the download returns to the page with the
+    reason."""
+    page = authed_page
+    record_csp(page)
+    boundary = create_boundary()
+    try:
+        triage = f"{base_url}/authorization_boundaries/{boundary['slug']}/triage"
+        page.goto(triage, wait_until="networkidle")
+
+        control = page.get_by_test_id("triage-download-amendments")
+        expect(control).to_have_text("No dispositions to export")
+        expect(control).to_have_attribute("aria-disabled", "true")
+        tag = control.evaluate("el => el.tagName")
+        assert tag == "SPAN", f"the disabled control is a {tag}, not plain text"
+
+        page.goto(f"{triage}/amendments", wait_until="networkidle")
+        assert page.url.rstrip("/").endswith("/triage"), f"stale link landed on {page.url}"
+        expect(page.locator(".flash-container")).to_contain_text("No dispositions to export")
+        assert_no_csp_violations(page, during="#1325 empty amendments download")
+    finally:
+        delete_doc("authorization_boundaries", boundary["slug"])

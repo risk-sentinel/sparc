@@ -146,11 +146,30 @@ RSpec.describe HdfAmendmentExportService do
     end
 
     it "excludes expired dispositions" do
+      dispositioned("CVE-1")
       finding = create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary,
                        control_id: "CVE-EXP", severity: "HIGH")
       create(:finding_disposition, :waiver, authorization_boundary: boundary,
              control_id: finding.control_id, expiration: 1.day.ago)
-      expect(service.export["overrides"]).to be_empty
+      expect(service.export["overrides"].map { |o| o["requirementId"] }).to eq(%w[CVE-1])
+    end
+
+    # #1325 — hdf requires at least one override, so an empty document can
+    # never verify. Nothing to export is refused before a document is built.
+    it "refuses a boundary with no dispositions, without calling hdf" do
+      expect(service.any_to_export?).to be(false)
+      expect { service.export }
+        .to raise_error(described_class::NoDispositions, "No dispositions to export")
+      expect(runner).not_to have_received(:amend_verify)
+    end
+
+    it "refuses when every disposition has expired or left the scan" do
+      finding = create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary,
+                       control_id: "CVE-EXP", severity: "HIGH")
+      create(:finding_disposition, :waiver, authorization_boundary: boundary,
+             control_id: finding.control_id, expiration: 1.day.ago)
+      create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-GONE")
+      expect { service.export(verify: false) }.to raise_error(described_class::NoDispositions)
     end
 
     it "is deterministic: same dispositions produce the same amendmentId" do
@@ -233,6 +252,18 @@ RSpec.describe HdfAmendmentExportService do
       doc = described_class.new(boundary, runner: HdfRunner.new).export
 
       expect(doc["systemRef"]).to be_present
+    end
+
+    # #1325 — the reason the empty case is refused: the real hdf rejects a
+    # document with no overrides. If a future hdf accepts one, this fails and
+    # the refusal can be revisited.
+    it "hdf rejects an amendments document with no overrides" do
+      dispositioned("CVE-1", decided_by: "sec@corp.io")
+      doc = described_class.new(boundary, runner: runner).export
+      doc["overrides"] = []
+
+      expect { HdfRunner.new.amend_verify(StringIO.new(JSON.generate(doc))) }
+        .to raise_error(HdfRunner::Error, /document is invalid/)
     end
 
     # The refusal leg, so the pass above is the verifier talking rather than a

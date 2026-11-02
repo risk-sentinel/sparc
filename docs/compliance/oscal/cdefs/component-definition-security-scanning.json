@@ -35,7 +35,7 @@
               {
                 "uuid": "7c4a9e61-3b28-4d75-9e10-5f2c8b71a0d3",
                 "control-id": "au-10",
-                "description": "The scanner output SPARC hands onward is attributable to the instance that produced it. The HDF package — amendments, findings and disposition summaries — is HMAC-SHA256 signed with an instance key derived from SPARC_HASH via SparcKeyDerivation, so a consumer can prove the package came from this SPARC instance and was not altered. Each disposition carries a signature_hash binding both the person who decided it and the person who approved it, so a risk acceptance cannot be repudiated by either.",
+                "description": "The scanner output SPARC hands onward is attributable to the instance that produced it. The HDF package — amendments (only when they pass hdf amend verify, #1325), findings and disposition summaries — is HMAC-SHA256 signed with an instance key derived from SPARC_HASH via SparcKeyDerivation, so a consumer can prove the package came from this SPARC instance and was not altered. Each disposition carries a signature_hash binding both the person who decided it and the person who approved it, so a risk acceptance cannot be repudiated by either.",
                 "remarks": "Implemented in app/services/hdf_package_service.rb, app/lib/sparc_key_derivation.rb and app/models/finding_disposition.rb (#809, #862)."
               },
               {

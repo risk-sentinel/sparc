@@ -13,8 +13,14 @@
           form: { data: { turbo_confirm: "Aggregate current findings into this boundary's SSP, SAP, SAR and POA&M?" } } %>
     <%= link_to "Download Package", triage_package_authorization_boundary_path(@boundary),
           class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
-    <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
-          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
+    <% if @amendments_exportable %>
+      <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+            data: { turbo: false, testid: "triage-download-amendments" } %>
+    <% else %>
+      <span class="sparc-action sparc-action--info sparc-action--outline sparc-action--sm is-disabled"
+            aria-disabled="true" data-testid="triage-download-amendments">No dispositions to export</span>
+    <% end %>
     <%= link_to "Back to Boundary", authorization_boundary_path(@boundary),
           class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
