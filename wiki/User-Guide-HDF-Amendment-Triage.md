@@ -21,12 +21,12 @@ trapped in SPARC that you can't reconstruct from your own inputs.
 ## Where it lives
 
 Every triage flow is scoped to an **Authorization Boundary** (the system you're
-assessing). Reach it three ways:
+assessing). The screen is titled **Findings Triage**. Reach it two ways:
 
-- The left **sidebar** — under each boundary, **Amendments** sits between **SSP**
-  and **SAP**.
-- The **Amendments** button on the boundary's page header.
-- The **Amendments** button on any POA&M page (jumps to that POA&M's boundary).
+- Open the boundary (its **Overview** tab, or pick it in the header's boundary
+  switcher) and choose **More → Findings Triage** in the page header.
+- The **Findings Triage** button on any POA&M page (jumps to that POA&M's
+  boundary).
 
 Or go straight to `…/authorization_boundaries/<your-boundary>/triage`.
 
@@ -144,11 +144,11 @@ A disposition is a proposed **amendment**. It only suppresses a finding once it 
 
 Once the window lapses, the finding returns to the board as **Expired** and must
 be re-decided. Instance Admins provision the fallback table under
-**Admin → Remediation Timelines**. The grid ships with sensible defaults — set it
+**Settings → Remediation timelines**. The grid ships with sensible defaults — set it
 to your organization's actual remediation policy, because these values decide how
 long an amendment keeps suppressing a finding.
 
-![Admin → Remediation Timelines: a grid of remediation days with a row per profile baseline (Low, Moderate, High) and a column per NIST criticality (Critical, High, Moderate, Low, Informational, Unknown), each cell an editable day count with its own Save button.](images/remediation-timelines.png)
+![Settings → Remediation timelines: a grid of remediation days with a row per profile baseline (Low, Moderate, High) and a column per NIST criticality (Critical, High, Moderate, Low, Informational, Unknown), each cell an editable day count with its own Save button.](images/remediation-timelines.png)
 
 ---
 

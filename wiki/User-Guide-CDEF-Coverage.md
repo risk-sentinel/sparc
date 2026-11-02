@@ -26,11 +26,14 @@ recognise the same state later, nothing that could expose a credential.
 
 ## Where to find it
 
-- **From an authorization boundary** — open the boundary and choose
-  **CDEF Coverage**. The analysis is pre-attached to that boundary, which is
-  usually what you want.
-- **From the CDEF area** — `/cdef_coverage` lists every saved analysis, and
-  **New analysis** starts one that need not belong to any boundary.
+- **From an authorization boundary** — open the boundary (pick it in the
+  boundary switcher in the header, or from the **Boundaries** tab), then choose
+  **More → CDEF Coverage** at the top of its page. The analysis is pre-attached
+  to that boundary, which is usually what you want.
+- **From the CDEFs tab** — the **Terraform Wizard** button on the Component
+  Definitions list starts an analysis that need not belong to any boundary. Its
+  **View saved coverage runs** link (`/cdef_coverage`) lists every saved
+  analysis, and **New analysis** there starts another.
 
 ## What to upload
 

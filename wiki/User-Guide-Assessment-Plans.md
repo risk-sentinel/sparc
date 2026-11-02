@@ -22,7 +22,8 @@ requires authentication and a role with SAP permissions — see [RBAC](RBAC).
 - **Access:** signed in, with a role that permits creating/editing SAPs.
 - **Prerequisites:** a completed **SSP** for the system being assessed — see
   [System Security Plans](User-Guide-System-Security-Plans).
-- **Where to find it:** *Assessment → Assessment Plans* (`/sap_documents`).
+- **Where to find it:** the **SAPs** tab (`/sap_documents`). Inside a
+  boundary, its own **SAPs** tab lists only that boundary's plans.
 
 ---
 
@@ -55,15 +56,18 @@ The SAP is the OSCAL `assessment-plan`; the SAR (see
 
 ## How to create an assessment plan
 
-1. Go to *Assessment → Assessment Plans* (`/sap_documents`).
-2. Click **Create New**, or **Upload** to import an existing SAP from JSON.
-3. Provide the plan metadata.
-4. Choose the **System Security Plan** being assessed. The **Baseline Profile**
+1. Choose **Create → SAP** in the header. Inside a boundary the menu is headed
+   **Create in** and the boundary's name, and the new plan has that boundary already chosen.
+   You can also open the **SAPs** tab and click **Create New**, or **Upload
+   File** to import an existing SAP from JSON (the form's **Or Upload Existing
+   SAP** section).
+2. Provide the plan metadata.
+3. Choose the **System Security Plan** being assessed. The **Baseline Profile**
    fills in automatically from whatever that SSP records as its baseline — that
    is the baseline the assessment is scoped against, so you normally leave it
    alone. You can override it if the assessment is deliberately scoped to a
    different one.
-5. Save. The detail page (`/sap_documents/:id`) shows controls organized by
+4. Save. The detail page (`/sap_documents/:id`) shows controls organized by
    family with an **assessment method heatmap**.
 
 **If Baseline stays blank**, the SSP you picked does not record what it is based

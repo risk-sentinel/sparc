@@ -17,13 +17,15 @@ requires the appropriate role — see [RBAC](RBAC).
 
 - **Access:** viewing is typically public; creating/editing catalogs, baselines,
   and mappings requires a role with the matching write permission.
-- **Where to find it:** the **Controls** menu → *Control Catalogs*
-  (`/control_catalogs`), *Baselines* (`/profile_documents`), *Mappings*
-  (`/control_mappings`).
+- **Where to find it:** the **Library** menu in the header → **Control
+  Catalogs** (`/control_catalogs`), **Baselines** (`/profile_documents`) or
+  **Mappings** (`/control_mappings`). Baselines also have their own
+  **Baselines** tab, and inside a boundary the **Baseline** tab opens the
+  baseline that boundary uses.
 
 ---
 
-![The Control Catalogs index listing available NIST catalogs and baselines with control counts](images/control_catalogs.png)
+![The Control Catalogs list, showing each available catalog with its control count](images/control_catalogs.png)
 
 *The Control Catalogs index — NIST catalogs and baselines available in the instance.*
 
@@ -55,8 +57,8 @@ flowchart LR
 
 ### How to create a catalog from NIST seed data
 
-1. Go to *Controls → Control Catalogs* (`/control_catalogs`).
-2. Click **New**.
+1. Choose **Library → Control Catalogs** (`/control_catalogs`).
+2. Click **New Catalog**.
 3. Enter **name**, **version**, **source**, and **description**.
 4. In the **template selector**, choose **NIST SP 800-53 Rev 4** or **Rev 5** to
    seed the catalog with that control set (or **blank** to start empty).
@@ -85,7 +87,7 @@ the value on the record and SPARC will not overwrite it on a later import.
 
 ### How to import a catalog
 
-1. From the catalog list, click **Import** (`/control_catalogs/import`).
+1. From the catalog list, click **Import from File** (`/control_catalogs/import`).
 2. Upload a catalog file — an OSCAL catalog in **JSON, YAML or XML**. All three
    import the same way: an XML catalog is first checked against the OSCAL schema
    (a file that is not a valid OSCAL catalog is refused) and converted to the
@@ -132,7 +134,7 @@ from. The catalog's own OSCAL metadata stays exactly as NIST wrote it. When NIST
 releases the fixes, SPARC moves to the released catalog and the badge goes away.
 
 An existing installation receives the three corrections automatically after the
-upgrade (a background data migration, listed on the admin *Data Migrations* page). Only those
+upgrade (a background data migration, listed under **Settings → Data migrations**). Only those
 three controls change, and only where they still hold NIST's original text: if
 someone in your organization edited one of them, the edit is kept and the log
 names it. SSPs are never changed — the log lists any SSP whose SA-15(13)
@@ -261,15 +263,18 @@ A baseline selects and prioritizes controls from a catalog.
 
 ### How to create a baseline from a catalog
 
-1. Go to *Controls → Baselines* (`/profile_documents`).
+1. Open the **Baselines** tab, or choose **Library → Baselines**
+   (`/profile_documents`).
 2. Click **Create from Catalog** (`/profile_documents/select_catalog`).
 3. **Step 1:** choose the source catalog.
 4. **Step 2:** use the checklist to select which controls to include.
 5. Submit to create the baseline. Its detail page shows the selected controls
    with a **priority heatmap** grouped by NIST family.
 
-You can also click **Create New** for an empty baseline, or **Copy** an existing
-baseline's detail page to duplicate it as a starting point.
+You can also click **Create from Profile** to build on another baseline,
+**Upload New** to upload an OSCAL profile file (**Create → Baseline** in the
+header opens the same upload page), or use **Copy** on an existing baseline's
+detail page to duplicate it as a starting point.
 
 ### How to confirm or select an imported baseline's catalog
 
@@ -453,7 +458,7 @@ back to the reference material in the document's back-matter.
 
 ### How to build a mapping between two catalogs
 
-1. Go to *Controls → Mappings* (`/control_mappings`) and click **Create New**.
+1. Choose **Library → Mappings** (`/control_mappings`) and click **New Mapping**.
 2. Give the mapping a **name** and set its **source** and **target** catalogs.
 3. Open the mapping detail page. In the **Add Entry** row, enter the **source
    control ID**, **target control ID**, their types, and a **relationship**,

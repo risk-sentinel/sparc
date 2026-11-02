@@ -2,7 +2,7 @@
 
 This page provides a comprehensive inventory of every screen in the SPARC application, organized by the OSCAL layer structure. Each section includes route paths, access requirements, and key UI elements.
 
-_Current as of app version **v1.13.0**. Routes are authoritative per `config/routes.rb`; the version badge in the navbar renders dynamically from `SparcConfig::VERSION`._
+_Navigation current as of **1.18.0-rf**. Routes are authoritative per `config/routes.rb`; the version badge in the header renders dynamically from `SparcConfig::VERSION`. Each screen's **Reached from** row says how to get there with the header, the tab bars and the Settings menu described under [Navigation Structure](#navigation-structure)._
 
 > **Looking for how-to instructions?** This page is a reference inventory. For
 > step-by-step, task-oriented walkthroughs of each area, see the
@@ -12,58 +12,86 @@ _Current as of app version **v1.13.0**. Routes are authoritative per `config/rou
 
 ## Navigation Structure
 
-The application uses a dark sticky navbar (`navbar-dark bg-dark sticky-top`) that adapts based on authentication state.
+_New in 1.18.0-rf (#1287): the old top bar with the Controls, Implementation,
+Assessment and Enterprise menus, and the Home, About, Resources and OSCAL
+menus, is gone. Every page now has one header, a tab bar under it, and (on
+administration screens) a Settings menu on the left._
 
-| Position | Element | Visibility | Details |
-|----------|---------|------------|---------|
-| Left | SPARC logo | Always | Responsive SVG logo linked to root path |
-| Left | Version badge | Always | Secondary badge rendered dynamically from `SparcConfig::VERSION` (the running app version) |
-| Center-Right | Home | Always | Nav link to `/` |
-| Center-Right | Controls dropdown (blue) | Always | Control Catalogs, Baselines, Mappings, Converters |
-| Center-Right | Implementation dropdown (green) | Auth required | System Security Plans, Component Definitions |
-| Center-Right | Assessment dropdown (orange) | Auth required | Assessment Plans, Assessment Results, Evidence, POA&Ms |
-| Center-Right | Authorization Boundaries | Auth required | Standalone nav link |
-| Center-Right | Compliance Library / workflow | Auth required | Authoritative Sources, Review Queue, Promotion Queue, Federation Peers (surfaced per role/config) |
-| Right | Theme toggle | Always | Light/dark mode button, persisted via `localStorage` key `sparc-theme` |
-| Right | User menu | Signed in | Avatar/initials, display name, dropdown with Profile, Change Password, Admin section (Instance Admin only), Sign Out |
-| Right | Login button | Not signed in | `btn-outline-info` button linking to `/login` |
+### The header
 
-### User Menu Dropdown (signed in)
+One dark row at the top of every page. Left to right:
 
-- User avatar (or initials) with display name and email
-- **Profile** -- `/profile/edit`
-- **Change Password** -- `/password/edit`
-- **Administration** (Instance Admin only):
-  - Users -- `/admin/users`
-  - Roles -- `/admin/roles`
-  - Authorization Boundaries -- `/admin/authorization_boundaries`
-  - Audit Log -- `/admin/audit_logs`
-- **Sign Out** -- `DELETE /logout`
+| Element | Shown to | What it does |
+|---------|----------|--------------|
+| SPARC logo and version | Everyone | The version comes from `SparcConfig::VERSION`. The logo is not a link to the home page; use the organization name or the **Overview** tab |
+| Where you are | Signed in (or sign-in turned off) | The organization name (links to the **Overview**), then the boundary name when the page is inside one boundary (links to that boundary's page) |
+| Boundary switcher | Signed in (or sign-in turned off) | The arrow beside the organization/boundary name. Lists **All boundaries**, then **Recently used**, then every boundary you can reach grouped by organization, each with its status. Type to filter; Esc closes it. Picking a boundary keeps you on the same list narrowed to that boundary, or opens the boundary's page |
+| **Create** menu (plus icon) | Anyone who may create something | Boundary, Baseline, SSP, CDEF, SAP, SAR, Evidence, POA&M — each only if you may create it. Inside a boundary the menu reads **Create in _boundary name_**, and the SSP, SAP, SAR, Evidence and POA&M forms open with that boundary already chosen |
+| **Library** menu ("Shared library") | Varies per item | Control Catalogs, Baselines, Mappings, Component Definitions, Converters, Authoritative Sources, Promotion Queue, Leveraged POA&Ms, Federation Peers — each only when you may open it |
+| **Review queue** (inbox icon with a count) | Approvers only | Opens the Review Queue; the count is the number of documents waiting for you |
+| **Help** menu | Everyone | **Help for this page** (opens the help drawer), then **Guides** (Getting Oriented, Help Center, every other guide), then **About SPARC**: About, Resources, OSCAL overview, and any reference links the operator configured. Signed-out visitors see About and Resources only |
+| Theme toggle | Everyone | Light/dark mode, saved in the browser (`localStorage` key `sparc-theme`) |
+| Account menu | Signed in | Your avatar or initials and name. Lists **Profile**, **Change Password**, **Security Keys** (when security keys are turned on) and **Sign Out**. Instance administrators also see an **Administration** list: Users, Roles, Service Accounts, Auth Boundaries, Organizations, Remediation Timelines, IdP Grants, Audit Log |
+| **Login** button | Signed out | Opens `/login` |
 
-### Controls Dropdown Items
+On narrow screens (under 768px) the menu names hide and only the icons show;
+each icon keeps its name for screen readers.
 
-| Item | Route | Icon |
-|------|-------|------|
-| Control Catalogs | `/control_catalogs` | Book |
-| Baselines | `/profile_documents` | Clipboard |
-| Mappings | `/control_mappings` | Arrows |
-| Converters | `/converters` | Refresh |
+### Organization tabs
 
-### Implementation Dropdown Items
+The tab bar under the header, on any page that is not inside one boundary:
 
-| Item | Route | Icon |
-|------|-------|------|
-| System Security Plans | `/ssp_documents` | Document |
-| Component Definitions | `/cdef_documents` | Wrench |
+**Overview | Boundaries | Baselines | SSPs | CDEFs | SAPs | SARs | Evidence | POA&Ms | People | Settings**
 
-### Assessment Dropdown Items
+| Tab | Opens | Shown to |
+|-----|-------|----------|
+| Overview | The home page (`/`) | Everyone signed in |
+| Boundaries | `/authorization_boundaries` | Everyone signed in |
+| Baselines | `/profile_documents` | When the reference library is visible to you |
+| SSPs | `/ssp_documents` | Everyone signed in |
+| CDEFs | `/cdef_documents` | When the reference library is visible to you |
+| SAPs, SARs, Evidence, POA&Ms | `/sap_documents`, `/sar_documents`, `/evidences`, `/poam_documents` | Everyone signed in |
+| People | `/admin/users` (the Users screen) | Instance administrators |
+| Settings | `/admin` (the Settings page) | Administrators |
 
-| Item | Route | Icon |
-|------|-------|------|
-| Assessment Plans | `/sap_documents` | Memo |
-| Assessment Results | `/sar_documents` | Chart |
-| Evidence | `/evidences` | Paperclip |
-| POA&Ms | `/poam_documents` | Warning |
+Each tab except Overview, People and Settings shows a count of the records its
+list would show you. The tabs are coloured by layer: Baselines blue (Controls),
+SSPs and CDEFs green (Implementation), SAPs, SARs, Evidence and POA&Ms orange
+(Assessment), Boundaries purple (Enterprise).
+
+### Boundary tabs
+
+When you are inside one boundary — its own page, or a list filtered to it —
+the tab bar shows that boundary's tabs instead:
+
+**Overview | Baseline | SSP | CDEFs | SAPs | SARs | Evidence | POA&Ms | Leveraged POA&Ms**
+
+- **Overview** opens the boundary's page.
+- **Baseline** opens the boundary's baseline; it appears only when the boundary has one.
+- The other tabs open the same lists as the organization tabs, filtered to this
+  boundary, with counts for this boundary.
+
+### Settings menu (administrators)
+
+The **Settings** tab opens the Settings page (`/admin`), which lists every
+administration screen in three groups with a one-line description. The same
+menu sits in a left column beside every administration screen (it stacks above
+the screen on a phone), with the current screen marked.
+
+| Group | Entries |
+|-------|---------|
+| Access | Users, Roles, Service accounts, Unmatched IdP grants |
+| Organization | Organizations, Authorization boundaries, Remediation timelines |
+| Records | Audit log, Catalog lineage, Data migrations |
+
+### Page frame
+
+Every screen uses one page header: the title, any status chips, short facts or
+list totals under the title, and the actions on the right (on a phone the
+secondary actions fold into a **More actions** menu). Lists (SSPs, CDEFs, SAPs,
+SARs, Evidence, POA&Ms, Baselines, Control Catalogs) put their filters,
+including the **Boundary** filter, in a left column beside the list, and keep
+their card/table view toggle.
 
 ---
 
@@ -93,6 +121,7 @@ Each alert is dismissible with auto-dismiss behavior handled by the Stimulus con
 | **Controller** | `SessionsController#new` |
 | **Layout** | `layouts/login` |
 | **Auth** | Public |
+| **Reached from** | The **Login** button at the right of the header (signed out) |
 
 The login page uses a tabbed interface that adapts based on enabled authentication methods via `SparcConfig`:
 
@@ -112,8 +141,9 @@ The login page uses a tabbed interface that adapts based on enabled authenticati
 | **Route** | `GET /webauthn_credentials`, `POST /webauthn_credentials/registration_options`, `POST /webauthn_credentials`, `DELETE /webauthn_credentials/:id` |
 | **Controller** | `WebauthnCredentialsController` |
 | **Auth** | Signed-in users; only present when `SPARC_FIDO2_ENABLED=true` (returns 404 otherwise) |
+| **Reached from** | Account menu → **Security Keys** |
 
-Reached from the account menu (**Security Keys**). Enroll a FIDO2 key (optional nickname → browser prompt → key + PIN), view registered keys, and remove one. Admins reset a locked-out user's keys from the user admin page (`DELETE /admin/users/:id/reset_security_keys`). See [User Guide: Security Keys](User-Guide-Security-Keys) and [Authentication and MFA](Authentication-and-MFA).
+Enroll a FIDO2 key (optional nickname → browser prompt → key + PIN), view registered keys, and remove one. Admins reset a locked-out user's keys from the user admin page (`DELETE /admin/users/:id/reset_security_keys`). See [User Guide: Security Keys](User-Guide-Security-Keys) and [Authentication and MFA](Authentication-and-MFA).
 
 #### Registration Page
 
@@ -122,6 +152,7 @@ Reached from the account menu (**Security Keys**). Enroll a FIDO2 key (optional 
 | **Route** | `GET /register`, `POST /register` |
 | **Controller** | `RegistrationsController#new`, `#create` |
 | **Auth** | Public (only available when `SPARC_ENABLE_USER_REGISTRATION=true`) |
+| **Reached from** | **Create Account** on the Login page |
 
 Self-service account creation form with email, password, and name fields.
 
@@ -133,6 +164,7 @@ Self-service account creation form with email, password, and name fields.
 | **Controller** | `ProfilesController#edit` |
 | **Auth** | Signed in |
 | **Actions** | `PATCH /profile/update_avatar`, `DELETE /profile/remove_avatar` |
+| **Reached from** | Account menu → **Profile** |
 
 Avatar upload and removal, display name information.
 
@@ -143,39 +175,34 @@ Avatar upload and removal, display name information.
 | **Route** | `GET /password/edit`, `PATCH /password` |
 | **Controller** | `PasswordsController#edit`, `#update` |
 | **Auth** | Signed in |
+| **Reached from** | Account menu → **Change Password** |
 
 Current password and new password fields. Also used for forced password reset on bootstrapped admin accounts.
 
 ---
 
-### Dashboard
+### Overview (home page)
 
-#### Home
+#### Overview
 
 | | |
 |---|---|
 | **Route** | `GET /` |
 | **Controller** | `HomeController#index` |
 | **Auth** | Varies (public when auth disabled) |
+| **Reached from** | The **Overview** tab, or the organization name in the header |
 
-The homepage opens with the **inventory**: one row of thin count tiles grouped by OSCAL layer -- Controls (Catalogs, Families, Controls, Baselines, Mappings), Implementation (SSPs, CDEFs, Converters), Assessment (SAPs, Evidence, SARs, POA&Ms) and Enterprise (Organizations, Auth Boundaries). Each tile is a link to its list and shows the same count as its card's badge below, so it counts what the signed-in user may see (Families and Controls open the catalog list, which totals them); Organizations appears only to someone the administrator screen admits. v1.17.2 removed these tiles by mistake; v1.17.3 restores them.
+The home page is the organization's Overview (1.18.0-rf). From top to bottom:
 
-Below it is a grid of cards grouped by OSCAL layer (Controls, Implementation, Assessment, Enterprise), one per area: Control Catalogs, Baselines / Profiles, Control Mapping, SSPs, CDEFs, Converters, SAPs, Evidence, SARs, POA&Ms, Organizations and Auth Boundaries (v1.17.2, #1243).
-
-- **Count badge** -- before each card's title, a count that links to the same list as the card's **View** button. The count is the one that list shows the signed-in user: SSPs, SAPs, SARs, Evidence and POA&Ms through the same boundary scoping as their list pages, Auth Boundaries through the boundaries the user may see, and the shared library (catalogs, baselines, mappings, CDEFs, converters) in full, as their lists show it. An instance administrator, or a deployment with authentication disabled, sees full totals.
-- **Layout** -- every card reads the same way: icon, count, title, then **View** and **New**. Families and controls are counted only in the inventory tiles.
-- **New** -- shown only where the user may create that kind of record.
-- **Organizations** -- an administrator screen; the card shows only to someone it admits.
-
-#### Family Drilldown
-
-| | |
-|---|---|
-| **Route** | `GET /dashboard/family/:family` |
-| **Controller** | `HomeController#family_drilldown` |
-| **Auth** | Varies |
-
-Displays controls filtered by a specific NIST control family code (e.g., `AC`, `AU`, `SC`). Reached by clicking a family cell in the dashboard heatmap.
+- **Organization header** -- the organization's name (or "All organizations" when you belong to none or several) with a two-letter tile, then links to its boundary count and people count, and the organization's contact person and email when set. The people count links to the Users screen for an instance administrator.
+- **Inventory strip** -- four cards, one per OSCAL layer, each with thin count tiles: Controls (Catalogs, Families, Controls, Baselines, Mappings), Implementation (SSPs, CDEFs, Converters), Assessment (SAPs, Evidence, SARs, POA&Ms) and Enterprise (Organizations, Auth Boundaries). Each tile links to its list and counts what the signed-in user may see (Families and Controls open the catalog list, which totals them). Organizations appears only to someone the administrator screen admits.
+- **Layer cards** -- one card per layer (Controls, Implementation, Assessment, Enterprise routing), with one row per screen: icon, name, count and **+ New** (shown only where the user may create that kind of record). Controls: Control Catalogs, Baselines / Profiles, Control Mapping. Implementation: SSPs, CDEFs, Converters. Assessment: SAPs, Evidence, SARs, POA&Ms. Enterprise routing: Organizations (administrators), Auth Boundaries, Federation Peers and Authoritative Sources (each when you may open it). Counts follow the same scoping as the lists: SSPs, SAPs, SARs, Evidence and POA&Ms through boundary scoping, Auth Boundaries through the boundaries you may see, the shared library in full. An instance administrator, or a deployment with authentication disabled, sees full totals.
+- **Right-hand column**:
+  - **Waiting on you** (approvers only) -- up to five documents submitted for your review, and a link to the Review Queue with the full count; "Nothing is waiting for your review." when empty.
+  - **Start something** -- quick links to create an SSP, Evidence, a Boundary or a CDEF, each shown only when you may create it.
+  - **Boundaries** -- the five boundaries you can reach that changed most recently, with status, when each was last updated and a small weekly activity chart, and **View all boundaries**.
+  - **Baselines in use** -- the baselines your boundaries use, most used first, each with the number of boundaries using it.
+  - **Help** -- a **Contact support** email link, when the operator set a support address.
 
 ---
 
@@ -188,8 +215,9 @@ Displays controls filtered by a specific NIST control family code (e.g., `AC`, `
 | **Route** | `GET /control_catalogs` |
 | **Controller** | `ControlCatalogsController#index` |
 | **Auth** | Public |
+| **Reached from** | **Library → Control Catalogs**; the Catalogs, Families and Controls tiles on the Overview |
 
-Summary tiles showing total catalogs, families, and controls. Table listing all catalogs with name, version, source, family count, control count, creation date, and action buttons. Actions include "View", "Import" (links to `/control_catalogs/import`), and "New".
+Summary tiles showing total catalogs, families, and controls. Table listing all catalogs with name, version, source, family count, control count, creation date, and action buttons. Header buttons: **New Catalog** and **Import from File** (links to `/control_catalogs/import`), shown to users who may write catalogs.
 
 #### Catalog Detail
 
@@ -198,6 +226,7 @@ Summary tiles showing total catalogs, families, and controls. Table listing all 
 | **Route** | `GET /control_catalogs/:uuid` — the OSCAL document uuid. The name-derived slug and the numeric id still resolve and 301 onto it (#881) |
 | **Controller** | `ControlCatalogsController#show` |
 | **Auth** | Public |
+| **Reached from** | A catalog's name on the Control Catalogs list |
 
 Displays the catalog with:
 - Editable metadata (name, version) via inline toggle
@@ -213,6 +242,7 @@ Displays the catalog with:
 | **Routes** | `GET /control_catalogs/new`, `GET /control_catalogs/:id/edit` |
 | **Controller** | `ControlCatalogsController#new`, `#edit` |
 | **Auth** | Authenticated |
+| **Reached from** | **New Catalog** on the Control Catalogs list; **+ New** on the Overview's Control Catalogs row |
 
 Form fields: name, version, source, description. Template selector for creating from blank, NIST SP 800-53 Rev 4, or Rev 5 seed data.
 
@@ -223,6 +253,7 @@ Form fields: name, version, source, description. Template selector for creating 
 | **Route** | `GET /control_catalogs/import`, `POST /control_catalogs/import` |
 | **Controller** | `ControlCatalogsController#import` |
 | **Auth** | Authenticated |
+| **Reached from** | **Import from File** on the Control Catalogs list |
 
 File upload form accepting JSON and XML catalog files for import.
 
@@ -233,6 +264,7 @@ File upload form accepting JSON and XML catalog files for import.
 | **Routes** | `GET /control_catalogs/:uuid/control_families/:code` (e.g. `.../control_families/ac`), `GET /control_families/:id/edit`. The bare `GET /control_families/:id` 301s onto the catalog-scoped form (#881) |
 | **Controller** | `ControlFamiliesController#show`, `#edit` |
 | **Auth** | Public (show), Authenticated (edit) |
+| **Reached from** | A family on the Catalog Detail page |
 
 Family detail shows controls within the family. Edit form includes family code, name, and description fields. Scoped within a catalog (`/control_catalogs/:catalog_id/control_families`).
 
@@ -243,6 +275,7 @@ Family detail shows controls within the family. Edit form includes family code, 
 | **Routes** | `GET /control_catalogs/:uuid/controls/:control_id` — a control's own page, new in #881. Also `.../controls/:control_id/edit`. `:control_id` is the canonical form (`ac-2`, `ac-1a`, `ac-19.4.b.1`); the legacy `GET /catalog_controls/:id[/edit]` 301s onto it |
 | **Controller** | `CatalogControlsController#edit` |
 | **Auth** | Authenticated |
+| **Reached from** | A control on its family's page |
 
 Edit form for individual catalog controls with control ID, title, description, and statement fields.
 
@@ -253,6 +286,7 @@ Edit form for individual catalog controls with control ID, title, description, a
 | **Route** | `GET /control_families/:control_family_id/catalog_controls/batch_new` |
 | **Controller** | `CatalogControlsController#batch_new` |
 | **Auth** | Authenticated |
+| **Reached from** | **＋ Batch Add** on a control family's page |
 
 Multiple control rows for bulk addition to a family. Submits via `POST batch_create`.
 
@@ -263,8 +297,9 @@ Multiple control rows for bulk addition to a family. Submits via `POST batch_cre
 | **Route** | `GET /profile_documents` |
 | **Controller** | `ProfileDocumentsController#index` |
 | **Auth** | Public |
+| **Reached from** | The **Baselines** tab; **Library → Baselines** |
 
-Summary tiles with document and control counts. Lists all baseline profiles with name, control count, and priority heatmap. Buttons for "Create New" and "Create from Catalog".
+Summary tiles with document and control counts. Lists all baseline profiles with name, control count, and priority heatmap. Header buttons: **Create from Catalog**, **Create from Profile** and **Upload New** (signed in).
 
 #### Baseline Detail
 
@@ -273,6 +308,7 @@ Summary tiles with document and control counts. Lists all baseline profiles with
 | **Route** | `GET /profile_documents/:id` |
 | **Controller** | `ProfileDocumentsController#show` |
 | **Auth** | Public |
+| **Reached from** | A baseline on the Baselines list; inside a boundary, the boundary's **Baseline** tab; **Baselines in use** on the Overview |
 
 Shows the baseline profile with:
 - Controls listed with priority information
@@ -304,6 +340,7 @@ Shows the baseline profile with:
 | **Route** | `GET /profile_documents/select_catalog` |
 | **Controller** | `ProfileDocumentsController#select_catalog` |
 | **Auth** | Authenticated |
+| **Reached from** | **Create from Catalog** on the Baselines list |
 
 Two-step flow: first select a source catalog, then choose which controls to include via a checklist interface. Submits via `POST create_from_catalog`.
 
@@ -314,6 +351,7 @@ Two-step flow: first select a source catalog, then choose which controls to incl
 | **Routes** | `GET /profile_documents/:profile_document_id/profile_controls/:id/edit` |
 | **Controller** | `ProfileControlsController#edit` |
 | **Auth** | Authenticated |
+| **Reached from** | A control's **Edit** link on the Baseline Detail page |
 
 Edit form for individual profile controls: control ID, title, priority, tailoring notes and back-matter references. Parameter values are tailored on the Profile detail screen (#1270).
 
@@ -324,8 +362,9 @@ Edit form for individual profile controls: control ID, title, priority, tailorin
 | **Route** | `GET /control_mappings` |
 | **Controller** | `ControlMappingsController#index` |
 | **Auth** | Public |
+| **Reached from** | **Library → Mappings** |
 
-Lists all control mappings showing name, source catalog, target catalog, status (draft/complete/deprecated), entry count, and creation date. "Create New" button.
+Lists all control mappings showing name, source catalog, target catalog, status (draft/complete/deprecated), entry count, and creation date. **New Mapping** button.
 
 #### Mapping Detail
 
@@ -334,6 +373,7 @@ Lists all control mappings showing name, source catalog, target catalog, status 
 | **Route** | `GET /control_mappings/:id` |
 | **Controller** | `ControlMappingsController#show` |
 | **Auth** | Public (view), Write permission required for editing |
+| **Reached from** | A mapping on the Control Mappings list |
 
 Two-column layout:
 - **Left column**: Mapping details card -- status badge, version, method, rationale, OSCAL version, timestamps, description
@@ -354,8 +394,9 @@ Action buttons: Edit, Publish (for draft/not-complete status), Deprecate (for co
 | **Route** | `GET /converters` |
 | **Controller** | `ConvertersController#index` |
 | **Auth** | Public (view); `converters.write` permission for mutations |
+| **Reached from** | **Library → Converters** |
 
-Lists rule-to-NIST converter registries (e.g. DISA CCI, AWS Config, AWS Security Hub) with name, source, entry count, and last-refresh timestamp. Buttons: "New", "Import" (`/converters/import`), and the STIG parser (`/converters/stig_parser`).
+Lists rule-to-NIST converter registries (e.g. DISA CCI, AWS Config, AWS Security Hub) with name, source, entry count, and last-refresh timestamp. Buttons: **New Converter**, **Import STIG** (the STIG parser, `/converters/stig_parser`) and **Import JSON** (`/converters/import`).
 
 #### Converter Detail
 
@@ -364,6 +405,7 @@ Lists rule-to-NIST converter registries (e.g. DISA CCI, AWS Config, AWS Security
 | **Route** | `GET /converters/:id` |
 | **Controller** | `ConvertersController#show` |
 | **Auth** | Public (view); `converters.write` for mutations |
+| **Reached from** | A converter on the Converters list |
 
 Shows the converter's mapping entries (source rule ID → NIST control IDs). Actions include Export (`GET export`), and refresh buttons that pull the latest upstream mappings: Refresh CCI (`POST refresh_cci`), Refresh AWS Config (`POST refresh_aws_config`, #494), Refresh AWS Security Hub (`POST refresh_aws_security_hub`, #494). Nested entry add/remove via `converter_entries` (`POST/DELETE /converters/:id/entries`) rendered as inline form rows.
 
@@ -374,6 +416,7 @@ Shows the converter's mapping entries (source rule ID → NIST control IDs). Act
 | **Routes** | `GET /converters/new`, `GET /converters/:id/edit`, `GET /converters/import` (`POST do_import`), `GET /converters/stig_parser` (`POST import_stig`) |
 | **Controller** | `ConvertersController#new`, `#edit`, `#import`, `#stig_parser` |
 | **Auth** | `converters.write` |
+| **Reached from** | **New Converter**, **Import JSON** and **Import STIG** on the Converters list |
 
 Metadata form (name, source, description); import form accepting converter definition files; STIG parser upload that extracts rule → control mappings from a DISA STIG XCCDF file.
 
@@ -388,6 +431,7 @@ Metadata form (name, source, description); import form accepting converter defin
 | **Route** | `GET /ssp_documents` |
 | **Controller** | `SspDocumentsController#index` |
 | **Auth** | Required |
+| **Reached from** | The **SSPs** tab (inside a boundary, the boundary's **SSP** tab, filtered to it) |
 
 Summary tiles: total SSP count, total controls, completed controls.
 
@@ -403,7 +447,7 @@ Table columns:
 | Created | Timestamp (`YYYY-MM-DD HH:MM`) |
 | Actions | View, Enrich (if not enriched), Delete (with confirmation) |
 
-Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
+Buttons: **Create New SSP** (links to wizard), **Upload File** (direct file upload).
 
 #### SSP Detail
 
@@ -412,6 +456,7 @@ Buttons: "Create New SSP" (links to wizard), "Upload File" (direct file upload).
 | **Route** | `GET /ssp_documents/:id` |
 | **Controller** | `SspDocumentsController#show` |
 | **Auth** | Required |
+| **Reached from** | An SSP on the SSP list |
 
 **Processing state**: If the document is not yet completed, shows either a processing spinner with auto-refresh (every 5 seconds via `<meta http-equiv="refresh">`) or a failure banner with error message.
 
@@ -460,6 +505,7 @@ Export buttons: Export OSCAL, Download JSON, Enrich, Back.
 | **Route** | `GET /ssp_documents/wizard`, `POST /ssp_documents/create_from_wizard` |
 | **Controller** | `SspDocumentsController#wizard`, `#create_from_wizard` |
 | **Auth** | Required |
+| **Reached from** | **Create New SSP** on the SSP list |
 
 Multi-step creation flow: profile/baseline selector, CDEF selector, system details form (name, version, description).
 
@@ -470,6 +516,7 @@ Multi-step creation flow: profile/baseline selector, CDEF selector, system detai
 | **Route** | `GET /ssp_documents/:id/enrich`, `PATCH /ssp_documents/:id/update_enrich`, `POST /ssp_documents/:id/declare_role` |
 | **Controller** | `SspDocumentsController#enrich`, `#update_enrich`, `#declare_role` |
 | **Auth** | Required; importing and declaring need SSP write on the boundary |
+| **Reached from** | **Enrich** on the SSP list or the SSP Detail page |
 
 Form for adding OSCAL-required metadata: system characteristics (description, sensitivity level, status, authorization boundary), components (title, type, description), system users (title, description), and information types.
 
@@ -496,6 +543,7 @@ link on the product pointing back at it.
 | **Route** | `GET /ssp_documents/:id/editor` |
 | **Controller** | `SspDocumentsController#editor` |
 | **Auth** | Required |
+| **Reached from** | By URL (`/ssp_documents/:id/editor`) |
 
 Dedicated inline editing interface using Turbo Frames for control field updates without full page reloads.
 
@@ -506,8 +554,9 @@ Dedicated inline editing interface using Turbo Frames for control field updates 
 | **Route** | `GET /cdef_documents` |
 | **Controller** | `CdefDocumentsController#index` |
 | **Auth** | Required |
+| **Reached from** | The **CDEFs** tab; **Library → Component Definitions** |
 
-Summary tiles with document and control counts. Lists all component definitions with severity heatmap visualization. "Create New" button.
+Summary tiles with document and control counts. Lists all component definitions with severity heatmap visualization. Header buttons (signed in): **Create New**, **Upload File** and **Terraform Wizard**.
 
 #### CDEF Detail
 
@@ -516,6 +565,7 @@ Summary tiles with document and control counts. Lists all component definitions 
 | **Route** | `GET /cdef_documents/:id` |
 | **Controller** | `CdefDocumentsController#show` |
 | **Auth** | Required |
+| **Reached from** | A CDEF on the CDEF list |
 
 Controls organized by family with severity heatmap. Action buttons: Copy (duplicates the document), Export OSCAL (validated/unvalidated), Download JSON, Back. Editable metadata via inline toggle.
 
@@ -530,8 +580,9 @@ Controls organized by family with severity heatmap. Action buttons: Copy (duplic
 | **Route** | `GET /sap_documents` |
 | **Controller** | `SapDocumentsController#index` |
 | **Auth** | Required |
+| **Reached from** | The **SAPs** tab |
 
-Summary tiles. Lists all assessment plans. "Create New" button, "Upload" for JSON import.
+Summary tiles. Lists all assessment plans. **Create New** button, **Upload File** for import.
 
 #### SAP Detail
 
@@ -540,6 +591,7 @@ Summary tiles. Lists all assessment plans. "Create New" button, "Upload" for JSO
 | **Route** | `GET /sap_documents/:id` |
 | **Controller** | `SapDocumentsController#show` |
 | **Auth** | Required |
+| **Reached from** | A SAP on the SAP list |
 
 Controls organized by family, in NIST catalog order within each family, with the assessment method heatmap. Editable metadata via inline toggle. Export buttons: OSCAL (validated/unvalidated), JSON.
 
@@ -552,8 +604,9 @@ As on the SAR (#1046), the duplicate "Assessment Status by Control Family (Objec
 | **Route** | `GET /sar_documents` |
 | **Controller** | `SarDocumentsController#index` |
 | **Auth** | Required |
+| **Reached from** | The **SARs** tab |
 
-Summary tiles: total SARs, total controls, pass/fail counts. Table listing all assessment results with name, source, version, status, control count, OSCAL status, creation date, and actions. Buttons: "Create New SAR" (wizard), "Upload File".
+Summary tiles: total SARs, total controls, pass/fail counts. Table listing all assessment results with name, source, version, status, control count, OSCAL status, creation date, and actions. Buttons: **Create from Wizard**, **Upload New**.
 
 #### SAR Detail
 
@@ -562,6 +615,7 @@ Summary tiles: total SARs, total controls, pass/fail counts. Table listing all a
 | **Route** | `GET /sar_documents/:id` |
 | **Controller** | `SarDocumentsController#show` |
 | **Auth** | Required |
+| **Reached from** | A SAR on the SAR list |
 
 **Processing state**: Same spinner/failure pattern as SSP with auto-refresh.
 
@@ -604,6 +658,7 @@ Export buttons: Download JSON, Download OSCAL, Back, and the enrichment action -
 | **Route** | `GET /sar_documents/wizard`, `POST /sar_documents/create_from_wizard` |
 | **Controller** | `SarDocumentsController#wizard`, `#create_from_wizard` |
 | **Auth** | Required |
+| **Reached from** | **Create from Wizard** on the SAR list |
 
 SAP selector and assessment date configuration.
 
@@ -614,6 +669,7 @@ SAP selector and assessment date configuration.
 | **Route** | `GET /sar_documents/:id/enrich`, `PATCH /sar_documents/:id/update_enrich` |
 | **Controller** | `SarDocumentsController#enrich`, `#update_enrich` |
 | **Auth** | Required |
+| **Reached from** | **Enrich** / **Edit Enrichment** on the SAR Detail page |
 
 Form for adding OSCAL assessment result metadata: results, observations, findings, and risks. Each section is an independently collapsible `<details>` block.
 
@@ -638,8 +694,9 @@ A hidden `collections_present` marker distinguishes "the form rendered these and
 | **Route** | `GET /evidences` |
 | **Controller** | `EvidencesController#index` |
 | **Auth** | Required |
+| **Reached from** | The **Evidence** tab |
 
-Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. "Upload" button for new evidence.
+Summary tiles. Lists all evidence items with filters for type, status, authorization boundary, and associated control. Search functionality. **Add Evidence** button for new evidence.
 
 **Tiered Instance → Organization → Boundary (#948).** When the already-scoped collection spans more than one boundary, the list groups itself under collapsible `<details>` tiers with per-tier counts; when it does not, the flat list renders unchanged, so a single-system user never meets a tree with one branch. Counts describe the whole filtered set while the records shown are the current page, so a tier can read 24 and display 8.
 
@@ -654,6 +711,7 @@ Boundary is a column in the table view (it was previously only a card chip), and
 | **Route** | `GET /evidences/new`, `GET /evidences/:id/edit` |
 | **Controller** | `EvidencesController#new` / `#edit` |
 | **Auth** | Required (`evidence.write`, boundary-scoped) |
+| **Reached from** | **Create → Evidence**; **Add Evidence** on the Evidence list; **New Evidence** under Start something on the Overview; **Edit** on the Evidence Detail page |
 
 Editable fields: **Title**, **Evidence Type**, **Status**, **Description**, **Source**, **Authorization Boundary**, **Controls** (catalog-backed picker), and the **Evidence File** dropzone (click or drag-and-drop; accepted extensions come from `EvidenceUploadPolicy`, archives excluded).
 
@@ -682,6 +740,7 @@ Feedback (#902): success confirms the **file** by name, size and SHA-256 prefix;
 | **Route** | `GET /evidences/:id` |
 | **Controller** | `EvidencesController#show` |
 | **Auth** | Required |
+| **Reached from** | An item on the Evidence list |
 
 File preview, linked controls, and attestation list. Actions: Edit, Delete. Nested attestation creation.
 
@@ -692,6 +751,7 @@ File preview, linked controls, and attestation list. Actions: Edit, Delete. Nest
 | **Route** | `GET /evidences/:evidence_id/attestations/new` |
 | **Controller** | `AttestationsController#new` |
 | **Auth** | Required |
+| **Reached from** | The Evidence Detail page |
 
 Form fields: attester name, date, role, attestation statement. Scoped within an evidence record.
 
@@ -708,8 +768,9 @@ Plans of Action & Milestones. The `PoamDocument` carries a rich set of OSCAL-ext
 | **Route** | `GET /poam_documents` |
 | **Controller** | `PoamDocumentsController#index` |
 | **Auth** | Required |
+| **Reached from** | The **POA&Ms** tab |
 
-Summary tiles with document and item counts. Lists all POA&M documents with name, item count, and creation date. "Create New" button.
+Summary tiles with document and item counts. Lists all POA&M documents with name, item count, and creation date. **Create New** and **Upload File** buttons.
 
 #### POA&M Detail
 
@@ -718,6 +779,7 @@ Summary tiles with document and item counts. Lists all POA&M documents with name
 | **Route** | `GET /poam_documents/:id` |
 | **Controller** | `PoamDocumentsController#show` |
 | **Auth** | Required |
+| **Reached from** | A POA&M on the POA&M list |
 
 Items displayed with pagination. Filter options for risk status and impact level. **Risk Status x Impact** heat map: its columns come from `RiskRating::LEVELS`, so all five impact tiers are always drawn and a tier with no risks renders an empty column with a dash rather than disappearing (#1095). An unrecognised legacy value is appended as an extra column rather than dropped. Editable metadata via inline toggle. Publish/publish-check actions. Export buttons: OSCAL (validated/unvalidated), JSON, YAML, XML. "+ Add" buttons for each child-entity type (items, risks, remediations, observations, findings, local components) linking to the nested forms below. Below the item cards, one collapsible section per child type (`poam_documents/_record_sections`, built by `PoamDocumentsHelper#poam_record_sections`), each headed with its count, with **Edit** and **Delete** on every record (v1.17.2). Before this, only items could be edited from the page, and a risk linked to no item was not shown at all. Risks also have **Close this risk…** / **Reopen this risk…**, a disclosure holding a required note: `PATCH .../poam_risks/:id/close` and `/reopen` set the OSCAL status and append a `risk-log` entry. Remediations have **Mark completed** (`PATCH .../poam_remediations/:id/complete`, OSCAL `lifecycle: completed`). All three go through `PoamResolutionService`, as do the API's `POST /api/v1/poam_risks/:id/close`, `/reopen` and `.../remediations/:id/complete`. The Delete confirmation names what goes with the record. Item cards' related risks carry an **Edit** link. Nested back-matter resource management.
 
@@ -728,6 +790,7 @@ Items displayed with pagination. Filter options for risk status and impact level
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_items/new`, `.../poam_items/:id/edit` |
 | **Controller** | `PoamItemsController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 Form fields: risk ID, finding source, status, impact level, remediation plan, scheduled completion date, milestones.
 
@@ -738,6 +801,7 @@ Form fields: risk ID, finding source, status, impact level, remediation plan, sc
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_risks/new`, `.../poam_risks/:id/edit` |
 | **Controller** | `PoamRisksController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 OSCAL `risk` form: title, description, statement, status, deadline, the impact/likelihood rating on the five-level `RiskRating::LEVELS` scale (`very-low`, `low`, `moderate`, `high`, `very-high`, exported as characterization facets), and (v1.17.2) **Threat IDs and Mitigating Factors**, the same section and rules as the SAR risk card. Remediations are not on this form: a POA&M keeps them as rows with their own screens. There is no link to the edit route from the POA&M page yet; it is reached by URL.
 
@@ -748,6 +812,7 @@ OSCAL `risk` form: title, description, statement, status, deadline, the impact/l
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_remediations/new`, `.../poam_remediations/:id/edit`; nested `.../poam_remediations/:poam_remediation_id/poam_milestones/new`, `.../poam_milestones/:id/edit` |
 | **Controller** | `PoamRemediationsController`, `PoamMilestonesController` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 OSCAL `response` (remediation) form: lifecycle, title, description, remarks. Milestones are nested under a remediation with their own new/edit forms (title, description, target date).
 
@@ -758,6 +823,7 @@ OSCAL `response` (remediation) form: lifecycle, title, description, remarks. Mil
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_observations/new`, `.../poam_observations/:id/edit` |
 | **Controller** | `PoamObservationsController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 OSCAL `observation` form: title, description, methods, collected/expires timestamps.
 
@@ -768,6 +834,7 @@ OSCAL `observation` form: title, description, methods, collected/expires timesta
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_findings/new`, `.../poam_findings/:id/edit` |
 | **Controller** | `PoamFindingsController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 OSCAL `finding` form: title, description, target/objective status, related-observation and related-risk references.
 
@@ -778,6 +845,7 @@ OSCAL `finding` form: title, description, target/objective status, related-obser
 | **Routes** | `GET /poam_documents/:poam_document_id/poam_local_components/new`, `.../poam_local_components/:id/edit` |
 | **Controller** | `PoamLocalComponentsController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **+ Add** / **Edit** on the POA&M Detail page |
 
 OSCAL `local-definitions` component form: type, title, description, status — components referenced by the POA&M but not defined in a linked SSP.
 
@@ -788,6 +856,7 @@ OSCAL `local-definitions` component form: type, title, description, status — c
 | **Routes** | `GET /leveraged_poam_documents`, `GET /leveraged_poam_documents/:id` |
 | **Controller** | `LeveragedPoamDocumentsController#index`, `#show` |
 | **Auth** | Required |
+| **Reached from** | **Library → Leveraged POA&Ms**; inside a boundary, the boundary's **Leveraged POA&Ms** tab |
 
 Leveraging-side read-only view of POA&Ms inherited from a leveraged (underlying) system (#415, Scenario A). Index lists inherited POA&Ms; detail shows their items without edit controls, since the leveraging system does not own them.
 
@@ -802,8 +871,9 @@ Leveraging-side read-only view of POA&Ms inherited from a leveraged (underlying)
 | **Route** | `GET /authorization_boundaries` |
 | **Controller** | `AuthorizationBoundariesController#index` |
 | **Auth** | Required |
+| **Reached from** | The **Boundaries** tab; **All boundaries** in the header's boundary switcher; **View all boundaries** on the Overview |
 
-Lists the authorization boundaries the user may see (v1.17.2, #1247): every boundary for an administrator or an instance-wide read grant, otherwise those a role grants read on, the same set as the sidebar and the Enterprise menu (`AuthorizationBoundary.visible_to`). The summary tiles count those boundaries. **New Authorization Boundary** shows only with an instance-level write grant.
+Lists the authorization boundaries the user may see (v1.17.2, #1247): every boundary for an administrator or an instance-wide read grant, otherwise those a role grants read on, the same set as the **Boundaries** tab count and the header's boundary switcher (`AuthorizationBoundary.visible_to`). The summary tiles count those boundaries. **New Authorization Boundary** shows only with an instance-level write grant.
 
 Table columns (v1.17.2, #1248):
 
@@ -826,6 +896,7 @@ Cards show the same fields: the organization under the name, and the next decisi
 | **Route** | `GET /authorization_boundaries/:id` |
 | **Controller** | `AuthorizationBoundariesController#show` |
 | **Auth** | Required |
+| **Reached from** | The header's boundary switcher; the boundary name in the header; inside a boundary, its **Overview** tab; a boundary on the Boundaries list or the Overview |
 
 Header (v1.17.2, #1251): the name, the UUID (copy button), the status badge, the description, the authorization boundary description, and the key ATO facts on one line -- **Authorization status**, **Next decision** (the list's badge: amber within 90 days, red once past) and **Authorizing official**.
 
@@ -854,6 +925,7 @@ Your open/closed choice is remembered per section, in this browser, and applies 
 | **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/boundaries/new`, `GET /authorization_boundaries/:authorization_boundary_id/boundaries/:id/edit` |
 | **Controller** | `BoundariesController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **Add Environment** (and Edit) in the Environments & Components section of the boundary's page |
 
 Form fields: name, description, environment classification.
 
@@ -864,6 +936,7 @@ Form fields: name, description, environment classification.
 | **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/authorization_boundary_memberships/new`, `GET /authorization_boundaries/:authorization_boundary_id/authorization_boundary_memberships/:id/edit` |
 | **Controller** | `AuthorizationBoundaryMembershipsController#new`, `#edit` |
 | **Auth** | Required |
+| **Reached from** | **Add Member** (and Edit) in the Personnel Roster section of the boundary's page |
 
 Add, edit, or remove team members with role assignment via dropdown.
 
@@ -874,6 +947,7 @@ Add, edit, or remove team members with role assignment via dropdown.
 | **Routes** | `GET /authorization_boundaries/:id/ato_wizard`, `POST .../create_ato_package`, `GET .../download_ato_package` |
 | **Controller** | `AuthorizationBoundariesController#ato_wizard`, `#create_ato_package`, `#download_ato_package` |
 | **Auth** | Required |
+| **Reached from** | **Build ATO Package** on the boundary's page |
 
 Assembles an Authorization-to-Operate package (bundled SSP/SAP/SAR/POA&M/evidence artifacts) for the boundary, then offers it as a downloadable archive. Starts from what the boundary has (v1.17.5, #1101): its baseline as settled context (or, when it has none, a picker whose choice becomes the boundary's baseline), its linked CDEFs listed as linked, and each document step on the boundary's one current document, its several listed, or Skip when it has none.
 
@@ -884,12 +958,26 @@ Assembles an Authorization-to-Operate package (bundled SSP/SAP/SAR/POA&M/evidenc
 | **Routes** | `GET /authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/new`, `.../leveraged_authorizations/:id` (show), `POST .../leveraged_authorizations/:id/populate` |
 | **Controller** | `LeveragedAuthorizationsController#new`, `#show` |
 | **Auth** | Required |
+| **Reached from** | The Leveraged Authorizations section of the boundary's page |
 
 Records a leveraged (inherited) authorization on the leveraging boundary (#396). New form captures the leveraged system name/ID and party; the detail view shows the leveraged authorization with a "Populate" action that pulls inherited controls/components from the underlying system. Created on the leveraging boundary, not the leveraged one.
 
 ---
 
 ### Administration (Instance Admin only)
+
+Every screen in this section shows the Settings menu in a left column beside it (see [Settings menu](#settings-menu-administrators)).
+
+#### Settings
+
+| | |
+|---|---|
+| **Route** | `GET /admin` |
+| **Controller** | `Admin::SettingsController#index` |
+| **Auth** | Administrators |
+| **Reached from** | The **Settings** tab |
+
+Page title **Settings**, with the line "Administration for this SPARC instance." Lists every administration screen in three groups -- **Access** (Users, Roles, Service accounts, Unmatched IdP grants), **Organization** (Organizations, Authorization boundaries, Remediation timelines) and **Records** (Audit log, Catalog lineage, Data migrations) -- each with its icon and a one-line description of what it is for.
 
 #### Users List
 
@@ -898,6 +986,7 @@ Records a leveraged (inherited) authorization on the leveraging boundary (#396).
 | **Route** | `GET /admin/users` |
 | **Controller** | `Admin::UsersController#index` |
 | **Auth** | Instance Admin |
+| **Reached from** | The **People** tab; **Settings → Users** |
 
 Search input, status filter, paginated user list (25 per page). Each row shows email, display name, status, creation date. Actions: View, Suspend/Reactivate, and **New User**.
 
@@ -908,6 +997,7 @@ Search input, status filter, paginated user list (25 per page). Each row shows e
 | **Route** | `GET /admin/users/new` |
 | **Controller** | `Admin::UsersController#new` |
 | **Auth** | Instance Admin |
+| **Reached from** | **New User** on the Users list |
 
 Form fields: email, first name, last name, display name, status, Instance Admin checkbox, instance role assignments.
 
@@ -920,6 +1010,7 @@ Form fields: email, first name, last name, display name, status, Instance Admin 
 | **Route** | `GET /admin/users/:id` |
 | **Controller** | `Admin::UsersController#show` |
 | **Auth** | Instance Admin |
+| **Reached from** | **View** on the Users list |
 
 Displays:
 - User identities (local, OIDC, LDAP, GitHub, GitLab)
@@ -939,6 +1030,7 @@ Actions: Edit, Suspend/Deactivate/Reactivate, Issue temporary password, Email re
 | **Route** | `GET /admin/users/:id/edit` |
 | **Controller** | `Admin::UsersController#edit` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Edit** on the User Detail page |
 
 Form fields: display name, instance role assignments, authorization-boundary-specific role assignments.
 
@@ -949,6 +1041,7 @@ Form fields: display name, instance role assignments, authorization-boundary-spe
 | **Route** | `GET /admin/roles` |
 | **Controller** | `Admin::RolesController#index` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Roles** |
 
 Lists all roles with name, display name, scope (instance or authorization boundary), user count. "Create New" button.
 
@@ -959,6 +1052,7 @@ Lists all roles with name, display name, scope (instance or authorization bounda
 | **Route** | `GET /admin/roles/:id` |
 | **Controller** | `Admin::RolesController#show` |
 | **Auth** | Instance Admin |
+| **Reached from** | A role on the Roles list |
 
 Shows assigned users and the full permission matrix for the role.
 
@@ -969,6 +1063,7 @@ Shows assigned users and the full permission matrix for the role.
 | **Routes** | `GET /admin/roles/new`, `GET /admin/roles/:id/edit` |
 | **Controller** | `Admin::RolesController#new`, `#edit` |
 | **Auth** | Instance Admin |
+| **Reached from** | The Roles list and the Role Detail page |
 
 Form fields: name, display name, scope selector (instance/authorization boundary), 20 permission checkboxes covering CRUD operations across document types and admin features.
 
@@ -981,6 +1076,7 @@ On a built-in role, each value that differs from its shipped default carries a *
 | **Route** | `GET /admin/authorization_boundaries` |
 | **Controller** | `Admin::AuthorizationBoundariesController#index` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Authorization boundaries** |
 
 Lists all authorization boundaries with member management capabilities.
 
@@ -991,6 +1087,7 @@ Lists all authorization boundaries with member management capabilities.
 | **Route** | `GET /admin/authorization_boundaries/:id` |
 | **Controller** | `Admin::AuthorizationBoundariesController#show` |
 | **Auth** | Instance Admin |
+| **Reached from** | A boundary on the admin Authorization Boundaries list |
 
 User-role assignments table. Actions: Add member (`POST add_member`), Remove member (`DELETE remove_member`).
 
@@ -1001,8 +1098,9 @@ User-role assignments table. Actions: Add member (`POST add_member`), Remove mem
 | **Route** | `GET /admin/audit_logs` |
 | **Controller** | `Admin::AuditLogsController#index` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Audit log** |
 
-Header with event count badge and "Export CSV" button (appends `format=csv` to current filters).
+Page header titled **Audit log**, with the event count under the title and an **Export CSV** button (appends `format=csv` to current filters).
 
 **Filter panel** (card with form):
 
@@ -1037,6 +1135,7 @@ Pagination below the table (shown when more than one page exists).
 | **Route** | `GET /admin/audit_logs/:id` |
 | **Controller** | `Admin::AuditLogsController#show` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Details** on an Audit Log row |
 
 Full event metadata display: timestamp, user, action, category, subject type and ID, IP address, user agent, and any additional stored metadata.
 
@@ -1047,6 +1146,7 @@ Full event metadata display: timestamp, user, action, category, subject type and
 | **Routes** | `GET /admin/organizations`, `…/new`, `…/:id`, `…/:id/edit` (no destroy); member ops `PATCH deactivate`/`reactivate`, `POST add_member`, `DELETE remove_member` |
 | **Controller** | `Admin::OrganizationsController` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Organizations**; the Organizations row or tile on the Overview (administrators) |
 
 Manage organization entities (UUID-based audit traceability) for multi-org instances. Create/edit/detail plus soft deactivate/reactivate and member add/remove — organizations are never hard-deleted.
 
@@ -1057,6 +1157,7 @@ Manage organization entities (UUID-based audit traceability) for multi-org insta
 | **Routes** | `GET /admin/service_accounts` (full CRUD); tokens under `/admin/users/:user_id/api_tokens`: `POST` (issue), `DELETE …/:id` (revoke), `POST …/:id/renew`, `POST …/:id/reissue`, `GET …/:id/edit` + `PATCH …/:id` (edit limits in place, #1233) |
 | **Controller** | `Admin::ServiceAccountsController`, `Admin::ApiTokensController` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Service accounts** |
 
 Create non-interactive automation identities and issue, renew, reissue and revoke their `sparc_sa_<token>` Bearer tokens. **Edit limits** changes a token's allowed endpoints and CIDRs without reissuing it. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
 
@@ -1067,8 +1168,42 @@ Create non-interactive automation identities and issue, renew, reissue and revok
 | **Route** | `GET /admin/data_migrations` |
 | **Controller** | `Admin::DataMigrationsController` |
 | **Auth** | Instance Admin |
+| **Reached from** | **Settings → Data migrations** |
 
 Status view for **deferred data migrations** (v1.8.3) — migrations that register at `db:migrate` time and run their body post-boot via a Solid Queue job. Shows each migration's state (pending / running / completed / failed) so operators can confirm a long-running backfill finished after a deploy.
+
+#### Catalog Lineage
+
+| | |
+|---|---|
+| **Route** | `GET /admin/reconciliation` |
+| **Controller** | `Admin::ReconciliationController#index` |
+| **Auth** | Instance Admin |
+| **Reached from** | **Settings → Catalog lineage** |
+
+A read-only report of every document that cannot yet name the catalog its controls come from (#911). Summary cards: **Blocking edits** (documents refused edits until a baseline is set), **Advisory** (findings to act on, not blocking anyone) and **By type** (affected / total per document type). Below them, a table per group with Type, Document, Status and What it needs. Before 1.18.0-rf this screen had no link; it is now in the Settings menu.
+
+#### Unmatched IdP Grants
+
+| | |
+|---|---|
+| **Route** | `GET /admin/idp_grants` (`POST dismiss`, `DELETE :id/restore`) |
+| **Controller** | `Admin::IdpGrantsController#index` |
+| **Auth** | Instance Admin |
+| **Reached from** | **Settings → Unmatched IdP grants**; account menu → Administration → **IdP Grants** |
+
+Access the identity provider asked for that SPARC could not grant (#860), over a time window you can change. Sections: **By reason** (reason, users affected, sign-ins, an example grant, and actions), **Recent refusals** (the most recent 200) and **Rejected grants** (grants no longer reported, each with **Restore**). Nothing here needs clearing: once the organization, boundary or role a grant names exists, it resolves at that user's next sign-in. SPARC never creates them automatically.
+
+#### Remediation Timelines
+
+| | |
+|---|---|
+| **Route** | `GET /admin/remediation_timelines`, `PATCH /admin/remediation_timelines` |
+| **Controller** | `Admin::RemediationTimelinesController` |
+| **Auth** | Instance Admin |
+| **Reached from** | **Settings → Remediation timelines**; account menu → Administration → **Remediation Timelines** |
+
+A grid of days to remediate, one row per baseline level and one column per NIST criticality (#809). Each cell has a number field and its own **Save**; a cell still on its shipped value is marked "default". Used to check amendments when a control has no remediation value from its profile.
 
 ---
 
@@ -1083,6 +1218,7 @@ The Compliance Library holds authoritative back-matter sources and drives the do
 | **Routes** | `GET /authoritative_sources`, `GET /authoritative_sources/:id`, `GET /authoritative_sources/new`, `POST /authoritative_sources` |
 | **Controller** | `AuthoritativeSourcesController#index`, `#show`, `#new`, `#create` |
 | **Auth** | Required (any authenticated user may add a source, #646) |
+| **Reached from** | **Library → Authoritative Sources**; the Authoritative Sources row on the Overview |
 
 Library of authoritative back-matter resources (#372) usable across documents. Sources are org/boundary-scoped by default and become instance-wide via the promotion approval workflow. Index lists sources with scope; detail shows the resource and its usages; new/create adds a source.
 
@@ -1093,6 +1229,7 @@ Library of authoritative back-matter resources (#372) usable across documents. S
 | **Route** | `GET /review_queue` |
 | **Controller** | `ReviewQueueController#index` |
 | **Auth** | Required (reviewer permission) |
+| **Reached from** | The review-queue icon (inbox with a count) in the header; the link under **Waiting on you** on the Overview |
 
 Consolidated queue of governed documents (Control Catalog, Baseline/Profile, CDEF) submitted for review (#630). Each row links to the underlying document's approve/reject actions (`POST submit_for_review`, `POST approve`, `POST reject` on the respective document controllers).
 
@@ -1103,6 +1240,7 @@ Consolidated queue of governed documents (Control Catalog, Baseline/Profile, CDE
 | **Routes** | `GET /promotion_queue`, `POST /promotion_queue/:id/approve`, `POST /promotion_queue/:id/reject` |
 | **Controller** | `PromotionQueueController#index` |
 | **Auth** | Required (approver permission) |
+| **Reached from** | **Library → Promotion Queue** |
 
 Queue of back-matter resources requesting promotion from org/boundary scope to instance-wide authoritative scope (#372). Approve/Reject actions per row.
 
@@ -1113,6 +1251,7 @@ Queue of back-matter resources requesting promotion from org/boundary scope to i
 | **Routes** | `GET /federation_peers`, `GET /federation_peers/:id`, `GET /federation_peers/new`, `GET /federation_peers/:id/edit`, `POST /federation_peers/:id/sync` |
 | **Controller** | `FederationPeersController` |
 | **Auth** | Required (admin/federation permission) |
+| **Reached from** | **Library → Federation Peers**; the Federation Peers row on the Overview |
 
 Manage trusted peer SPARC instances for cross-instance authoritative-source sharing (#372). List/detail/create/edit peers (name, base URL, shared-secret config); the per-peer "Sync" action exchanges HMAC-signed authoritative-source bundles with the peer.
 
@@ -1167,6 +1306,7 @@ Evidence list/detail and attestation screens are documented under the **Assessme
 | **Routes** | `GET /about`, `GET /about/api`, `GET /about/quickstart`, `GET /about/resources` |
 | **Controller** | `AboutController#index`, `#api_docs`, `#quickstart`, `#resources` |
 | **Auth** | Public |
+| **Reached from** | **Help → About** and **Help → Resources** |
 
 Static informational pages: project overview (`/about`), REST API documentation (`/about/api`), a getting-started quickstart (`/about/quickstart`), and external OSCAL/NIST resource links (`/about/resources`).
 
@@ -1177,6 +1317,7 @@ Static informational pages: project overview (`/about`), REST API documentation 
 | **Route** | `GET /oscal-overview` |
 | **Controller** | `HomeController#oscal_overview` |
 | **Auth** | Public |
+| **Reached from** | **Help → OSCAL overview** |
 
 Standalone page explaining the OSCAL layer model (also embedded as a partial on the login page).
 
@@ -1278,11 +1419,11 @@ Rendered via the shared `_heatmap.html.erb` partial. Configuration is passed via
 | `family_url_builder` | Lambda for generating family drill-down URLs |
 | `link_mode` | `:server` for server-side filtering via links, or client-side JS |
 
-Heatmaps appear on: Dashboard (aggregate), SSP detail, SAR detail, SAP detail, CDEF detail, Baseline detail, POA&M detail.
+Heatmaps appear on: SSP detail, SAR detail, SAP detail, CDEF detail, Baseline detail, POA&M detail.
 
 ### Summary Tiles
 
-Rendered via the shared `_section_summary.html.erb` partial. Each section index page shows 2-4 compact statistic tiles at the top (e.g., document count, control count, completed count).
+Most list screens show their totals (e.g. document count, control count, completed count) as one line under the title, through the `summary` option of the shared page header (`shared/_page_header.html.erb`, 1.18.0-rf). The Authorization Boundaries list, the Converter detail and the CDEF coverage screens still use the older `_section_summary.html.erb` tiles.
 
 ### Turbo Frames
 
@@ -1306,7 +1447,7 @@ Rendered via `_oscal_metadata_section.html.erb` partial at the bottom of documen
 Implemented via Bootstrap 5.3 `data-bs-theme` attribute on the `<html>` element:
 
 1. **Initial load**: A synchronous `<script>` in `<head>` checks `localStorage.getItem("sparc-theme")` to prevent flash of unstyled content (FOUC). Falls back to `prefers-color-scheme` media query.
-2. **Toggle**: A Stimulus controller (`theme`) bound to the navbar button toggles between `light` and `dark`, persisting the choice to `localStorage`.
+2. **Toggle**: A Stimulus controller (`theme`) bound to the theme toggle in the header toggles between `light` and `dark`, persisting the choice to `localStorage`.
 3. **Styling**: Uses Bootstrap's built-in dark mode CSS variables plus custom `sparc-theme.css` overrides.
 
 ### Flash Notifications
@@ -1338,3 +1479,4 @@ Fixed-position overlay in the top-right corner. Managed by a `flash` Stimulus co
 | Issue #494 / #499 | AWS Config / Security Hub converters + bulk-apply |
 | Issue #107 | FedRAMP 20x KSI catalog + validation tracking |
 | Issue #449 | HDF ↔ OSCAL translation bridge |
+| Issues #1287 / #1308 | 1.18.0-rf navigation: header, organization and boundary tab bars, Settings menu, Overview home page |

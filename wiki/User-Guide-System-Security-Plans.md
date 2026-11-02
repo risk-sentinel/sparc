@@ -23,8 +23,8 @@ requires authentication and a role with SSP permissions — see [RBAC](RBAC).
 - **Prerequisites:** a **baseline** (profile) to build from — see
   [Control Catalogs & Baselines](User-Guide-Control-Catalogs-and-Baselines).
   Optionally a **Component Definition (CDEF)** to seed component narratives.
-- **Where to find it:** *Implementation → System Security Plans*
-  (`/ssp_documents`).
+- **Where to find it:** the **SSPs** tab (`/ssp_documents`). Inside a
+  boundary, the boundary's **SSP** tab shows only that boundary's plan.
 
 ---
 
@@ -61,21 +61,27 @@ the assessment layer (SAP/SAR) and the ATO package.
 
 ## How to create an SSP with the wizard
 
-1. Go to *Implementation → System Security Plans* (`/ssp_documents`).
+1. Open the **SSPs** tab (`/ssp_documents`).
 2. Click **Create New SSP** to open the wizard (`/ssp_documents/wizard`).
 3. **Select a baseline/profile** — this determines the control set. Only
    **published** baselines are listed: the SSP's statement parts come from the
    resolved catalog publishing produces.
 4. **Select a CDEF** (optional) — to seed component-provided implementations.
-5. Enter **system details**: name, version, description.
+5. Enter **system details**: name, version, description, and choose the
+   **Authorization Boundary** the SSP belongs to (required).
 6. Submit. SPARC generates the SSP with one control entry per baseline control,
    and a row for each of its statement parts to answer, exactly as **Create from
    profile** does.
 
 ## How to import or upload an existing SSP
 
-- From the SSP list, use **Upload File** to submit an existing document. Uploaded
-  files are parsed asynchronously — the detail page shows a **processing
+- From the SSP list, use **Upload File** to submit an existing document.
+  **Create → SSP** in the header (or **+ New** beside SSPs on the Overview) opens
+  the same upload page. Inside a boundary, the menu reads **Create in** *(the
+  boundary's name)* and the upload form has that boundary already chosen. The
+  page also links to the wizard (**or Create from Wizard**) and to **Create from
+  Published Profile**.
+- Uploaded files are parsed asynchronously — the detail page shows a **processing
   spinner** and refreshes every few seconds until it reaches **completed** (or
   shows a **failure banner** if parsing fails).
 - The **Source** badge on the list marks how each SSP was created: **Wizard**,
