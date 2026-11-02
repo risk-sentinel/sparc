@@ -35,8 +35,9 @@ with CDEF permissions — see [RBAC](RBAC).
 - **Prerequisites:** none to start; a **converter** is needed only if you plan to
   bulk-apply rule → control mappings (see
   [Converters & Imports](User-Guide-Converters-and-Imports)).
-- **Where to find it:** *Implementation → Component Definitions*
-  (`/cdef_documents`).
+- **Where to find it:** the **CDEFs** tab, or **Library → Component
+  Definitions** in the header (`/cdef_documents`). Inside a boundary, the
+  boundary's **CDEFs** tab lists the CDEFs for that boundary.
 
 ---
 
@@ -79,12 +80,14 @@ you enter in one carries over to another. Each choice has its own link
 (`/cdef_documents/new#upload`, `#author`, `#profile`) to send someone straight
 to it. On the Component Definitions list, **Create New** opens this page and
 **Upload File** opens the upload on its own: drop the files, set where the CDEF
-may be used, and upload.
+may be used, and upload. **Create → CDEF** in the header, and **+ New** beside
+CDEFs on the Overview, open the same **Create New** page.
 
 ### Author one from scratch
 
-1. Go to *Implementation → Component Definitions* (`/cdef_documents`).
-2. Click **Create New**, then choose **Author from scratch**.
+1. Open the **CDEFs** tab (`/cdef_documents`) and click **Create New** — or
+   choose **Create → CDEF** in the header.
+2. Choose **Author from scratch**.
 3. Fill in what the component *is*:
    - **Document name** — what it is called inside SPARC.
    - **Component type** — what kind of thing it is: service, hardware, policy,

@@ -16,7 +16,7 @@ SPARC. Viewing converters is public on most instances; mutations require the
 
 - **Access:** viewing is typically public; creating, editing, refreshing, and
   importing require `converters.write`.
-- **Where to find it:** *Controls → Converters* (`/converters`).
+- **Where to find it:** **Library → Converters** in the header (`/converters`).
 
 ---
 
@@ -48,7 +48,7 @@ flowchart LR
 
 ## How to browse converters
 
-1. Go to *Controls → Converters* (`/converters`).
+1. Choose **Library → Converters** (`/converters`).
 2. The list shows each registry (e.g. **DISA CCI**, **AWS Config**, **AWS
    Security Hub**) with its source, entry count, and last-refresh timestamp.
 3. Open one to see its **mapping entries** — each row is a source rule ID mapped
@@ -59,9 +59,11 @@ flowchart LR
 On a converter's detail page, use the refresh button that matches its source to
 pull the latest published mappings:
 
-- **Refresh CCI** — reloads DISA CCI → NIST mappings.
-- **Refresh AWS Config** — reloads AWS Config rule → NIST mappings.
-- **Refresh AWS Security Hub** — reloads Security Hub control → NIST mappings.
+- **Refresh from DISA** — reloads DISA CCI → NIST mappings.
+- **Refresh from MITRE** — reloads AWS Config rule → NIST mappings.
+- **Refresh from AWS docs** — reloads Security Hub control → NIST mappings.
+
+Each asks you to confirm; click **Refresh Now**.
 
 After a refresh, check the updated entry count and last-refresh timestamp.
 
@@ -73,14 +75,14 @@ this for corrections; prefer refresh/import for bulk changes.
 
 ## How to create or import a converter
 
-- **New** (`/converters/new`) — enter **name**, **source**, and **description**
-  to register an empty converter.
-- **Import** (`/converters/import`) — upload a converter definition file to
+- **New Converter** (`/converters/new`) — enter **name**, **source**, and
+  **description** to register an empty converter.
+- **Import JSON** (`/converters/import`) — upload a converter definition file to
   populate entries in bulk.
 
 ## How to parse a STIG
 
-1. From the converter list, open the **STIG parser**
+1. From the converter list, click **Import STIG** to open the STIG parser
    (`/converters/stig_parser`).
 2. Upload a **DISA STIG XCCDF** file.
 3. Submit. The parser extracts the STIG's rule → control mappings, which you can

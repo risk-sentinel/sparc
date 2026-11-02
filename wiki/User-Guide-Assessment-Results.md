@@ -22,7 +22,8 @@ authentication and a role with SAR permissions — see [RBAC](RBAC).
 - **Access:** signed in, with a role that permits creating/editing SARs.
 - **Prerequisites:** an **Assessment Plan (SAP)** to build from — see
   [Assessment Plans](User-Guide-Assessment-Plans).
-- **Where to find it:** *Assessment → Assessment Results* (`/sar_documents`).
+- **Where to find it:** the **SARs** tab (`/sar_documents`). Inside a
+  boundary, its own **SARs** tab lists only that boundary's results.
 
 ---
 
@@ -58,13 +59,16 @@ POA&M (see [POA&M](User-Guide-POAM)).
 
 ## How to create a SAR with the wizard
 
-1. Go to *Assessment → Assessment Results* (`/sar_documents`).
-2. Click **Create New SAR** to open the wizard (`/sar_documents/wizard`).
-3. **Select the SAP** to base results on.
-4. Set the **assessment date(s)**.
-5. Submit. SPARC generates the SAR with a control entry per assessed control.
+1. Open the **SARs** tab (`/sar_documents`) and click **Create from Wizard**
+   (`/sar_documents/wizard`). **Create → SAR** in the header opens the upload
+   page instead; its **or Create from Wizard** link leads to the same wizard.
+2. **Select the SAP** to base results on, and pick the **Authorization
+   Boundary**.
+3. Set the **assessment date(s)**.
+4. Submit. SPARC generates the SAR with a control entry per assessed control.
 
-You can also use **Upload File** to import an existing SAR; uploaded files parse
+You can also use **Upload New** on the **SARs** tab (or **Create → SAR**) to
+import an existing SAR; uploaded files parse
 asynchronously with the same **processing spinner / failure banner** pattern as
 SSPs.
 
@@ -90,7 +94,7 @@ entry.
 
 Controls are listed in **NIST catalog order** — family, then base number, then
 enhancement (AC-1, AC-2, AC-2(1), AC-3 … AC-17, AC-18), not the order they
-arrived in from the source spreadsheet. The ordering is applied by the query, so
+arrived in from the source document. The ordering is applied by the query, so
 it holds across page boundaries rather than only within the page you are looking
 at.
 

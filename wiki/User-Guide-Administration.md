@@ -1,29 +1,39 @@
 # User Guide: Administration
 
-The **Administration** area is where Instance Admins manage people and
-instance-wide settings: user accounts, roles and permissions, organizations,
-service accounts and API tokens, the audit log, and deferred data migrations.
+**Settings**, the administration area, is where Instance Admins manage people
+and instance-wide settings: user accounts, roles and permissions,
+organizations, service accounts and API tokens, the audit log, and deferred
+data migrations.
 This guide covers the day-to-day admin tasks.
 
-**Who this is for:** Instance Admins. Everything here lives under
-*Administration* in the user menu and requires the Instance Admin role — see
-[RBAC](RBAC) for the full permission model.
+**Who this is for:** Instance Admins. Everything here lives under the
+**Settings** tab and requires the Instance Admin role — see [RBAC](RBAC) for
+the full permission model.
 
 ---
 
 ## Before you start
 
-- **Access:** the **Instance Admin** role. The Administration submenu only
-  appears in the user menu for Instance Admins.
-- **Where to find it:** user menu (top right) → **Administration** → Users,
-  Roles, Authorization Boundaries, Audit Log; plus Organizations and Service
-  Accounts.
+- **Access:** the **Instance Admin** role. The **Settings** and **People**
+  tabs, and the **Administration** list in the account menu, appear only for
+  Instance Admins.
+- **Where to find it:** the **Settings** tab, at the end of the organization
+  tabs. It opens a page that lists every admin screen in three groups:
+  - **Access** — Users, Roles, Service accounts, Unmatched IdP grants
+  - **Organization** — Organizations, Authorization boundaries, Remediation
+    timelines
+  - **Records** — Audit log, Catalog lineage, Data migrations
+
+  Every admin screen shows the same menu down its left side, so you can move
+  between them in one click. Two shortcuts also work: the **People** tab opens
+  **Users**, and the account menu's **Administration** list links to most of
+  these screens.
 
 ---
 
 ![The Admin Users screen listing SPARC user accounts with their roles, status, and management actions](images/admin_users.png)
 
-*Admin → Users: manage accounts, assign roles, and control account status.*
+*Settings → Users: manage accounts, assign roles, and control account status.*
 
 ## At a glance
 
@@ -51,15 +61,15 @@ flowchart TD
 
 ## How to manage users
 
-1. Go to **Administration → Users** (`/admin/users`).
+1. Go to **Settings → Users** (`/admin/users`), or open the **People** tab.
 2. Search or filter by status; the list is paginated (25 per page).
 3. **View** a user (`/admin/users/:id`) to see their identities (local, OIDC,
    LDAP, GitHub, GitLab), assigned instance and boundary roles, and recent audit
    events.
 4. **Edit** a user (`/admin/users/:id/edit`) to change their display name and
    **assign roles** — both instance roles and boundary-specific roles.
-5. Use **Suspend** / **Reactivate** from the list to disable or restore an
-   account.
+5. Use **Suspend** / **Reactivate** on the user's page to disable or restore
+   an account.
 6. If a user has lost their security key, open their profile and click **Reset
    security keys** to revoke all of their FIDO2 keys (the only recovery path —
    there are no self-service codes). They must then re-enroll. See
@@ -81,7 +91,7 @@ flowchart TD
 
 ![The New User screen: email, name and role fields, with a notice that a temporary password will be generated and shown once after saving](images/admin_user_new.png)
 
-1. Go to **Administration → Users** and click **New User** (`/admin/users/new`).
+1. Go to **Settings → Users** and click **New user** (`/admin/users/new`).
 2. Fill in the email and name. **There is no password field** — you do not choose
    the new user's password.
 3. Save. SPARC generates a **temporary password** and shows it once, in a panel on
@@ -124,8 +134,8 @@ account you no longer use while leaving your real one exposed to the sweep. See
 
 ## How to create and assign roles
 
-1. Go to **Administration → Roles** (`/admin/roles`).
-2. Click **Create New** (`/admin/roles/new`).
+1. Go to **Settings → Roles** (`/admin/roles`).
+2. Click **New role** (`/admin/roles/new`).
 3. Set the **name**, **display name**, and **scope** — *instance* or
    *authorization boundary*.
 4. Tick the **permission checkboxes** (CRUD across document types and admin
@@ -153,14 +163,14 @@ bypass work.
 
 ## How to manage organizations
 
-Go to **Administration → Organizations** (`/admin/organizations`) to create,
+Go to **Settings → Organizations** (`/admin/organizations`) to create,
 edit, and view organizations, and to add/remove members. Organizations are
 **never hard-deleted** — use **Deactivate** / **Reactivate** instead, preserving
 UUID-based audit traceability.
 
 ## How to issue service accounts and API tokens
 
-1. Go to **Administration → Service Accounts** (`/admin/service_accounts`).
+1. Go to **Settings → Service accounts** (`/admin/service_accounts`).
 2. Create a service account — a non-interactive identity for automation. Its
    **email is a contact address**, not its identity: several accounts may share
    one team mailbox, and it may be a person's address.
@@ -191,7 +201,7 @@ and these actions:
 
 **Regenerate Token** revokes every token on the account and issues one, keeping
 the newest token's limits. A person's tokens are managed the same way from
-their page under **Administration → Users**, where "Never" is still offered.
+their page under **Settings → Users**, where "Never" is still offered.
 
 A token issued before v1.17.2 may never expire; the account page says so. It
 keeps working — renew it to replace it with one that expires.
@@ -201,7 +211,7 @@ Service accounts authenticate the REST API and can bridge to a UI session via
 
 ## How to use the audit log
 
-1. Go to **Administration → Audit Log** (`/admin/audit_logs`).
+1. Go to **Settings → Audit log** (`/admin/audit_logs`).
 2. Use the **filter panel** — free-text search, user, category, resource type,
    and a start/end **date range** — then **Filter** (or **Clear**).
 3. The results table shows time, user, a colour-coded action badge, category,
@@ -211,7 +221,7 @@ Service accounts authenticate the REST API and can bridge to a UI session via
 
 ## How to check data migrations
 
-Go to **Administration → Data Migrations** (`/admin/data_migrations`) to confirm
+Go to **Settings → Data migrations** (`/admin/data_migrations`) to confirm
 that **deferred** migrations (which run post-boot via a background job) have
 finished — each shows a state of pending, running, completed, or failed. Use
 this after a deploy that included a long-running backfill.
@@ -249,12 +259,12 @@ one. It is retried once at the next boot, not every 5 minutes.
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| No Administration menu | You aren't an Instance Admin | Only Instance Admins see it — request the role |
+| No **Settings** tab | You aren't an Instance Admin | Only Instance Admins see it — request the role |
 | A user can't access a boundary's docs | Role assigned at wrong scope | Assign the boundary-scoped role on the user's Edit screen |
 | Lost an API token | Plaintext is shown only once | **Reissue** it: the lost one stops, and the new one keeps its limits |
 | "Expires at is required for a service account's token" | "Never" or no expiry was asked for a service account | Pick a lifetime of at most `SPARC_API_TOKEN_MAX_DAYS` |
 | "Choose the endpoints this token may reach" | Nothing was ticked in Allowed Endpoints | Tick **All endpoints**, or Read/Write for the resources it needs |
-| Backfill seems incomplete after deploy | Deferred migration still running | Check Data Migrations for its state |
+| Backfill seems incomplete after deploy | Deferred migration still running | Check **Settings → Data migrations** for its state |
 | A new migration shows failed: `Class … not loadable`, right after an upgrade | The previous release's container took it during a rolling deploy | Nothing to do: it re-runs within 5 minutes of the old container draining (v1.17.2+) |
 | Audit export is huge | No filters applied | Narrow by date range/user before **Export CSV** |
 

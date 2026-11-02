@@ -20,14 +20,15 @@ managing federation require specific permissions — see [RBAC](RBAC).
   authentication; the **Review Queue** needs reviewer permission, the
   **Promotion Queue** needs approver permission, and **Federation Peers** needs
   the admin/federation permission.
-- **Where to find it:** **Enterprise › Compliance Library** in the top nav, or
-  the sidebar's **Compliance Library** group — Authoritative Sources, Promotion
-  Queue, Leveraged POA&Ms, Federation Peers. The **Review Queue** is reached from
-  the documents it governs (catalogs, baselines, component definitions).
+- **Where to find it:** the **Library** menu in the header — **Authoritative
+  Sources**, **Promotion Queue**, **Leveraged POA&Ms** and **Federation Peers**
+  (each shown only when you may open it). If you approve documents, the
+  **Review queue** button (the inbox icon with a count) sits in the header too,
+  showing how many documents are waiting for you.
 
 ---
 
-![The Authoritative Sources screen listing trusted federation sources and their scope](images/authoritative_sources.png)
+![The Authoritative Sources screen: the curated library of reference resources, filterable by scope and relationship](images/authoritative_sources.png)
 
 *The Authoritative Sources screen — trusted sources SPARC will accept federated content from.*
 
@@ -57,8 +58,8 @@ flowchart LR
 
 ## How to add an authoritative source
 
-1. Go to **Authoritative Sources** (`/authoritative_sources`).
-2. Click **New** and provide the source details.
+1. Choose **Library → Authoritative Sources** (`/authoritative_sources`).
+2. Click **Add source** and provide the source details.
 3. Save. The source is created at **org/boundary scope** by default; the index
    shows each source with its scope, and the detail view shows the resource and
    where it's used.
@@ -68,7 +69,7 @@ Any authenticated user may add a source.
 ## How to promote a source to instance-wide scope
 
 1. From a source (or the promotion workflow), request promotion.
-2. An approver opens the **Promotion Queue** (`/promotion_queue`), which lists
+2. An approver chooses **Library → Promotion Queue** (`/promotion_queue`), which lists
    sources requesting elevation from org/boundary scope to instance-wide
    authoritative scope.
 3. The approver clicks **Approve** or **Reject** on the row. Approved sources
@@ -78,14 +79,16 @@ Any authenticated user may add a source.
 
 1. Authors submit a governed document (**Control Catalog**, **Baseline /
    Profile**, or **CDEF**) for review.
-2. A reviewer opens the **Review Queue** (`/review_queue`), which consolidates
-   documents awaiting review.
+2. A reviewer clicks the **Review queue** button in the header (the inbox icon;
+   its number is how many documents are waiting) to open the queue
+   (`/review_queue`), which consolidates documents awaiting review. The
+   Overview's **Waiting on you** panel shows the first few of them.
 3. Each row links to the document's **approve/reject** actions. Approve to
    publish, or reject to send it back.
 
 ## How to configure federation peers
 
-1. Go to **Federation Peers** (`/federation_peers`) and click **New**.
+1. Choose **Library → Federation Peers** (`/federation_peers`) and click **New Peer**.
 2. Enter the peer's **name**, **base URL**, and **shared-secret** configuration.
 3. Save. From a peer's detail page, use **Sync** to exchange HMAC-signed
    authoritative-source bundles with that peer.

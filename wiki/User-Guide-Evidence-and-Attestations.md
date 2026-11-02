@@ -17,7 +17,8 @@ evidence permissions — see [RBAC](RBAC).
 - **Access:** signed in, with a role that permits managing evidence.
 - **Prerequisites:** none, though evidence is most useful when linked to the
   controls it supports.
-- **Where to find it:** *Assessment → Evidence* (`/evidences`).
+- **Where to find it:** the **Evidence** tab (`/evidences`). Inside a
+  boundary, its own **Evidence** tab lists only that boundary's evidence.
 
 ---
 
@@ -49,11 +50,13 @@ flowchart LR
 
 ## How to upload evidence
 
-1. Go to *Assessment → Evidence* (`/evidences`).
-2. Click **Upload**.
-3. Provide the file and its metadata (type, status, associated authorization
+1. Choose **Create → Evidence** in the header, or open the **Evidence** tab
+   and click **Add Evidence**. Inside a boundary the Create menu is headed
+   **Create in** and the boundary's name, and the new record has that boundary
+   already chosen.
+2. Provide the file and its metadata (type, status, associated authorization
    boundary and control).
-4. Save. The evidence appears in the list, which you can filter by **type**,
+3. Click **Upload Evidence**. The evidence appears in the list, which you can filter by **type**,
    **status**, **authorization boundary**, and **associated control**, or search.
 
 **Every evidence record must support at least one control.** Evidence that
@@ -73,12 +76,13 @@ periodic access review satisfies the control by *asserting* it — "I have
 reviewed the access list and confirm its validity" — and there may be no file to
 attach at all.
 
-1. Click **Upload**, and set **Evidence Type** to **Attestation**.
+1. Start new evidence as above (**Create → Evidence** or **Add Evidence**),
+   and set **Evidence Type** to **Attestation**.
 2. The form asks for the assertion instead of insisting on a file: an
    **attester**, the **role** they are attesting under, and the **statement**
    itself.
 3. Link at least one control, as with any evidence.
-4. Save. You may still attach a supporting file, but nothing requires one.
+4. Click **Upload Evidence**. You may still attach a supporting file, but nothing requires one.
 
 The attester is chosen from a list of accounts, not typed in, and SPARC checks
 that the person actually holds the role they are attesting under **on that
@@ -86,7 +90,7 @@ system**. Being able to upload evidence is not the same as having the authority
 to sign for it, and for a record whose whole substance is who asserted it, that
 difference is the point. If someone you expect is missing from the list, they
 hold no attesting role on that boundary — add them to the boundary roster with
-one, or grant `evidence.attest` to a role in *Admin → Roles*.
+one, or grant `evidence.attest` to a role in **Settings → Roles**.
 
 Which roles may attest is **your instance's decision**, not a fixed list. Out of
 the box it is the accountable roles — Authorizing Official, Agency AO, System
@@ -216,10 +220,10 @@ review of a record that already exists.
 | Can't add an attestation | Not on an evidence record, or view-only role | Open the evidence first; confirm your role ([RBAC](RBAC)) |
 | File won't preview | Unsupported preview type | The file is still stored and downloadable; preview is best-effort |
 | Filters hide items you expect | An active filter is applied | Reset the type/status/boundary/control filters |
-| **Upload** does nothing when clicked | No file chosen, for a type that needs one | The dropzone shows the reason; choose a file, or switch the type to **Attestation** if the statement *is* the evidence |
+| **Upload Evidence** does nothing when clicked | No file chosen, for a type that needs one | The dropzone shows the reason; choose a file, or switch the type to **Attestation** if the statement *is* the evidence |
 | "Link at least one control" | The evidence supports no control | Pick a control in the Controls box. Evidence that supports nothing cannot be assessed |
 | "A file is required for *&lt;type&gt;* evidence" | An artefact type with no artefact | Attach the file, or change the type to **Attestation** |
-| The person you want isn't in the **Attester** list | They hold no attesting role on that system | Add them to the boundary roster with an attesting role, or grant `evidence.attest` to a role in *Admin → Roles* |
+| The person you want isn't in the **Attester** list | They hold no attesting role on that system | Add them to the boundary roster with an attesting role, or grant `evidence.attest` to a role in **Settings → Roles** |
 | "…does not hold *&lt;role&gt;* on this boundary" | The attester holds that role somewhere else, not here | Attest under a role they hold here — the message lists them — or correct the roster |
 | An older attestation can't be re-saved | It predates the roster check and names nobody verifiable | Choose a real account as the attester. The original record stays readable and its signature is untouched |
 | Red message naming an HTTP status (403, 413) | The request was rejected before it reached SPARC, usually by a network security policy or a proxy size limit | Nothing was saved. Retry; if it persists, send the status code to your administrator |

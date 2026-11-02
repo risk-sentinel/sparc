@@ -3440,7 +3440,14 @@ a.link-purple { color: var(--sparc-purple); }
   align-items: center;
   gap: 0.35rem;
 }
-.sparc-shell-header__menu .sparc-counter { margin-left: 0; }
+/* #1308 — the header is dark in both themes; the body-colour count (the
+   review queue's) was dark on dark. White on a white tint, like the menu
+   names beside it. */
+.sparc-shell-header__menu .sparc-counter {
+  margin-left: 0;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
 .sparc-shell-header__help {
   max-height: min(70vh, 32rem);
   overflow-y: auto;

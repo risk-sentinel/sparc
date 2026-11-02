@@ -19,7 +19,8 @@ also see [Administration](User-Guide-Administration).
 - **Prerequisites:** a FIDO2-compatible security key with a PIN set, or a
   PIV/CAC card with a reader and its middleware installed. A supported browser
   (Chrome, Edge, or Firefox; Safari support is limited).
-- **Where to find it:** *Account menu → Security Keys*.
+- **Where to find it:** *Account menu → Security Keys*. The account menu is
+  your avatar (or initials) at the right end of the header.
 
 ---
 
@@ -51,7 +52,8 @@ flowchart LR
 ### How to enroll a security key
 
 1. Sign in the way you normally do.
-2. Open the **account menu** (top right) and choose **Security Keys**.
+2. Open the **account menu** (your avatar, at the right end of the header)
+   and choose **Security Keys**.
 3. Under *Add a security key*, optionally type a **Name** (e.g. "Work
    YubiKey") so you can recognize it later.
 4. Click **Add security key**.
@@ -204,5 +206,6 @@ CA to trust* — that stays at the gateway; it's an extra app-side allowlist.
 ## Related guides
 
 - [User Guides index](User-Guides)
-- [Administration](User-Guide-Administration) — admins reset a user's keys.
+- [Administration](User-Guide-Administration) — admins reset a user's keys
+  from **Settings → Users**: open the user, then **Reset security keys**.
 - [Authentication and MFA](Authentication-and-MFA) — operator setup and configuration.

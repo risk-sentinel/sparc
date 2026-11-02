@@ -13,6 +13,9 @@ Requires SPARC_SMOKE_SA_TOKEN; skipped otherwise.
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 
 from helpers import assert_no_csp_violations, record_csp
@@ -117,6 +120,52 @@ def test_updated_guide_renders_its_new_screenshots(authed_page, slug, images, te
         assert served.status == 200 and content_type.startswith("image/png"), (
             f"{src} served {served.status} {content_type}"
         )
+    assert_no_csp_violations(authed_page, during=f"guide {slug}")
+
+
+# 1.18.0-rf #1308 — every guide in wiki/ opens in-app, and every picture it
+# names loads there. The list is read from the wiki folder, as the app reads
+# it (UserGuideLibrary), so a new guide or picture is checked without an edit.
+WIKI = Path(__file__).resolve().parents[2] / "wiki"
+
+
+def _slug(path: Path) -> str:
+    # UserGuideLibrary.slug_for
+    name = path.stem.removeprefix("User-Guide-").lower()
+    return re.sub(r"[^a-z0-9]+", "-", name).strip("-")
+
+
+ALL_GUIDES = sorted(
+    (_slug(p), sorted(set(re.findall(r"\(images/([^)\s]+)\)", p.read_text()))))
+    for p in WIKI.glob("User-Guide-*.md")
+)
+
+
+def test_the_wiki_holds_the_guides():
+    assert len(ALL_GUIDES) >= 15, f"found {len(ALL_GUIDES)} guides in {WIKI}"
+
+
+@pytest.mark.parametrize(("slug", "images"), ALL_GUIDES, ids=[g[0] for g in ALL_GUIDES])
+def test_every_guide_opens_with_every_picture(authed_page, slug, images):
+    record_csp(authed_page)
+    resp = authed_page.goto(f"/help/{slug}")
+    assert resp is not None and resp.status < 400, f"/help/{slug} returned {resp and resp.status}"
+    authed_page.wait_for_load_state("networkidle")
+
+    content = authed_page.locator(".sparc-guide-content")
+    assert content.count() == 1, f"/help/{slug} has no guide content"
+    broken = []
+    for name in images:
+        img = content.locator(f"img[src$='/help/images/{name}']")
+        if img.count() == 0:
+            broken.append(f"{name}: not embedded")
+            continue
+        # Guide images are loading="lazy": scroll to each, as a reader would.
+        img.first.scroll_into_view_if_needed()
+        img.first.evaluate("el => el.decode ? el.decode().catch(() => null) : null")
+        if not img.first.evaluate("el => el.complete && el.naturalWidth") > 0:
+            broken.append(f"{name}: did not load")
+    assert not broken, f"/help/{slug}:\n  " + "\n  ".join(broken)
     assert_no_csp_violations(authed_page, during=f"guide {slug}")
 
 

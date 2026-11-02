@@ -23,7 +23,8 @@ permissions — see [RBAC](RBAC).
 - **Access:** signed in, with a role that permits creating/editing POA&Ms.
 - **Prerequisites:** typically a **SAR** whose findings you are tracking — see
   [Assessment Results](User-Guide-Assessment-Results).
-- **Where to find it:** *Assessment → POA&Ms* (`/poam_documents`).
+- **Where to find it:** the **POA&Ms** tab (`/poam_documents`). Inside a
+  boundary, its own **POA&Ms** tab lists only that boundary's POA&Ms.
 
 ---
 
@@ -64,10 +65,12 @@ and is bundled into the ATO package.
 
 ## How to create a POA&M
 
-1. Go to *Assessment → POA&Ms* (`/poam_documents`).
-2. Click **Create New**.
-3. Provide the document metadata.
-4. Save. The detail page (`/poam_documents/:id`) shows items with a **risk
+1. Choose **Create → POA&M** in the header. Inside a boundary the menu is
+   headed **Create in** and the boundary's name, and the new POA&M has that
+   boundary already chosen. You can also open the **POA&Ms** tab and click
+   **Create New**, or **Upload File** to import an existing OSCAL POA&M.
+2. Provide the document metadata.
+3. Save. The detail page (`/poam_documents/:id`) shows items with a **risk
    distribution heatmap** and a section per child-entity type.
 
 ## How to add and manage entities
@@ -164,7 +167,9 @@ shows a dash.
 ## How to view inherited (leveraged) POA&Ms
 
 If your boundary leverages an underlying system, its POA&Ms appear read-only
-under **Leveraged POA&M Documents** (`/leveraged_poam_documents`). The index
+under **Library → Leveraged POA&Ms** (`/leveraged_poam_documents`), or on the
+boundary's own **Leveraged POA&Ms** tab, which lists only the POA&Ms of the
+systems that boundary leverages. The index
 lists inherited POA&Ms and the detail view shows their items without edit
 controls — you don't own them, so you can see but not change them. Record the
 leveraged relationship on your boundary first (see
@@ -190,7 +195,7 @@ leveraged relationship on your boundary first (see
 |---|---|---|
 | Publish blocked | Publish-check found incomplete items | Fix the flagged items, then publish |
 | A milestone form isn't available | You're not under a remediation | Open the remediation first, then add its milestones |
-| Leveraged POA&Ms are empty | No leveraged authorization recorded / populated | Record and **Populate** the leveraged authorization on the boundary |
+| Leveraged POA&Ms are empty | No leveraged authorization recorded / populated | Record the leveraged authorization on the boundary, then **Resync** it |
 | OSCAL export fails validation | Missing required item/risk fields | Fill the flagged fields, then use the validated export |
 | Can't edit entities | View-only role | Request POA&M write permission ([RBAC](RBAC)) |
 | A risk rated **Medium** now reads **Moderate** | The rating scale moved to the five NIST SP 800-30 / FedRAMP levels, and existing `medium` ratings were migrated | Nothing to do — the rating is unchanged, only its spelling |
@@ -206,7 +211,8 @@ POA&Ms filter by **status**, **OSCAL version**, **revision**, **authorization
 boundary**, **added by** and a **created between** date range.
 
 Leveraged POA&Ms — those owned by a system you inherit from — are listed on
-their own screen and are read-only, which the cards state plainly.
+their own screen (**Library → Leveraged POA&Ms**, or a boundary's **Leveraged
+POA&Ms** tab) and are read-only, which the cards state plainly.
 
 See [Browsing a list of documents](User-Guide-Getting-Oriented#browsing-a-list-of-documents) for how cards, lists, search and filters work — they behave the same on every list screen.
 

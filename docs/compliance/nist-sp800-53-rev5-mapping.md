@@ -594,8 +594,12 @@ items (#602 -- amber heading contrast, `.btn-outline-secondary`,
 > theme has **1** violation (color-contrast, one label on New Baseline) and the
 > dark theme **113**, all color-contrast -- 107 of them white text on the success,
 > primary and danger badges (2.1:1, 2.5:1, 3.5:1) on the API reference, service
-> accounts, data migrations and catalog pages. Colour values are owner-held, so
-> these are recorded and reported, not recoloured. Unlabelled selects and a nested
+> accounts, data migrations and catalog pages. The owner then cleared these for
+> fixing (only the layer accents are owner-held), and each was fixed the same day
+> with an existing theme value (black on the dark badges, 6.0-10.0:1; the dark
+> danger ink, muted text, the implementation heading green), checked by computed
+> contrast ratio; the file of tolerated findings is not re-captured until the next
+> audit run, so it still lists them. Unlabelled selects and a nested
 > interactive control were fixed in #1306; a capture now replaces each page's
 > entry, and every audit runs in both themes. Keyboard-only use (skip link to
 > `<main>`, visible focus at every header stop) and reduced motion are checked

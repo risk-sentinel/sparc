@@ -16,17 +16,18 @@ in, then [User Guide: Getting Oriented](User-Guide-Getting-Oriented) for a tour
 of the interface.
 
 > **These guides ship inside the app.** From **v1.13.1**, every SPARC deployment
-> bundles this exact set of guides as an in-app **Help Center** — open it from
-> the **Help & Guides** section in the left sidebar, the **?** button in the top
-> navigation (which deep-links to the guide for the screen you're on), or the
-> **Resources** page. The in-app guides render the same Markdown you see here, so
-> the wiki and the shipped documentation never drift (#784).
+> bundles this exact set of guides as an in-app **Help Center**. Open the
+> **Help** menu in the header: **Help for this page** opens the guide for the
+> screen you're on, and **Guides** lists the **Help Center** and every guide.
+> The **Resources** page (**Help → Resources**) links to the Help Center too.
+> The in-app guides render the same Markdown you see here, so the wiki and the
+> shipped documentation never drift (#784).
 
 ### Looking something up without losing your place
 
-From **v1.16.0**, the **?** in the top navigation opens the guide for the screen
-you're on in a **drawer that slides over the page** instead of taking you
-somewhere else. The form stays visible underneath it, and anything you have
+From **v1.16.0**, the guide for the screen you're on opens in a **drawer that
+slides over the page** instead of taking you somewhere else. Open it with
+**Help → Help for this page** in the header. The form stays visible underneath it, and anything you have
 already typed is untouched — so checking what a field means mid-way through
 filling one in costs you nothing.
 
@@ -41,9 +42,8 @@ typed name still in place underneath](images/help-drawer.png)
   tables and diagrams — use **Open full guide** at the top of the drawer. It
   opens the complete page in a new tab and leaves your work alone.
 
-The sidebar **Help & Guides** links and the **Resources** page still open guides
-in a new tab, which remains the better route when you are reading rather than
-looking something up.
+The guides listed under **Help → Guides** open in a new tab, which remains the
+better route when you are reading rather than looking something up.
 
 ---
 
@@ -82,7 +82,7 @@ flowchart LR
 
 | Guide | Covers |
 |---|---|
-| [Getting Oriented](User-Guide-Getting-Oriented) | Dashboard, navigation, the Organization → Boundary → document hierarchy, roles |
+| [Getting Oriented](User-Guide-Getting-Oriented) | The header and its menus, the boundary switcher, the tabs, the Overview, Settings, lists, the Organization → Boundary → document hierarchy, roles |
 | [Authorization Boundaries](User-Guide-Authorization-Boundaries) | Boundaries, environments, team members, leveraged authorizations, ATO packages |
 
 ### Controls library
@@ -116,8 +116,10 @@ flowchart LR
 
 ## Conventions used in these guides
 
-- **Navigation paths** are written as *Menu → Item* (e.g.
-  *Implementation → System Security Plans*).
+- **Navigation paths** name a header menu and its item, such as
+  **Create → SSP**, **Library → Control Catalogs** or
+  **Help → Help for this page**. Admin screens are written
+  **Settings → Users**. A tab is named on its own, such as the **SSPs** tab.
 - **Button and field labels** appear in **bold** and match what you see on
   screen.
 - Each guide opens with a **Before you start** section listing the role and any

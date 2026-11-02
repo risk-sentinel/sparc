@@ -349,10 +349,22 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
   labels on four dropdowns, Re-validate out of the Data Quality card's
   `<summary>`, and no motion when the system asks for less (spinners aside).
   `a11y.py` audits both themes and a capture replaces a page's entry;
-  `test_keyboard_1306.py` walks the app by keyboard. Left: 1 light and 113
-  dark colour-contrast findings (mostly white on the success, primary and
-  danger badges in dark), reported to the owner; colours are not changed.
-  The screen-reader check by hand is #1324 (no milestone).
+  `test_keyboard_1306.py` walks the app by keyboard. The 1 light and 113
+  dark colour-contrast findings were fixed with existing theme values (owner,
+  2026-11-02: only the layer accents are off limits): black on the dark
+  success/info/primary/danger badges, the dark danger ink for `.text-danger`,
+  muted text for score-card labels. The screen-reader check by hand is #1324
+  (no milestone).
+- **Guides (#1308, plan approved 2026-11-02):** every User Guide, Screens and
+  the guide index describe the new header, tabs, Overview and Settings; the
+  15 whole-screen screenshots re-captured from Chrome on a fresh demo-only
+  database (`ssp_tpr_manager_shots`, smoke fixtures removed). The 10
+  close-up captures show one panel and no navigation, so they stand; the 54
+  images no guide uses are left for later. `test_help_center.py` opens every
+  guide and loads every picture it names. The public wiki is published only
+  if the look is kept (merge to `main`). The review queue's count in the
+  header was dark on dark; it is white now. `SparcConfig::VERSION` is
+  `1.18.0` (owner, 2026-11-02), so keeping the look needs no re-capture.
 
 ---
 
