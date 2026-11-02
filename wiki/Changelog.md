@@ -4,6 +4,18 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.18.0 -- A New Navigation (in testing as v1.18.0-rf)
+
+A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it ships is still to be decided; until then this entry describes the prerelease.
+
+- **One header** with where you are (organization and boundary, with a boundary switcher), and the **Create**, **Library** and **Help** menus, the review queue, the theme toggle and your account menu. The old layer menus are gone. See [Getting Oriented](User-Guide-Getting-Oriented).
+- **Tabs** under the header: the organization's (Overview, Boundaries, Baselines, SSPs, CDEFs, SAPs, SARs, Evidence, POA&Ms, People, Settings), and a boundary's own when you are inside one, each list filtered to that boundary. See [Authorization Boundaries](User-Guide-Authorization-Boundaries).
+- **A new Overview** (the home page): every inventory count, a card per layer with "+ New", what is waiting on you, quick actions and your boundaries' activity.
+- **Settings** gathers the administration screens in one left menu (Access, Organization, Records). See [Administration](User-Guide-Administration).
+- **Accessibility:** a "Jump to page content" link, labelled filters, keyboard focus shown on every control, motion stopped when the system asks for less, and dark-mode badges and text at WCAG AA contrast.
+
+---
+
 ## v1.17.5 -- SSP Items Answered in Full, ATO Wizard Starts From the Boundary, CDEFs Serve Many Baselines (2026-10-27)
 
 A patch release from an SSP review: every statement item now records everything about itself, in OSCAL's terms, and that carries through the assessment.
