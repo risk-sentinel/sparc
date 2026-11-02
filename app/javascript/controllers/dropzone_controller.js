@@ -67,7 +67,8 @@ export default class DropzoneController extends Controller {
     // where the problem is, mirroring what native validation would have done.
     this.zoneTarget.setAttribute("tabindex", "-1")
     this.zoneTarget.focus()
-    this.zoneTarget.scrollIntoView({ block: "center", behavior: "smooth" })
+    // #1306 — no smooth scroll when the system asks for less motion.
+    this.zoneTarget.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
   }
 
   // ── Drag events ──────────────────────────────────────────────────

@@ -14,6 +14,18 @@
 <% last_validated = catalog.metadata_extra&.dig("last_validated_at") %>
 
 <div class="card mb-4 data-quality-card <%= has_warnings ? 'data-quality-card--warnings' : 'data-quality-card--clean' %>">
+  <%# #1306 — the date and Re-validate sit over the header's right end but
+      outside <summary>: a button inside the control that opens and closes the
+      card is a control inside a control (axe nested-interactive). %>
+  <div class="data-quality-card__actions">
+    <% if last_validated %>
+      <span class="text-body-secondary small">Last checked: <%= Time.parse(last_validated).strftime("%b %d, %Y %H:%M") rescue last_validated %></span>
+    <% end %>
+    <%= button_to "Re-validate", revalidate_path, method: :patch,
+        class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+        data: { turbo_confirm: "Re-run quality validation on this catalog?" },
+        form: { style: "display: inline;" } %>
+  </div>
   <details<%= " open" if has_warnings %>>
     <summary class="card-header d-flex align-items-center justify-content-between" style="cursor: pointer; list-style: none;">
       <div class="d-flex align-items-center gap-2">
@@ -29,15 +41,6 @@
         <% else %>
           <span class="badge bg-success">No Issues</span>
         <% end %>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <% if last_validated %>
-          <span class="text-body-secondary small">Last checked: <%= Time.parse(last_validated).strftime("%b %d, %Y %H:%M") rescue last_validated %></span>
-        <% end %>
-        <%= button_to "Re-validate", revalidate_path, method: :patch,
-            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-            data: { turbo_confirm: "Re-run quality validation on this catalog?" },
-            form: { style: "display: inline;" } %>
       </div>
     </summary>
 

@@ -75,6 +75,7 @@
   <%# 1.18.0-rf — sparc-shell marks the new navigation, so the page frame's
       styles apply. %>
   <body data-controller="video-easter-egg details-arrow submit-feedback help-drawer" class="sparc-shell">
+    <%= render "shared/skip_link" %>
     <%# #1289 — the icon sprite, once per page; IconHelper#icon draws from it. %>
     <%= render "shared/icon_sprite" %>
     <%= render "shared/environment_header" %>
@@ -111,16 +112,16 @@
         organization/boundary tree is the header's switcher (#1291) and the
         Boundaries tab, its Compliance Library the header's Library menu, and
         its Resources and Help & Guides the header's Help menu (#1295). %>
-    <% if shell_nav? && admin_settings_page? %>
-      <%# 1.18.0-rf #1303 — an admin screen, with the settings menu beside it. %>
-      <div class="container">
+    <%# #1306 — the page's own content is the <main> landmark, and the target
+        of the skip link (tabindex -1 so focus moves there, not just the scroll). %>
+    <main id="main-content" class="container" tabindex="-1">
+      <% if shell_nav? && admin_settings_page? %>
+        <%# 1.18.0-rf #1303 — an admin screen, with the settings menu beside it. %>
         <%= render layout: "admin/settings_frame" do %><%= yield %><% end %>
-      </div>
-    <% else %>
-      <div class="container">
+      <% else %>
         <%= yield %>
-      </div>
-    <% end %>
+      <% end %>
+    </main>
 
     <%# In-page help drawer (#880). Gated on the same condition as the navbar
         "?" that opens it — no trigger, no drawer. %>
