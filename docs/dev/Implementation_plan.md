@@ -365,6 +365,12 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
   if the look is kept (merge to `main`). The review queue's count in the
   header was dark on dark; it is white now. `SparcConfig::VERSION` is
   `1.18.0` (owner, 2026-11-02), so keeping the look needs no re-capture.
+- **HDF amendments with nothing to export (#1325, found on the 1.18.0-rf
+  walk, plan approved 2026-11-02):** hdf 3.7 requires at least one override,
+  so a boundary with no dispositions got "document is invalid". The API now
+  answers 422 "No dispositions to export", the triage page shows the download
+  disabled, and the signed package carries amendments only when `hdf amend
+  verify` accepts them.
 
 ---
 

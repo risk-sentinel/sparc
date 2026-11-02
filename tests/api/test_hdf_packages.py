@@ -21,7 +21,7 @@ from typing import Any
 import httpx
 import pytest
 
-from _hdf_triage_flow import BOUNDARIES_PATH, delete_boundary, triaged_boundary
+from _hdf_triage_flow import BOUNDARIES_PATH, create_boundary, delete_boundary, triaged_boundary
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.findings, pytest.mark.phase2]
@@ -128,3 +128,24 @@ class TestAuthentication:
         self, anon_client: httpx.Client, triaged: dict[str, Any]
     ) -> None:
         assert anon_client.get(_path(triaged["boundary"]["id"])).status_code == 401
+
+
+@pytest.mark.happy
+class TestAmendmentsRideOnlyWhenValid:
+    def test_the_triaged_amendments_pass_hdf_and_ride(self, package: dict[str, Any]) -> None:
+        """#1325 — amendments go in only after `hdf amend verify` accepts them."""
+        overrides = package["payload"]["amendments"]["overrides"]
+        assert overrides, package["payload"]["amendments"]
+
+    def test_a_boundary_with_nothing_to_export_carries_no_amendments(
+        self, admin_client: httpx.Client
+    ) -> None:
+        """An empty amendments document is invalid HDF, so it is left out of
+        the signed package rather than signed and shipped."""
+        boundary = create_boundary(admin_client, "hdf-package-empty")
+        try:
+            response = admin_client.get(_path(boundary["id"]))
+            assert response.status_code == 200, response.text
+            assert "amendments" not in response.json()["payload"], response.text
+        finally:
+            delete_boundary(admin_client, boundary)

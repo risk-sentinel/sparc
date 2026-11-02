@@ -165,6 +165,8 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
 An HMAC-SHA256 signed bundle (amendments + findings summary + dispositions summary)
 keyed from `SPARC_HASH` — tamper-evident and provably from this instance. Returns
 `{ payload, encoded_payload, signature, algorithm }`. Requires `evidence.read`.
+`payload.amendments` is present only when the amendments pass `hdf amend
+verify`; with nothing to export it is left out (#1325).
 
 ## Remediation Timelines (admin)
 
@@ -187,6 +189,10 @@ Returns the raw HDF Amendments JSON (schema v3.7.0) — one override per current
 non-expired disposition, deterministic (stable ordering + content-seeded
 `amendmentId`). The output is validated with `hdf amend verify` before it is
 returned (`?verify=false` skips this); a schema drift returns `422`.
+
+A boundary with nothing to export (no current, non-expired disposition)
+returns `422` `{"error": "No dispositions to export"}` (#1325). HDF requires
+at least one override, so an empty document is never sent.
 
 The document is bound to its system (#1179):
 

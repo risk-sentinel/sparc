@@ -20,6 +20,11 @@ class Api::V1::HdfAmendmentsController < Api::V1::BaseController
            status: :unprocessable_content
   end
 
+  # #1325 — nothing to export is a plain answer, not an invalid document.
+  rescue_from HdfAmendmentExportService::NoDispositions do |e|
+    render json: { error: e.message }, status: :unprocessable_content
+  end
+
   # 422, not 502: the dispositions are ours to fix, and the message names which.
   # hdf requires an expiresAt on every override and SPARC will not invent one —
   # see HdfAmendmentExportService#guard_exportable!.

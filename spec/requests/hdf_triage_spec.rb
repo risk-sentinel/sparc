@@ -242,6 +242,21 @@ RSpec.describe "HdfTriage", type: :request do
     end
   end
 
+  # #1325
+  describe "with nothing to export" do
+    it "shows the amendments download as disabled" do
+      get triage_authorization_boundary_path(boundary)
+      expect(response.body).to include("No dispositions to export")
+      expect(response.body).not_to include(triage_amendments_authorization_boundary_path(boundary))
+    end
+
+    it "sends a stale download link back to the page with the reason" do
+      get triage_amendments_authorization_boundary_path(boundary)
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:error]).to eq("No dispositions to export")
+    end
+  end
+
   describe "GET triage/amendments" do
     it "downloads the Amendments JSON" do
       create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")

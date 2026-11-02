@@ -155,7 +155,10 @@ long an amendment keeps suppressing a finding.
 ## 3. Export amendments for your pipeline
 
 Click **Download Amendments** to get an HDF Amendments JSON document containing
-one override per current, non-expired disposition. Feed it to your pipeline:
+one override per current, non-expired disposition. Until at least one finding
+has a disposition, the button reads **No dispositions to export** and is
+disabled: HDF does not accept an empty amendments document. Feed it to your
+pipeline:
 
 ```bash
 hdf amend apply --results scan.hdf.json --amendments boundary-amendments.hdf.json -o amended.hdf.json
@@ -198,7 +201,9 @@ amendments + a findings summary + a dispositions summary — that a consumer can
 archive or feed downstream. The signature is derived from this instance's
 `SPARC_HASH`, so the bundle is tamper-evident and provably from your SPARC
 instance (the same signing pattern as federation bundles). Verify it with the
-`signature` / `encoded_payload` fields the bundle carries.
+`signature` / `encoded_payload` fields the bundle carries. The amendments are
+included only when they pass `hdf amend verify`; with nothing to export, the
+package carries the findings and dispositions alone.
 
 ---
 

@@ -72,7 +72,21 @@ class HdfAmendmentExportService
     end
   end
 
+  # #1325 — a boundary with nothing to export. hdf requires at least one
+  # override, so an empty document can never verify; refuse instead of
+  # building one.
+  class NoDispositions < StandardError
+    def initialize(msg = "No dispositions to export") = super
+  end
+
+  # True when at least one disposition would become an override.
+  def any_to_export?
+    dispositions.exists?
+  end
+
   def export(verify: true)
+    raise NoDispositions unless any_to_export?
+
     guard_exportable!
     overrides = build_overrides
     doc = {
