@@ -1,8 +1,41 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-27 (v1.17.4 — net-ssh 7.3.8 for seven advisories; no base change)
+**Last reviewed:** 2026-11-02 (1.18.0-rf — rack, loofah, nokogiri and rails-html-sanitizer fixes; two new not-fixed sqlite Highs in the base image)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **1.18.0-rf rescan (2026-11-02).** Real rescan of the built `sparc:v1.18.0-rf`
+> image (arm64, `6f08801a580e`, built from `0af76ff8`, the release code with
+> the gem fixes below), not an SBOM, with grype 0.114.0 (DB v6.1.10 built
+> 2026-11-02, the newest published) and Trivy 0.74.0. Same UBI 10 base as
+> v1.17.4.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-11-02) | **0** | **2** | 51 | 34 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (111 grype matches). 87 ids, against v1.17.4's 78: the nine
+> new ones are all in the base image's RPMs. The same scan of the published
+> `sparc:v1.17.5` image (arm64, `95b0fcd49bdd`) on the same database finds the
+> same 87 ids, so they are newly published against packages already shipping,
+> not brought in by this release. Trivy's one Low is still Ruby's on-disk
+> `json` 2.9.1 (the app loads 3.1.0).
+>
+> - **Gems taken (bundle update --conservative, nothing else moved):**
+>   rack 3.2.7 → 3.2.8, loofah 2.25.2 → 2.25.3, nokogiri 1.19.4 → 1.19.7,
+>   rails-html-sanitizer 1.7.1 → 1.7.2, and addressable 2.9.0 → 2.9.2
+>   (test-only, through capybara; not in the image). Before them, Trivy
+>   reported 1 High, 8 Medium and 3 Low against those four gems in the image,
+>   and bundle-audit (ruby-advisory-db of 2026-11-02) reported them plus
+>   addressable's seven. After: bundle-audit reports no vulnerabilities and
+>   Trivy only the `json` Low. grype's advisory data carried none of them, so
+>   its image scan neither found them before nor proves them gone.
+> - **New Highs, not fixed upstream:** `sqlite-libs` 3.46.1-6.el10_2,
+>   CVE-2026-119373 and CVE-2026-119586 (grype, Red Hat el10 data, fix state
+>   not-fixed). Also present in v1.17.5. **Not yet in the register**: a
+>   disposition is the owner's to record.
+> - **Register:** unchanged, 7 entries; no `RELEASE-BLOCKING` finding.
 
 > **v1.17.4 rescan (2026-10-27).** Real rescan of the built `sparc:v1.17.4`
 > image (arm64, `5807623677f0`, the release code with net-ssh 7.3.8), not an
