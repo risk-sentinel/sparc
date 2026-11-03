@@ -33,9 +33,13 @@ or whenever a new suppression is added.
 >   its image scan neither found them before nor proves them gone.
 > - **New Highs, not fixed upstream:** `sqlite-libs` 3.46.1-6.el10_2,
 >   CVE-2026-119373 and CVE-2026-119586 (grype, Red Hat el10 data, fix state
->   not-fixed). Also present in v1.17.5. **Not yet in the register**: a
->   disposition is the owner's to record.
-> - **Register:** unchanged, 7 entries; no `RELEASE-BLOCKING` finding.
+>   not-fixed). Also present in v1.17.5. Nothing in the image loads
+>   libsqlite3 (none of 352 ELF files links it) and the sqlite3 shell is not
+>   installed. Added to the register as `risk_adjustment` deviations in
+>   `deviation-requested`, which keeps the gate red until the owner approves
+>   them (`/approve-deviation`).
+> - **Register:** 9 entries (the two above added); no `RELEASE-BLOCKING`
+>   finding.
 
 > **v1.17.4 rescan (2026-10-27).** Real rescan of the built `sparc:v1.17.4`
 > image (arm64, `5807623677f0`, the release code with net-ssh 7.3.8), not an

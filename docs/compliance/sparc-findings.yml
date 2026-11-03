@@ -187,6 +187,82 @@ findings:
   discovery_date: '2026-08-20'
   next_review_date: '2026-11-16'
   superseded_debian_finding: libsqlite3-0 3.40.1-2+deb12u2 (removed with the Debian base image)
+- cve_id: CVE-2026-119586
+  package: sqlite-libs
+  installed_version: 3.46.1-6.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: sqlite-libs 3.46.1-6.el10_2 [rpm]. Command injection in the
+    sqlite3 COMMAND-LINE SHELL''s .recover command: a crafted database''s schema can carry dot-commands that run
+    when the recovered output is piped back into the shell (CVSS 3.1 7.8, AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H).
+    Red Hat el10 data: not-fixed, so there is no package to take. NOT INTRODUCED BY A CODE CHANGE: the published
+    sparc:v1.17.5 image (95b0fcd49bdd) carries the same package and grype reports the same finding on the same
+    database (v6.1.10 built 2026-11-02); the advisory reached the database after the v1.17.4 audit. The sqlite3
+    shell is not installed in the image (no sqlite3 on PATH, no /usr/bin/sqlite3), so the vulnerable command
+    is absent; only the library is. Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a
+    fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-02'
+  next_review_date: '2026-12-02'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a host where a user runs the sqlite3 shell's .recover on an untrusted
+      database. The image does not contain the sqlite3 shell, and nothing in it loads the library (measured
+      2026-11-02, below). No fix exists to apply, so the residual is what is being accepted until Red Hat
+      ships one.
+    mitigating_factors:
+    - description: nothing in the image loads libsqlite3 - of 352 ELF executables and shared libraries
+        in the image, none links it (ldd over the whole filesystem, sparc:v1.18.0-rf 6f08801a580e, measured
+        2026-11-02); the library is a dependency of the base image's rpm, and rpm itself is not installed
+    - description: SPARC's database is PostgreSQL - no SQLite gem is in the bundle and app/, lib/ and config/
+        hold no reference to sqlite or FTS5 (measured 2026-11-02)
+    - description: local attack vector requiring user interaction (CVSS 3.1 AV:L/UI:R) - the container runs
+        no interactive shell users (ECS Fargate, no exec)
+    - description: the vulnerable code is in the sqlite3 command-line shell, which the image does not contain
+        (no sqlite3 on PATH, no /usr/bin/sqlite3; measured 2026-11-02)
+    kev_checked: '2026-11-02'
+    kev_listed: false
+- cve_id: CVE-2026-119373
+  package: sqlite-libs
+  installed_version: 3.46.1-6.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: sqlite-libs 3.46.1-6.el10_2 [rpm]. Heap buffer overflow in the
+    FTS5 full-text search extension when merging detail=none prefix doclists: a caller able to insert negative
+    rowids into such a table and run a prefix MATCH can write past the allocation (CVSS 3.1 7.8,
+    AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H). Red Hat el10 data: not-fixed, so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the published sparc:v1.17.5 image (95b0fcd49bdd) carries the same package and
+    grype reports the same finding on the same database (v6.1.10 built 2026-11-02); the advisory reached the
+    database after the v1.17.4 audit. Reaching it needs a process that opens an SQLite database with an FTS5
+    table, and nothing in the image loads the library. Deferred as a POA&M with a risk_adjustment deviation
+    until Red Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-02'
+  next_review_date: '2026-12-02'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a process that runs FTS5 prefix queries over tables an attacker can
+      write to. No process in the image loads libsqlite3 and SPARC stores nothing in SQLite (measured
+      2026-11-02, below). No fix exists to apply, so the residual is what is being accepted until Red Hat
+      ships one.
+    mitigating_factors:
+    - description: nothing in the image loads libsqlite3 - of 352 ELF executables and shared libraries
+        in the image, none links it (ldd over the whole filesystem, sparc:v1.18.0-rf 6f08801a580e, measured
+        2026-11-02); the library is a dependency of the base image's rpm, and rpm itself is not installed
+    - description: SPARC's database is PostgreSQL - no SQLite gem is in the bundle and app/, lib/ and config/
+        hold no reference to sqlite or FTS5 (measured 2026-11-02)
+    - description: local attack vector requiring user interaction (CVSS 3.1 AV:L/UI:R) - the container runs
+        no interactive shell users (ECS Fargate, no exec)
+    kev_checked: '2026-11-02'
+    kev_listed: false
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
