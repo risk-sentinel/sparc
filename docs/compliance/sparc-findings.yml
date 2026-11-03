@@ -80,7 +80,7 @@
 # evidence is direct image inspection plus CI's 4 -> 0 container measurement, NOT a
 # local trivy gemspec scan — that path is unreliable per #1080.
 #
-# ONE RESIDUAL REMAINS, and it is not hidden: `json`. Ruby 3.4.10 still ships
+# ONE RESIDUAL REMAINS, and it is not hidden: `json`. Ruby 3.4.12 (#1333) still ships
 # json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It carries no
 # entry here for the same reason resolv and uri never did — it is a real
 # finding, and the honest thing is to leave it visible. It does not reach the
