@@ -374,6 +374,17 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
 
 ---
 
+### Hotfix: `v1.17.6` — every SSP item answerable, one copy of each item, changing an SSP's baseline
+
+Plan approved by the owner on 2026-11-03; one branch (`hotfix/v1176_ssp_items_baseline`) from
+`main`, one commit per issue, one PR; then carried onto `release-1.18.0-rf`.
+
+| Issue | What | Decisions (owner, 2026-11-03) |
+|---|---|---|
+| **#1328** | An SSP whose controls hold only `<control>_smt` (created before v1.17.4, imported, or built from a baseline whose cached catalog is flattened) offered only Notes in Edit while its badge counted the items. `SspStatementRows` adds a row for every item from the tree the counts read (`ControlRequirementText#rows`); SSP creation and import call it, a deferred data migration runs it over existing SSPs, and the SSP page adds any still missing when it opens. Additive: no answer is changed or removed. | Fix existing SSPs, not only new ones |
+
+---
+
 ### Patch: `v1.17.5` — SSP items answered in full, ATO wizard defaults, CDEFs under many baselines
 
 Plan approved by the owner on 2026-10-27; one branch (`feature/v1175_bundle`), one PR.
