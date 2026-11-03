@@ -16,7 +16,7 @@
       after         HTML under the rename form (review panels, description)
       primary, secondary   as shared/_page_header
       export        document_type: for the export menu (nil: no menu);
-                    export_items — extra menu items
+                    export_group — extra menu links, as the export menu's extra_group
       publish       true to offer Publish (the caller decides when)
       sections      [[label, "#anchor"], ...] %>
 <% rename = local_assigns[:rename] %>
@@ -39,7 +39,7 @@
 <% actions = capture do %>
   <% if local_assigns[:export] %>
     <%= render "shared/oscal_export_dropdown", **oscal_export_paths(document),
-          document_type: export, extra_items: local_assigns[:export_items] %>
+          document_type: export, extra_group: local_assigns[:export_group] %>
   <% end %>
   <% if local_assigns[:publish] %>
     <%= render "shared/publish_button", document: document, **publish_paths(document) %>

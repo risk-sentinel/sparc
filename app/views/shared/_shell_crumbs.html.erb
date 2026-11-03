@@ -31,7 +31,8 @@
           aria-label="Switch boundary" title="Switch boundary"
           data-boundary-switcher-target="trigger" data-action="boundary-switcher#toggle"
           data-testid="shell-switcher"><%= icon("chevron-down") %></button>
-  <div class="sparc-switcher__panel" id="sparc-switcher-panel" role="dialog" aria-label="Switch boundary" hidden
+  <%# A non-modal <dialog>: show() opens it beside the page, which stays usable. %>
+  <dialog class="sparc-switcher__panel" id="sparc-switcher-panel" aria-label="Switch boundary"
        data-boundary-switcher-target="panel" data-testid="shell-switcher-panel">
     <input type="search" class="form-control form-control-sm" placeholder="Filter boundaries…"
            aria-label="Filter boundaries" autocomplete="off"
@@ -66,5 +67,5 @@
       <% end %>
     </ul>
     <p class="sparc-switcher__empty small mb-0" hidden data-boundary-switcher-target="empty">No boundary matches.</p>
-  </div>
+  </dialog>
 </div>

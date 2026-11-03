@@ -49,6 +49,39 @@ RSpec.describe "ProfileDocuments", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Show Profile")
     end
+
+    # 1.18.0-rf — the Resolved Catalog download is a headed group the export
+    # menu draws inside its own list, under both headers: signed in, and
+    # signed out with the control library public.
+    describe "the export menu's Resolved Catalog group" do
+      def export_menu = Nokogiri::HTML(response.body).at_css("[data-controller=oscal-export] ul.dropdown-menu")
+
+      def resolved_link = export_menu&.at_css("li > a.dropdown-item[href$='/download_resolved_catalog']")
+
+      let(:resolved) { create(:profile_document, resolved_catalog_json: { "catalog" => { "uuid" => SecureRandom.uuid } }) }
+
+      it "lists JSON (Resolved) under a Resolved Catalog heading for a signed-in viewer" do
+        get profile_document_path(resolved)
+        expect(resolved_link&.text).to eq("JSON (Resolved)")
+        expect(export_menu.at_css("li > h6.dropdown-header")&.text).to eq("Resolved Catalog")
+      end
+
+      it "lists it for a signed-out viewer when the control library is public" do
+        allow(SparcConfig).to receive_messages(any_auth_enabled?: true, public_catalogs?: true)
+        allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(nil)
+        allow_any_instance_of(ApplicationController).to receive(:signed_in?).and_return(false)
+        get profile_document_path(resolved)
+        expect(response).to have_http_status(:ok)
+        expect(resolved_link&.text).to eq("JSON (Resolved)")
+      end
+
+      it "is absent when the profile has no resolved catalog" do
+        get profile_document_path(create(:profile_document, resolved_catalog_json: nil))
+        expect(export_menu).to be_present
+        expect(resolved_link).to be_nil
+        expect(response.body).not_to include("Resolved Catalog</h6>")
+      end
+    end
   end
 
   describe "GET /profile_documents/new" do

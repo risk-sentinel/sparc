@@ -14,7 +14,7 @@ export default class BoundarySwitcherController extends Controller {
 
   connect() {
     this.outside = (event) => {
-      if (!this.panelTarget.hidden && !this.element.contains(event.target)) this.close(false)
+      if (this.panelTarget.open && !this.element.contains(event.target)) this.close(false)
     }
     this.beforeCache = () => this.close(false)
     document.addEventListener("click", this.outside)
@@ -27,18 +27,18 @@ export default class BoundarySwitcherController extends Controller {
   }
 
   toggle() {
-    this.panelTarget.hidden ? this.open() : this.close(true)
+    this.panelTarget.open ? this.close(true) : this.open()
   }
 
   open() {
-    this.panelTarget.hidden = false
+    this.panelTarget.show()
     this.triggerTarget.setAttribute("aria-expanded", "true")
     this.filterTarget.focus()
   }
 
   close(returnFocus) {
-    if (this.panelTarget.hidden) return
-    this.panelTarget.hidden = true
+    if (!this.panelTarget.open) return
+    this.panelTarget.close()
     this.triggerTarget.setAttribute("aria-expanded", "false")
     if (returnFocus) this.triggerTarget.focus()
   }
@@ -62,7 +62,7 @@ export default class BoundarySwitcherController extends Controller {
   }
 
   keydown(event) {
-    if (this.panelTarget.hidden) return
+    if (!this.panelTarget.open) return
 
     if (event.key === "Escape") {
       event.preventDefault()
@@ -72,17 +72,25 @@ export default class BoundarySwitcherController extends Controller {
 
     const items = this.visibleItems()
     if (items.length === 0) return
-    const index = items.indexOf(document.activeElement)
-    let next = null
-    if (event.key === "ArrowDown") next = index < 0 ? 0 : Math.min(index + 1, items.length - 1)
-    else if (event.key === "ArrowUp") next = index <= 0 ? null : index - 1
-    else if (event.key === "Home" && index >= 0) next = 0
-    else if (event.key === "End" && index >= 0) next = items.length - 1
-    else return
+    const next = this.nextIndex(event.key, items.indexOf(document.activeElement), items.length)
+    if (next === undefined) return
 
     event.preventDefault()
     if (next === null) this.filterTarget.focus()
     else items[next].focus()
+  }
+
+  // Where a key moves focus among `count` items, from `index` (-1 = the filter
+  // box): an item index, null for back to the filter box, or undefined when the
+  // key does not move focus.
+  nextIndex(key, index, count) {
+    switch (key) {
+      case "ArrowDown": return index < 0 ? 0 : Math.min(index + 1, count - 1)
+      case "ArrowUp": return index <= 0 ? null : index - 1
+      case "Home": return index >= 0 ? 0 : undefined
+      case "End": return index >= 0 ? count - 1 : undefined
+      default: return undefined
+    }
   }
 
   visibleItems() {

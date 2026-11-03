@@ -19,7 +19,7 @@
     absolutely only inside an expanded navbar. Without it every menu opened
     in the flow and stretched the header (owner, walking phase 3). %>
 <nav class="navbar navbar-expand navbar-dark bg-dark sticky-top sparc-shell-header" aria-label="Main" data-testid="shell-header">
-  <div class="container-fluid flex-nowrap gap-2">
+  <div class="container-fluid flex-nowrap">
     <div class="d-flex align-items-center gap-2 flex-shrink-0">
       <a href="#" class="navbar-brand d-flex align-items-center me-0" data-action="click->video-easter-egg#play">
         <%= image_tag "sparc_logo.png", alt: "SPARC", class: "sparc-navbar-logo" %>
@@ -31,7 +31,7 @@
       <%= render "shared/shell_crumbs" %>
     <% end %>
 
-    <ul class="navbar-nav flex-row align-items-center gap-1 ms-auto flex-shrink-0 sparc-shell-header__actions">
+    <ul class="navbar-nav flex-row align-items-center ms-auto flex-shrink-0 sparc-shell-header__actions">
       <% if create_items.any? %>
         <li class="nav-item dropdown" data-testid="shell-create">
           <button type="button" class="nav-link dropdown-toggle sparc-nav-btn sparc-shell-header__menu"
@@ -126,8 +126,64 @@
         </ul>
       </li>
 
-      <%= render "shared/nav_theme_toggle" %>
-      <%= render "shared/nav_account_menu" %>
+      <%# ── Theme toggle ── %>
+      <li class="nav-item" data-controller="theme">
+        <button class="btn btn-outline-light btn-sm sparc-nav-theme-btn"
+                data-theme-target="icon"
+                data-action="theme#toggle"
+                title="Toggle light/dark mode"><%# #1289 — both glyphs render; the theme decides which shows (CSS), so
+                the right one is there on first paint, before Stimulus connects. %><%= icon("moon", css_class: "sparc-theme-icon-moon") %><%= icon("sun", css_class: "sparc-theme-icon-sun") %></button>
+      </li>
+      <%# ── Account menu, or Login ── %>
+      <% if SparcConfig.any_auth_enabled? %>
+        <% if signed_in? %>
+          <li class="nav-item dropdown">
+            <button type="button" class="nav-link dropdown-toggle d-flex align-items-center gap-2 sparc-nav-user" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="sparc-avatar">
+                <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
+              </span>
+              <span class="d-none d-xl-inline"><%= current_user.display_label %></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end sparc-dropdown-menu">
+              <li class="px-3 py-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="sparc-avatar sparc-avatar-md">
+                    <%= safe_avatar_tag(current_user, alt: current_user.initials) %>
+                  </span>
+                  <div>
+                    <div class="fw-semibold small"><%= current_user.display_label %></div>
+                    <div class="text-body-secondary" style="font-size: 0.75rem;"><%= current_user.email %></div>
+                  </div>
+                </div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <% if current_user.instance_administrator? %>
+                <li><h6 class="dropdown-header">Administration</h6></li>
+                <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
+                <li><%= link_to "IdP Grants", admin_idp_grants_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
+                <li><hr class="dropdown-divider"></li>
+              <% end %>
+              <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>
+              <li><%= link_to "Change Password", edit_password_path, class: "dropdown-item" %></li>
+              <% if SparcConfig.fido2_enabled? %>
+                <li><%= link_to "Security Keys", webauthn_credentials_path, class: "dropdown-item" %></li>
+              <% end %>
+              <li><hr class="dropdown-divider"></li>
+              <li><%= button_to "Sign Out", logout_path, method: :delete, class: "dropdown-item" %></li>
+            </ul>
+          </li>
+        <% else %>
+          <li class="nav-item">
+            <%= link_to "Login", login_path, class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm fw-semibold" %>
+          </li>
+        <% end %>
+      <% end %>
     </ul>
   </div>
 </nav>
