@@ -98,6 +98,11 @@
             document_type: "SSP" %>
       <%= link_to "Enrich", enrich_ssp_document_path(@ssp_document),
             class: "sparc-action sparc-action--info sparc-action--outline" %>
+      <%# #1330 — a published SSP's baseline is fixed: change a copy instead. %>
+      <% if signed_in? && !@ssp_document.published_lifecycle? %>
+        <%= link_to "Change baseline", change_baseline_ssp_document_path(@ssp_document),
+              class: "sparc-action sparc-action--info sparc-action--outline", data: { testid: "change-baseline-link" } %>
+      <% end %>
       <%# #398: bulk refresh inherited statements from linked CDEFs %>
       <% if signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists? %>
         <%= button_to "Refresh Inherited",
@@ -325,6 +330,12 @@
               <span class="sparc-asset-tag">Inherited</span>
             <% end %>
             <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
+            <%# #1330 — kept, for its answers, when the SSP's baseline changed to
+                one that does not select it; left out of the OSCAL export. %>
+            <% if control.kept_outside_baseline? %>
+              <span class="sparc-asset-tag" data-testid="kept-outside-baseline"
+                    title="The SSP's baseline does not select this control. It was kept because it holds answers, and is left out of the OSCAL export.">Not in baseline</span>
+            <% end %>
             <%# #1100 — how much of this control is answered, on the COLLAPSED
                 card. The per-statement work is invisible until you expand a
                 control, so a document of 150 controls gave an author no way to

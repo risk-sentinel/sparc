@@ -27,12 +27,12 @@ class SspDocumentsController < ApplicationController
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed,
     :attach_profile, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter,
-    :attach_boundary
+    :attach_boundary, :change_baseline, :apply_baseline_change
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary, :change_baseline, :apply_baseline_change ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -331,6 +331,34 @@ class SspDocumentsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     flash[:error] = "Published profile not found."
     redirect_to attach_profile_ssp_document_path(@ssp_document)
+  end
+
+  # GET /ssp_documents/:id/change_baseline — #1330: choose a baseline; with
+  # ?profile_document_id=, what changing to it does, for the author to confirm.
+  def change_baseline
+    @baseline_choices = SspBaselineChange.choices.where.not(id: @ssp_document.profile_document_id)
+    @new_baseline = ProfileDocument.find_by(id: params[:profile_document_id]) if params[:profile_document_id].present?
+    return unless @new_baseline
+
+    change = SspBaselineChange.new(@ssp_document, @new_baseline)
+    @refusal = change.refusal
+    @delta = change.delta
+  end
+
+  # PATCH /ssp_documents/:id/change_baseline — #1330: make the change the
+  # author confirmed. The API's POST goes through the same service.
+  def apply_baseline_change
+    profile = ProfileDocument.find_by(id: params[:profile_document_id])
+    from_id = @ssp_document.profile_document_id
+    delta = SspBaselineChange.new(@ssp_document, profile).apply!
+
+    audit_log("ssp_document_baseline_changed", subject: @ssp_document,
+              metadata: { from_profile_document_id: from_id, to_profile_document_id: profile.id, **delta.to_h })
+    flash[:success] = "Baseline changed to '#{profile.name}': #{delta.summary}."
+    redirect_to ssp_document_path(@ssp_document)
+  rescue SspBaselineChange::Refused => e
+    flash[:error] = e.message
+    redirect_to change_baseline_ssp_document_path(@ssp_document, profile_document_id: params[:profile_document_id].presence)
   end
 
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────

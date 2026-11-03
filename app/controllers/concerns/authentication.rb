@@ -74,6 +74,7 @@ module Authentication
     refresh_cci refresh_aws_config refresh_aws_security_hub refresh_aws_labs
     bulk_destroy bulk_apply bulk_apply_preview bulk_apply_confirm
     update_metadata update_field update_statement update_scope set_baseline
+    change_baseline apply_baseline_change
   ].freeze
 
   # ── Current User ──────────────────────────────────────────────────────

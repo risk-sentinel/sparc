@@ -162,6 +162,7 @@ GET /api/v1/service_accounts/:id
 GET /api/v1/ssp_control_statements/:id
 GET /api/v1/ssp_documents
 GET /api/v1/ssp_documents/:id
+GET /api/v1/ssp_documents/:id/change_baseline
 GET /api/v1/ssp_documents/:id/export
 GET /api/v1/ssp_documents/:ssp_document_id/components
 GET /api/v1/ssp_documents/:ssp_document_id/components/:id
@@ -313,6 +314,7 @@ POST /api/v1/sessions/from_token
 POST /api/v1/ssp_control_statements/:id/mark_reviewed
 POST /api/v1/ssp_control_statements/:id/reset_to_source
 POST /api/v1/ssp_documents
+POST /api/v1/ssp_documents/:id/change_baseline
 POST /api/v1/ssp_documents/:id/fields/import/confirm
 POST /api/v1/ssp_documents/:id/fields/import/preview
 POST /api/v1/ssp_documents/:id/populate_from_profile

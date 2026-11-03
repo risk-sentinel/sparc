@@ -82,6 +82,26 @@ class SspFromProfileService
     @document
   end
 
+  # #1330 — add to an existing SSP the controls a newly chosen baseline selects
+  # that the SSP lacks, built exactly as SSP creation builds them (same fields,
+  # same statement rows, same derived UUIDs), after the SSP's own controls.
+  #
+  # @param control_ids [Enumerable<String>] in any form (ac-1, AC-01)
+  # @return [Array<Integer>] the new SspControl ids
+  def add_controls(document, control_ids)
+    validate!
+    wanted = control_ids.map { ControlId.canonical(_1) }.to_set
+    return [] if wanted.empty?
+
+    @document = document
+    @this_system = document.ssp_components.find_by(component_type: SspComponent::THIS_SYSTEM) ||
+                   create_this_system_component
+    imported_ids = build_controls_from_catalog(catalog, only: wanted,
+                                                        first_row: document.ssp_controls.maximum(:row_order).to_i + 1)
+    create_by_component_records(imported_ids)
+    imported_ids
+  end
+
   private
 
   def validate!
@@ -157,13 +177,17 @@ class SspFromProfileService
     )
   end
 
-  def build_controls_from_catalog(catalog)
+  # `only` — #1330: build just these canonical control ids; `first_row`, where
+  # their row order starts.
+  def build_controls_from_catalog(catalog, only: nil, first_row: 0)
     control_attrs = []
     field_entries = []
     statement_entries = []
-    row_order = 0
+    row_order = first_row
 
     ResolvedCatalog.wrap(catalog).each_control do |control, _group|
+      next if only && !only.include?(ControlId.canonical(control["id"]))
+
       idx = control_attrs.size
 
       control_attrs << {

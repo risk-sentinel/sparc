@@ -279,6 +279,28 @@ For heads-down editing of the control-level notes, open the dedicated
 **Editor** (`/ssp_documents/:id/editor`), which updates them without full page
 reloads. Items are answered on the control card.
 
+## Changing the baseline an SSP is based on
+
+An SSP follows one baseline. To move it to another, open the SSP and choose
+**Change baseline** (shown while the SSP is not published), then pick a
+published baseline and **Show what changes**. Nothing changes until you confirm.
+The page lists:
+
+- **Added** — controls the new baseline selects that the SSP does not have yet.
+  They are created with every item ready to answer.
+- **In both** — controls both baselines select. They are left exactly as they
+  are, answers included.
+- **Kept for their answers** — controls the new baseline does not select that
+  already hold an answer (a response, status, origination, roles, remarks, a
+  date, or an inherited answer). They stay on the SSP, marked **Not in
+  baseline**, and are left out of the OSCAL export.
+- **Removed** — controls the new baseline does not select that hold no answer.
+
+Confirm with **Change baseline to "…"**. The SSP page then says what was done,
+and the change is recorded in the audit log. A **published** SSP's baseline is
+fixed: create a copy to change it. The API does the same through
+`GET` / `POST /api/v1/ssp_documents/:id/change_baseline`.
+
 ## How to export an SSP
 
 On the detail page use **Export OSCAL** (for the OSCAL `system-security-plan`)

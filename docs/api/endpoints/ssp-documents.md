@@ -15,6 +15,8 @@ System Security Plan (SSP) documents capture the security controls implemented f
 | `PUT` | `/api/v1/ssp_documents/:slug/update_fields` | Bulk-update editable control fields on one SSP | `ssp.write` |
 | `GET` | `/api/v1/ssp_documents/:slug/export` | Export the SSP — field JSON by default, or the OSCAL SSP (`?format=oscal`, `oscal-yaml`, `oscal-xml`) | `ssp.read` |
 | `POST` | `/api/v1/ssp_documents/:id/populate_from_profile` | Populate an empty SSP from a published profile | `ssp.write` |
+| `GET` | `/api/v1/ssp_documents/:id/change_baseline` | What changing the SSP's baseline would do (#1330) | `ssp.write` |
+| `POST` | `/api/v1/ssp_documents/:id/change_baseline` | Change the SSP's baseline (#1330) | `ssp.write` |
 
 ---
 
@@ -651,6 +653,83 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{ "source_profile_id": "fedramp-moderate" }' \
   "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/populate_from_profile" | jq .
+```
+
+---
+
+### GET /api/v1/ssp_documents/:id/change_baseline
+
+What changing the SSP's baseline to another published baseline would do, without doing it (#1330). The SSP page shows the same delta before the author confirms.
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `profile_document_id` | integer | Yes | The published baseline (with a resolved catalog) to change to |
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "ssp_document_id": 42,
+    "profile_document_id": 7,
+    "profile_document_name": "NIST SP 800-53 Rev 5 LOW Baseline",
+    "added": ["ac-21"],
+    "unchanged": ["ac-1", "ac-2"],
+    "kept": ["ac-6.5"],
+    "removed": ["au-9.4"],
+    "refusal": null
+  }
+}
+```
+
+- `added`: controls the new baseline selects that the SSP lacks. They are created, with a statement row for every item.
+- `unchanged`: controls in both baselines. They are left as they are.
+- `kept`: controls the new baseline does not select that hold any answer (a response, status, origination, roles, remarks, date, an inherited answer, or a control-level field). They stay, marked `kept_outside_baseline`, and are left out of the OSCAL export.
+- `removed`: controls the new baseline does not select that hold no answer. They are removed.
+- `refusal`: why the change would be refused (for example a published SSP), or `null`.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | The delta |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` for the boundary |
+| `422 Unprocessable Entity` | `Choose a baseline.` -- no `profile_document_id` |
+
+### POST /api/v1/ssp_documents/:id/change_baseline
+
+Change the SSP's baseline (#1330), applying the delta `GET` reports, and audit it (`ssp_document_baseline_changed`, with the delta). A published SSP's baseline is fixed: change a copy instead.
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `profile_document_id` | integer | Yes | The published baseline (with a resolved catalog) to change to |
+
+#### Response Body
+
+The delta that was applied, in the `GET` shape, without `refusal`.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Baseline changed |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` for the boundary |
+| `422 Unprocessable Entity` | Refused: no baseline chosen, a published SSP, a baseline that is not published with a resolved catalog, or the baseline the SSP already uses |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{ "profile_document_id": 7 }' \
+  "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/change_baseline" | jq .
 ```
 
 ---
