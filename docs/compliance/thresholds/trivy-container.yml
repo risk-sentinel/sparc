@@ -57,7 +57,7 @@
 # already loads a complete replacement. The residual is 0 because the vulnerable
 # code left the image — the same standard #1065 was held to.
 #
-# ONE KNOWN RESIDUAL, deliberately not gated here: `json`. Ruby 3.4.10 still
+# ONE KNOWN RESIDUAL, deliberately not gated here: `json`. Ruby 3.4.12 still
 # ships json 2.9.1 on disk (CVE-2026-54696, fixed upstream in 2.19.9). It does
 # not appear in this gate because the scan is `--severity CRITICAL,HIGH` and
 # that CVE is CVSS 3.7 LOW. The Gemfile pins `json >= 2.19.9` so the LOADED copy

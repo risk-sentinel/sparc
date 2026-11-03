@@ -266,12 +266,12 @@ These rules are **mandatory** — no exceptions without explicit owner approval.
     GHSA-mvxr-6m87-mv2q (`mail` 2.9.0) sit on `main` for five days:
 
     ```bash
-    # host, ruby 3.4.10 — `rvm use` silently leaves you on system ruby 2.6,
+    # host, ruby 3.4.12 — `rvm use` silently leaves you on system ruby 2.6,
     # and bundle-audit on 2.6 prints NOTHING, which reads exactly like success
-    export PATH="$HOME/.rvm/rubies/ruby-3.4.10/bin:$HOME/.rvm/gems/ruby-3.4.10/bin:$PATH"
-    export GEM_HOME="$HOME/.rvm/gems/ruby-3.4.10"
-    export GEM_PATH="$HOME/.rvm/gems/ruby-3.4.10:$HOME/.rvm/gems/ruby-3.4.10@global"
-    ruby -v                                   # MUST print 3.4.10 before continuing
+    export PATH="$HOME/.rvm/rubies/ruby-3.4.12/bin:$HOME/.rvm/gems/ruby-3.4.12/bin:$PATH"
+    export GEM_HOME="$HOME/.rvm/gems/ruby-3.4.12"
+    export GEM_PATH="$HOME/.rvm/gems/ruby-3.4.12:$HOME/.rvm/gems/ruby-3.4.12@global"
+    ruby -v                                   # MUST print 3.4.12 before continuing
     (cd ~/.local/share/ruby-advisory-db && git pull)
     bundle-audit check --database ~/.local/share/ruby-advisory-db
     ```
