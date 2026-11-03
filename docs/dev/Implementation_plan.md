@@ -119,6 +119,7 @@ Plan approved by the owner on 2026-11-03; one branch (`hotfix/v1176_ssp_items_ba
 | Issue | What | Decisions (owner, 2026-11-03) |
 |---|---|---|
 | **#1328** | An SSP whose controls hold only `<control>_smt` (created before v1.17.4, imported, or built from a baseline whose cached catalog is flattened) offered only Notes in Edit while its badge counted the items. `SspStatementRows` adds a row for every item from the tree the counts read (`ControlRequirementText#rows`); SSP creation and import call it, a deferred data migration runs it over existing SSPs, and the SSP page adds any still missing when it opens. Additive: no answer is changed or removed. | Fix existing SSPs, not only new ones |
+| **#1329** | With its baseline naming no catalog, an SSP control listed each item under "What this baseline requires" once per loaded catalog. Each control's items now come only from the catalog its own text comes from (`@catalog_guidance`, which `ControlRequirementText` also reads), so the items listed are the items answered. A linked baseline is unchanged. | One copy of each item |
 
 ---
 
