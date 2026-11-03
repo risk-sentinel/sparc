@@ -50,6 +50,10 @@ class SspFromProfileService
 
     imported_ids = build_controls_from_catalog(catalog)
     create_by_component_records(imported_ids)
+    # #1328 — a baseline resolved before #1100 caches a flattened statement, so
+    # the build above gives each control only `<control>_smt`. Every item the
+    # baseline requires gets its row.
+    SspStatementRows.ensure!(@document)
 
     @document
   end
@@ -72,6 +76,7 @@ class SspFromProfileService
 
       imported_ids = build_controls_from_catalog(catalog)
       create_by_component_records(imported_ids)
+      SspStatementRows.ensure!(document) # #1328, as in #create
     end
 
     @document

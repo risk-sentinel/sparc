@@ -215,6 +215,9 @@ class SspResponseProgress
   # statement row id => Part, for the rows that are required responses.
   def part_for_statement(statement_id) = parts_by_statement[statement_id]
 
+  # #1328 — a required item with no statement row to answer it in.
+  def rowless_items? = parts.any? { _1.statement_id.nil? }
+
   # Statement row ids whose text sits above the parts that need it.
   def parent_level_statement_ids = parent_level_text_rows.map { _1[:id] }.to_set
 

@@ -27,7 +27,11 @@ class ControlRequirementText
   #
   # `objectives` — #1312: statement part id => the SP 800-53A objectives that
   # test it (Objective), assessable ones only, parameter values applied.
-  Text = Struct.new(:full, :parts, :required, :objectives, keyword_init: true) do
+  #
+  # `rows` — #1328: every statement part in catalog order (Row: part_id,
+  # parent_part_id, label), lead-ins included. An SSP holds one statement row
+  # per entry, so `required` always has a row to be answered in.
+  Text = Struct.new(:full, :parts, :required, :objectives, :rows, keyword_init: true) do
     def for_part(part_id) = parts[part_id.to_s]
 
     def objectives_for(part_id) = (objectives || {}).fetch(part_id.to_s, [])
@@ -153,7 +157,8 @@ class ControlRequirementText
 
       lines << ("  " * [ depth[row.part_id], 0 ].max) + [ row.label, text ].compact_blank.join(" ")
     end
-    Text.new(full: lines.join("\n"), parts: prose, required: rows.map(&:part_id).reject { parents.include?(_1) })
+    Text.new(full: lines.join("\n"), parts: prose, required: rows.map(&:part_id).reject { parents.include?(_1) },
+             rows: rows.map { Row.new(part_id: _1.part_id, parent_part_id: _1.parent_part_id, label: _1.label) })
   end
 
   # #1252 — the statement rows as the profile's alters leave them: removed
@@ -195,6 +200,8 @@ class ControlRequirementText
     statement = (control.guidance_data || {})["statement"].to_s
     text = statement.present? ? resolver.resolve_text(statement).strip : ""
     Text.new(full: text, parts: text.present? ? { "#{control.control_id}_smt" => text } : {},
-             required: [ "#{control.control_id}_smt" ])
+             required: [ "#{control.control_id}_smt" ],
+             # #955 — no statement at all (a guidance-only control) gives no row.
+             rows: text.present? ? [ Row.new(part_id: "#{control.control_id}_smt") ] : [])
   end
 end
