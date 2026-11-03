@@ -96,6 +96,25 @@ RSpec.describe "Layer colour contrast (#1288)" do
     expect(failures).to be_empty, failures.join("\n")
   end
 
+  # The navbar's white tints (the review-queue count, the boundary switcher's
+  # hover) are solid tokens: each is the colour white at that strength renders
+  # on the navbar, and white text on it clears AA.
+  { "sparc-navbar-tint" => 0.18, "sparc-navbar-tint-hover" => 0.12 }.each do |name, strength|
+    it "--#{name} is white at #{(strength * 100).round}% on the navbar and white reads at 4.5:1 on it" do
+      value = token(block(":root,"), name)
+      expect(value).to eq(tint("#ffffff", strength, navbar))
+      expect(contrast("#ffffff", value)).to be >= 4.5
+    end
+  end
+
+  it "uses the solid navbar tints, not translucent white, behind the header's white text" do
+    rules = css.gsub(%r{/\*.*?\*/}m, "")
+    counter = rules[/\.sparc-shell-header__menu \.sparc-counter \{[^}]*\}/] or raise "no header counter rule"
+    trigger = rules[/\.sparc-switcher__trigger\[aria-expanded="true"\] \{[^}]*\}/] or raise "no switcher hover rule"
+    expect(counter).to include("background: var(--sparc-navbar-tint);")
+    expect(trigger).to include("background: var(--sparc-navbar-tint-hover);")
+  end
+
   it "leaves no hard-coded layer colour in the stylesheet's rules or the navigation" do
     retired = %w[#6ba3d6 #6abf69 #e8a838 #d4943c #bb6bd9]
     rules = css.gsub(%r{/\*.*?\*/}m, "").lines.reject { |l| l.include?("--sparc-") }

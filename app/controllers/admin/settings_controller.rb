@@ -9,6 +9,9 @@ module Admin
   class SettingsController < ApplicationController
     before_action :authorize_admin!
 
-    def index; end
+    def index
+      # Nothing to load: the page is the list of admin screens
+      # (AdminSettingsHelper), and each screen guards itself.
+    end
   end
 end

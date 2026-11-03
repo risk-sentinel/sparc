@@ -6,7 +6,9 @@
       download_xml_path:   — validated XML download path
       fallback_json_path:  — unvalidated JSON download path
       document_type:       — label for modal (e.g., "SSP", "SAR")
-      extra_items:         — (optional) additional HTML for extra dropdown items (e.g., Resolved Catalog)
+      extra_group:         — (optional) { heading:, links: [[label, path], ...] } — a
+                             headed group of plain download links under the formats
+                             (e.g., the profile's Resolved Catalog)
 %>
 <div class="btn-group" data-controller="oscal-export">
   <button type="button" class="sparc-action sparc-action--info sparc-action--outline sparc-action--sm dropdown-toggle"
@@ -48,9 +50,12 @@
             oscal_export_doc_type_param: document_type
           } %>
     </li>
-    <% if local_assigns[:extra_items].present? %>
+    <% if (group = local_assigns[:extra_group]).present? %>
       <li><hr class="dropdown-divider"></li>
-      <%= extra_items %>
+      <li><h6 class="dropdown-header"><%= group[:heading] %></h6></li>
+      <% group[:links].each do |label, path| %>
+        <li><%= link_to label, path, class: "dropdown-item" %></li>
+      <% end %>
     <% end %>
   </ul>
 </div>

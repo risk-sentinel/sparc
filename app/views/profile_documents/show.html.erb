@@ -39,6 +39,11 @@
     (shared/_document_header), first on the page: the source catalog under
     the name; the copies and the control actions beside it. The review panel
     stays under the name. %>
+<%# The Resolved Catalog download, for the export menu under either header. %>
+<% resolved_group = if @profile_document.resolved_catalog_json.present?
+                     { heading: "Resolved Catalog",
+                       links: [ [ "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document) ] ] }
+                   end %>
 <% if shell_nav? %>
   <% editable_profile = signed_in? && !@profile_document.published_lifecycle? %>
   <% profile_source = capture do %>
@@ -63,12 +68,6 @@
           reject_path: reject_profile_document_path(@profile_document),
           muted_class: "text-body-secondary" %>
   <% end %>
-  <% resolved_item = capture do %>
-    <% if @profile_document.resolved_catalog_json.present? %>
-      <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
-      <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-    <% end %>
-  <% end %>
   <% profile_secondary =
        if !signed_in? then []
        elsif @profile_document.published_lifecycle?
@@ -87,7 +86,7 @@
                   @profile_document.source_profile.present?) ],
         after: profile_after,
         secondary: profile_secondary,
-        export: "Profile", export_items: resolved_item.presence,
+        export: "Profile", export_group: resolved_group,
         publish: editable_profile && @profile_document.control_catalog.present?,
         sections: [ [ "Overview", "#doc-overview" ], ([ "Families", "#heatmapSection" ] if @heatmap_families.any?), [ "Controls", "#controlsContainer" ],
                     [ "Metadata", "#oscal-metadata" ], [ "Back matter", "#oscal-back-matter" ] ].compact %>
@@ -289,12 +288,6 @@
           <% end %>
         <% end %>
       <% end %>
-      <% resolved_catalog_item = capture do %>
-        <% if @profile_document.resolved_catalog_json.present? %>
-          <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
-          <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
-        <% end %>
-      <% end %>
       <%= render "shared/oscal_export_dropdown",
             validate_path: validate_oscal_export_profile_document_path(@profile_document),
             download_json_path: download_oscal_validated_profile_document_path(@profile_document),
@@ -302,7 +295,7 @@
             download_xml_path: download_xml_profile_document_path(@profile_document),
             fallback_json_path: download_oscal_unvalidated_profile_document_path(@profile_document),
             document_type: "Profile",
-            extra_items: resolved_catalog_item %>
+            extra_group: resolved_group %>
       <%= link_to "&#8592; Back".html_safe, profile_documents_path,
             class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
     </div>
