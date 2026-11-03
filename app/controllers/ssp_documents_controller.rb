@@ -179,7 +179,8 @@ class SspDocumentsController < ApplicationController
           candidates = candidates.joins(:control_family)
                                  .where(control_families: { control_catalog_id: catalog_id })
         end
-        CatalogControl.sub_parts_by_parent(candidates, normalized_ids)
+        sub_parts = CatalogControl.sub_parts_by_parent(candidates, normalized_ids)
+        catalog_id ? sub_parts : sub_parts_from_guidance_catalog(sub_parts)
       else
         {}
       end
@@ -777,6 +778,21 @@ class SspDocumentsController < ApplicationController
   end
 
   private
+
+  # #1329 — with no catalog link, each loaded catalog contributed its own copy
+  # of a control's sub-parts (ac-1a once per catalog). Keep, for each control,
+  # only the sub-parts of the catalog its control text came from
+  # (`@catalog_guidance`, the catalog ControlRequirementText reads), so the
+  # items listed are the items the author answers (#1328).
+  def sub_parts_from_guidance_catalog(sub_parts)
+    rows = sub_parts.values.flatten + @catalog_guidance.values
+    catalog_of = ControlFamily.where(id: rows.map(&:control_family_id).uniq).pluck(:id, :control_catalog_id).to_h
+    sub_parts.to_h do |parent_id, parts|
+      chosen = @catalog_guidance[parent_id]
+      catalog = chosen && catalog_of[chosen.control_family_id]
+      [ parent_id, parts.select { |part| catalog && catalog_of[part.control_family_id] == catalog } ]
+    end
+  end
 
   # #997 — param_id => value across the linked profile. Ids are unique within a
   # catalog, so one lookup serves every control on the page and the screen does
