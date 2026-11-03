@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 329 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 331 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -13874,6 +13874,77 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"source_profile_id\": \"fedramp-moderate\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Preview SSP Baseline Change",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/change_baseline?profile_document_id={{profile_document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "change_baseline"
+              ],
+              "query": [
+                {
+                  "key": "profile_document_id",
+                  "value": "{{profile_document_id}}"
+                }
+              ]
+            },
+            "description": "Show what changing this SSP's baseline to another published baseline would do, without changing anything (#1330): controls added, unchanged, kept for their answers, and removed, plus `refusal` when the change is not allowed. 422 when no baseline is named."
+          }
+        },
+        {
+          "name": "Change SSP Baseline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/change_baseline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "change_baseline"
+              ]
+            },
+            "description": "Change this SSP's baseline and return the delta applied (#1330). Added controls get every item ready to answer; controls the new baseline drops are kept when they hold answers (marked kept_outside_baseline, left out of the OSCAL export) and removed otherwise. Audited. A published SSP is refused with 422; a caller without ssp.write gets 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_document_id\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },

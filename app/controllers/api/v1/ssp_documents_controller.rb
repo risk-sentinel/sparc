@@ -26,9 +26,9 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
   # #1181 — OSCAL export over the API, shared with CDEF/SAP/SAR/POA&M.
   include OscalApiExport
 
-  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm ]
+  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change ]
   before_action :authorize_document_read!, only: [ :show, :export ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile, :import_fields_preview, :import_fields_confirm ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change ]
 
   # #716 — FieldImportable hook: the loaded, write-authorized document.
   def field_import_document = @document
@@ -134,7 +134,37 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
     render json: { error: e.message }, status: :unprocessable_content
   end
 
+  # GET /api/v1/ssp_documents/:id/change_baseline?profile_document_id= — #1330:
+  # what changing the SSP's baseline would do, and why it would be refused, if
+  # it would. Changes nothing. The web page shows the same delta.
+  def change_baseline
+    change = SspBaselineChange.new(@document, ProfileDocument.find_by(id: params[:profile_document_id]))
+    return render(json: { error: "Choose a baseline." }, status: :unprocessable_content) if change.profile.nil?
+
+    render json: { data: baseline_change_json(change.delta, change.profile).merge(refusal: change.refusal) }
+  end
+
+  # POST /api/v1/ssp_documents/:id/change_baseline — #1330: make the change.
+  # Controls the new baseline adds are created; those it drops are kept when
+  # they hold any answer and removed when they hold none.
+  def apply_baseline_change
+    profile = ProfileDocument.find_by(id: params[:profile_document_id])
+    from_id = @document.profile_document_id
+    delta = SspBaselineChange.new(@document, profile).apply!
+
+    audit_log("ssp_document_baseline_changed", subject: @document,
+              metadata: { from_profile_document_id: from_id, to_profile_document_id: profile.id, **delta.to_h })
+    render json: { data: baseline_change_json(delta, profile) }
+  rescue SspBaselineChange::Refused => e
+    render json: { error: e.message }, status: :unprocessable_content
+  end
+
   private
+
+  def baseline_change_json(delta, profile)
+    { ssp_document_id: @document.id, profile_document_id: profile.id, profile_document_name: profile.name,
+      **delta.to_h }
+  end
 
   def document_class = SspDocument
   def document_param_key = :ssp_document

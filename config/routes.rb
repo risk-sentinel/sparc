@@ -137,6 +137,10 @@ Rails.application.routes.draw do
       patch :attach_boundary
       # #911 — the write the reconciliation gate exists to provoke.
       patch :set_baseline, to: "ssp_documents#set_baseline"
+      # #1330 — change the baseline: choose one and see what changes (GET),
+      # then confirm it (PATCH).
+      get :change_baseline
+      patch :change_baseline, action: :apply_baseline_change
       patch :update_metadata
       patch :update_statement
       patch :publish
@@ -654,6 +658,10 @@ Rails.application.routes.draw do
           get :export
           # #628 — populate an existing empty SSP from a published profile.
           post :populate_from_profile
+          # #1330 — what changing the baseline does (GET ?profile_document_id=),
+          # then the change (POST), through the web page's service.
+          get :change_baseline
+          post :change_baseline, action: :apply_baseline_change
           # #716 — bulk editable-field file import (preview → confirm).
           post field_import_preview, to: "ssp_documents#import_fields_preview", as: :import_fields_preview
           post field_import_confirm, to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm

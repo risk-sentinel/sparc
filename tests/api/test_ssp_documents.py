@@ -17,6 +17,8 @@ deletes it in teardown. Tests that need an existing document use the
 # cannot see them.
 # api-inventory: covers ssp_documents#import_fields_preview
 # api-inventory: covers ssp_documents#import_fields_confirm
+# POST change_baseline routes to apply_baseline_change (#1330); TestChangeBaseline.
+# api-inventory: covers ssp_documents#apply_baseline_change
 
 from __future__ import annotations
 
@@ -133,6 +135,120 @@ class TestPopulateFromProfile(PopulateFromProfileContract):
     @pytest.fixture
     def populate_doc(self, ssp_doc: dict[str, Any]) -> dict[str, Any]:
         return ssp_doc
+
+
+# ── change baseline (#1330) ────────────────────────────────────────────────
+
+def _published_profile_ids(client: httpx.Client) -> list[int]:
+    resp = client.get("/api/v1/profile_documents", params={"items": 100})
+    assert resp.status_code == 200, resp.text
+    return [
+        row["id"] for row in resp.json()["data"]
+        if (row.get("lifecycle_status") or row.get("status")) == "published"
+    ]
+
+
+class TestChangeBaseline:
+    """GET previews the delta and changes nothing; POST applies it. Both go
+    through SspBaselineChange, so a refusal reads the same on each."""
+
+    @pytest.fixture
+    def on_baseline(
+        self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> tuple[dict[str, Any], int, int]:
+        """An SSP populated from one published baseline, and another baseline
+        it may change to. Skips when the instance has no such pair."""
+        ids = _published_profile_ids(admin_client)
+        if len(ids) < 2:
+            pytest.skip("needs two published baselines to change between")
+        slug = ssp_doc["slug"]
+        resp = admin_client.post(f"{PATH}/{slug}/populate_from_profile",
+                                 json={"source_profile_id": ids[0]})
+        assert resp.status_code == 200, resp.text
+        for target in ids[1:]:
+            preview = admin_client.get(f"{PATH}/{slug}/change_baseline",
+                                       params={"profile_document_id": target})
+            if preview.status_code == 200 and preview.json()["data"]["refusal"] is None:
+                return ssp_doc, ids[0], target
+        pytest.skip("no other published baseline with a resolved catalog")
+
+    def _baseline_of(self, client: httpx.Client, slug: str) -> int | None:
+        resp = client.get(f"{PATH}/{slug}")
+        assert resp.status_code == 200, resp.text
+        return resp.json()["data"]["profile_document_id"]
+
+    @pytest.mark.happy
+    def test_preview_shows_the_delta_and_changes_nothing(
+        self, admin_client: httpx.Client, on_baseline: tuple[dict[str, Any], int, int]
+    ) -> None:
+        ssp, current, target = on_baseline
+        resp = admin_client.get(f"{PATH}/{ssp['slug']}/change_baseline",
+                                params={"profile_document_id": target})
+        assert resp.status_code == 200, resp.text
+        data = resp.json()["data"]
+        assert data["profile_document_id"] == target
+        for key in ("added", "unchanged", "kept", "removed"):
+            assert isinstance(data[key], list), f"{key} missing from the delta: {data}"
+        assert data["refusal"] is None
+        assert self._baseline_of(admin_client, ssp["slug"]) == current
+
+    @pytest.mark.happy
+    def test_apply_changes_the_baseline_and_returns_the_delta(
+        self, admin_client: httpx.Client, on_baseline: tuple[dict[str, Any], int, int]
+    ) -> None:
+        ssp, _current, target = on_baseline
+        resp = admin_client.post(f"{PATH}/{ssp['slug']}/change_baseline",
+                                 json={"profile_document_id": target})
+        assert resp.status_code == 200, resp.text
+        data = resp.json()["data"]
+        assert data["profile_document_id"] == target
+        for key in ("added", "unchanged", "kept", "removed"):
+            assert isinstance(data[key], list), f"{key} missing from the delta: {data}"
+        assert self._baseline_of(admin_client, ssp["slug"]) == target
+
+    def test_apply_refuses_the_baseline_already_in_use_with_422(
+        self, admin_client: httpx.Client, on_baseline: tuple[dict[str, Any], int, int]
+    ) -> None:
+        ssp, current, _target = on_baseline
+        preview = admin_client.get(f"{PATH}/{ssp['slug']}/change_baseline",
+                                   params={"profile_document_id": current})
+        assert preview.status_code == 200, preview.text
+        assert preview.json()["data"]["refusal"] == "This SSP already uses that baseline."
+
+        resp = admin_client.post(f"{PATH}/{ssp['slug']}/change_baseline",
+                                 json={"profile_document_id": current})
+        assert_error_envelope(resp, expected_status=422)
+        assert resp.json()["error"] == "This SSP already uses that baseline."
+
+    @pytest.mark.validation
+    def test_no_baseline_named_returns_422(
+        self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> None:
+        for method in ("get", "post"):
+            resp = getattr(admin_client, method)(f"{PATH}/{ssp_doc['slug']}/change_baseline")
+            assert_error_envelope(resp, expected_status=422)
+
+    @pytest.mark.auth
+    def test_apply_is_refused_to_a_read_only_user(
+        self, admin_client: httpx.Client, user_client: httpx.Client,
+        on_baseline: tuple[dict[str, Any], int, int],
+    ) -> None:
+        ssp, current, target = on_baseline
+        resp = user_client.post(f"{PATH}/{ssp['slug']}/change_baseline",
+                                json={"profile_document_id": target})
+        # 403 for a user who may read the boundary; 404 when it is not even
+        # visible to them. Either way nothing changes.
+        assert resp.status_code in (403, 404), resp.text
+        assert self._baseline_of(admin_client, ssp["slug"]) == current
+
+    @pytest.mark.auth
+    def test_change_baseline_requires_token(
+        self, anon_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> None:
+        for method in ("get", "post"):
+            resp = getattr(anon_client, method)(f"{PATH}/{ssp_doc['slug']}/change_baseline",
+                                                params={"profile_document_id": 1})
+            assert resp.status_code == 401, resp.text
 
 
 # ── index ──────────────────────────────────────────────────────────────────
