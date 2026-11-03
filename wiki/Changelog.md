@@ -4,6 +4,21 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.6 -- Every SSP Item Answerable, One Copy of Each Item, Change an SSP's Baseline (2026-11-03)
+
+A patch release from a customer's SSP, where Edit offered only Notes.
+
+- **Every item can be answered, on existing SSPs too** ([#1328](https://github.com/risk-sentinel/sparc/issues/1328)). An SSP created before v1.17.4, imported, or built from a baseline whose stored catalog predates statement parts held one row per control, so its control badges counted the items ("0/6 answered") while **Edit** offered only Notes. Every item the baseline requires now has a row, ready to answer: at creation, at import, when the SSP is opened, and once for every existing SSP on upgrade. Nothing already written is changed. See [System Security Plans](User-Guide-System-Security-Plans).
+- **Each baseline item is listed once** ([#1329](https://github.com/risk-sentinel/sparc/issues/1329)). An SSP whose baseline has no confirmed catalog listed each item under **What this baseline requires** once per catalog loaded (ac-1a four times, in each catalog's wording). Items now come from the one catalog the control's own text comes from. Confirming the baseline's catalog on its page also fixes this on v1.17.5.
+- **Change an SSP's baseline** ([#1330](https://github.com/risk-sentinel/sparc/issues/1330)). **Change baseline** on an SSP that is not published, or `GET`/`POST /api/v1/ssp_documents/:id/change_baseline`, shows what the change does before it is made: controls added (ready to answer), controls in both (unchanged), controls the new baseline drops that hold answers (kept, marked **Not in baseline**, left out of the OSCAL export), and controls it drops with no answers (removed). The change is audited. A published SSP's baseline is fixed: change a copy. See [System Security Plans](User-Guide-System-Security-Plans).
+- **Ruby 3.4.12** (was 3.4.10, [#1333](https://github.com/risk-sentinel/sparc/issues/1333)), for CVE-2026-97229 in Ruby's regular-expression engine, reported as Critical against the image, and its three sibling CVEs.
+- **Gem fixes:** rack 3.2.8 (a High), loofah 2.25.3, nokogiri 1.19.7 and rails-html-sanitizer 1.7.2, for advisories published this week.
+- **sqlite-libs:** two Highs in the base image (CVE-2026-119373, CVE-2026-119586) have no upstream fix. Nothing in the image loads SQLite and the sqlite3 shell is not installed; both are recorded as approved deviations.
+
+**Upgrading:** an image swap from v1.17.5, with migrations. Every existing SSP gains a row for each item its baseline requires, as a deferred data migration after the container starts; a row that exists, and anything written in it, is left alone. `ssp_controls` gains `kept_outside_baseline` (default false).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.6).
+
 ## v1.17.5 -- SSP Items Answered in Full, ATO Wizard Starts From the Boundary, CDEFs Serve Many Baselines (2026-10-27)
 
 A patch release from an SSP review: every statement item now records everything about itself, in OSCAL's terms, and that carries through the assessment.
