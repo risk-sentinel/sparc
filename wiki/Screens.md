@@ -536,6 +536,16 @@ On export they become `validation-type` / `validation-reference` props and a
 `validation-details` link on the validation component, with a `validation`
 link on the product pointing back at it.
 
+#### SSP Change Baseline
+
+| | |
+|---|---|
+| **Route** | `GET /ssp_documents/:id/change_baseline` (choose and preview), `PATCH /ssp_documents/:id/change_baseline` (confirm) |
+| **Controller** | `SspDocumentsController#change_baseline`, `#apply_baseline_change` |
+| **Auth** | `ssp.write` on the SSP's boundary |
+
+Moves an SSP to another published baseline (#1330). Shows what the change does first: controls added, controls in both, controls kept for their answers (marked **Not in baseline**, left out of the OSCAL export) and controls removed. A published SSP's baseline is fixed.
+
 #### SSP Editor
 
 | | |

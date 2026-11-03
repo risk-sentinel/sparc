@@ -1,0 +1,62 @@
+<%# #1330 — change the baseline an SSP is based on. Choose a baseline, see what
+    the change does to the SSP's controls, then confirm. SspBaselineChange
+    computes the same delta here and on the API. %>
+<div class="card" data-testid="change-baseline">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Change the baseline of "<%= @ssp_document.name %>"</h2>
+    <%= link_to "Back to System Security Plan", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  </div>
+
+  <p class="text-body-secondary mb-3">
+    Current baseline:
+    <strong data-testid="current-baseline"><%= @ssp_document.profile_document&.name || "none" %></strong>
+  </p>
+
+  <% if @baseline_choices.any? %>
+    <%= form_with url: change_baseline_ssp_document_path(@ssp_document), method: :get, local: true,
+          class: "d-flex flex-wrap align-items-end gap-2 mb-4" do |f| %>
+      <div>
+        <label for="profile_document_id" class="form-label">New baseline</label>
+        <%= select_tag :profile_document_id,
+              options_from_collection_for_select(@baseline_choices, :id, :name, @new_baseline&.id),
+              include_blank: "— Choose a published baseline —", class: "form-select", required: true,
+              data: { testid: "baseline-choice" } %>
+      </div>
+      <%= f.submit "Show what changes", name: nil, class: "sparc-action sparc-action--info sparc-action--outline",
+            data: { testid: "preview-baseline-change" } %>
+    <% end %>
+  <% else %>
+    <p class="text-center p-4 text-body-secondary">
+      No other published baseline with a resolved catalog is available. Publish one first.
+    </p>
+  <% end %>
+
+  <% if @delta %>
+    <div class="border rounded p-3" data-testid="baseline-delta">
+      <h3 class="h5">Changing to "<%= @new_baseline.name %>"</h3>
+      <ul class="mb-3">
+        <li data-testid="delta-added"><strong><%= @delta.added.size %></strong> controls added, each item ready to answer</li>
+        <li data-testid="delta-unchanged"><strong><%= @delta.unchanged.size %></strong> controls in both baselines, left as they are</li>
+        <li data-testid="delta-kept"><strong><%= @delta.kept.size %></strong> controls not in the new baseline, kept because they hold answers. They are marked and left out of the OSCAL export.</li>
+        <li data-testid="delta-removed"><strong><%= @delta.removed.size %></strong> controls not in the new baseline, with no answers, removed</li>
+      </ul>
+      <% { "Added" => @delta.added, "Kept for their answers" => @delta.kept, "Removed" => @delta.removed }.each do |label, ids| %>
+        <% next if ids.empty? %>
+        <details class="mb-2">
+          <summary><%= label %> (<%= ids.size %>)</summary>
+          <p class="sparc-mono small mb-0"><%= ids.map(&:upcase).join(", ") %></p>
+        </details>
+      <% end %>
+
+      <% if @refusal %>
+        <div class="alert alert-warning mb-0" role="alert" data-testid="baseline-change-refused"><%= @refusal %></div>
+      <% else %>
+        <%= button_to "Change baseline to \"#{@new_baseline.name}\"",
+              change_baseline_ssp_document_path(@ssp_document),
+              method: :patch, params: { profile_document_id: @new_baseline.id },
+              class: "sparc-action sparc-action--primary sparc-action--solid",
+              form: { data: { testid: "confirm-baseline-change" } } %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

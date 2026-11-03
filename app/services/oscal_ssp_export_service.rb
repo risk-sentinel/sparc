@@ -49,7 +49,7 @@ class OscalSspExportService
     # #911 layer 2 — never publish a control-id that resolves to no loaded
     # catalog. The schema cannot catch this: `tbd` is a valid TokenDatatype.
     refuse_unresolvable_controls!(label: "SSP", name: @document.name,
-                                  control_ids: @document.ssp_controls.pluck(:control_id))
+                                  control_ids: @document.ssp_controls.where(kept_outside_baseline: false).pluck(:control_id))
     data = build_ssp
     OscalSchemaValidationService.validate!(:ssp, data, version: effective_oscal_version)
     # #1154 — what JSON Schema cannot see: SPARC-namespace prop values and
@@ -84,8 +84,11 @@ class OscalSspExportService
     @info_types    = @document.ssp_information_types.order(:id).to_a
     @leveraged     = @document.ssp_leveraged_authorizations.to_a
     @inventory     = @document.ssp_inventory_items.to_a
+    # #1330 — a control kept, for its answers, after the baseline changed to one
+    # that does not select it is not part of the plan the SSP exports.
     @controls      = @document.ssp_controls
                               .roots
+                              .where(kept_outside_baseline: false)
                               .includes(
                                 :ssp_control_fields,
                                 ssp_control_statements: :inheritance_links,

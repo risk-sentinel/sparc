@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1703,6 +1703,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_120000) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.boolean "kept_outside_baseline", default: false, null: false
     t.index ["parent_id"], name: "index_ssp_controls_on_parent_id"
     t.index ["ssp_document_id", "row_order"], name: "index_ssp_controls_on_ssp_document_id_and_row_order"
     t.index ["ssp_document_id"], name: "index_ssp_controls_on_ssp_document_id"

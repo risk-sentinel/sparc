@@ -36,7 +36,8 @@
      data-ssp-control-resource-unlink-url-value="<%= unlink_control_resource_ssp_document_path(@ssp_document) %>">
 
 <%# 1.18.0-rf #1304 — the shared document header
-    (shared/_document_header); Enrich and Refresh Inherited beside it. %>
+    (shared/_document_header); Enrich, Change baseline (#1330; not on a
+    published SSP, whose baseline is fixed) and Refresh Inherited beside it. %>
   <%= render "shared/document_header", document: @ssp_document, type: :ssp, version: @ssp_document.ssp_version,
         rename: { update_path: update_metadata_ssp_document_path(@ssp_document), version_field: :ssp_version },
         title_extra: (tag.span("Incomplete — needs content", class: "badge bg-warning text-dark",
@@ -44,6 +45,8 @@
         meta: [ @ssp_document.original_filename, pluralize(total_controls, "control") ],
         secondary: [
           { label: "Enrich", look: "info outline", path: enrich_ssp_document_path(@ssp_document) },
+          ({ label: "Change baseline", look: "info outline", path: change_baseline_ssp_document_path(@ssp_document),
+             data: { testid: "change-baseline-link" } } if signed_in? && !@ssp_document.published_lifecycle?),
           ({ label: "Refresh Inherited", look: "caution solid", path: refresh_inherited_statements_ssp_document_path(@ssp_document), method: :post } if
             signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists?)
         ].compact,
@@ -271,6 +274,12 @@
               <span class="sparc-asset-tag">Inherited</span>
             <% end %>
             <span class="sparc-ctrl-family sparc-ml-01"><%= family_code %></span>
+            <%# #1330 — kept, for its answers, when the SSP's baseline changed to
+                one that does not select it; left out of the OSCAL export. %>
+            <% if control.kept_outside_baseline? %>
+              <span class="sparc-asset-tag" data-testid="kept-outside-baseline"
+                    title="The SSP's baseline does not select this control. It was kept because it holds answers, and is left out of the OSCAL export.">Not in baseline</span>
+            <% end %>
             <%# #1100 — how much of this control is answered, on the COLLAPSED
                 card. The per-statement work is invisible until you expand a
                 control, so a document of 150 controls gave an author no way to
