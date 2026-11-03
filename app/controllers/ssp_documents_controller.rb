@@ -75,6 +75,15 @@ class SspDocumentsController < ApplicationController
     # Short-circuit for documents still being processed
     return if @ssp_document.pending? || @ssp_document.processing? || @ssp_document.failed?
 
+    # #1328 — every item the baseline counts gets a row before the page draws
+    # its editor; without one, Edit offered only Notes. Creation, import and the
+    # upgrade add them; this covers an item that appears later (a catalog's
+    # parts imported after the SSP was built). Additive; answers are untouched.
+    @response_progress = SspResponseProgress.new(@ssp_document)
+    if @response_progress.rowless_items? && SspStatementRows.ensure!(@ssp_document).positive?
+      @response_progress = SspResponseProgress.new(@ssp_document)
+    end
+
     # Load root controls only; provider statements eagerly loaded via association
     @controls = @ssp_document.ssp_controls
                               .roots
@@ -166,8 +175,8 @@ class SspDocumentsController < ApplicationController
       end
 
     # #1242 — the responses the SSP's baseline requires, by state: the header
-    # figure, each control's badge and each statement row read this.
-    @response_progress = SspResponseProgress.new(@ssp_document)
+    # figure, each control's badge and each statement row read this. Built at
+    # the top of #show (#1328).
 
     # #1312 — the assessor's latest determination of each 800-53A objective,
     # shown read-only under the item it tests.

@@ -50,6 +50,10 @@ class SspJsonParserService
       @component_map = parse_system_implementation(ssp["system-implementation"])
       parse_control_implementation(ssp["control-implementation"], @component_map)
       link_inheritances!
+      # #1328 — an imported SSP answers whichever statements its file names,
+      # often only `<control>_smt`; every item its baseline requires gets a row.
+      # Before the carry-down, so control-level answers reach each item.
+      SspStatementRows.ensure!(@document)
       # #1312 — a document an older SPARC exported records status, origination
       # and responsible entities once per control; each item takes its own.
       SspControlFieldCarryDown.new(@document).carry!
