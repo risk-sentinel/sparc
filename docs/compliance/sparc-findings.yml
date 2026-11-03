@@ -208,7 +208,11 @@ findings:
   next_review_date: '2026-12-02'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1326"
+    approved_at: "2026-11-03"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a host where a user runs the sqlite3 shell's .recover on an untrusted
       database. The image does not contain the sqlite3 shell, and nothing in it loads the library (measured
@@ -247,7 +251,11 @@ findings:
   next_review_date: '2026-12-02'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1326"
+    approved_at: "2026-11-03"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that runs FTS5 prefix queries over tables an attacker can
       write to. No process in the image loads libsqlite3 and SPARC stores nothing in SQLite (measured
