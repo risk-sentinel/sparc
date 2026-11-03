@@ -60,7 +60,8 @@ KEEP_ALWAYS = %w[bundler].freeze
 # resolv — added 2026-09-03. Ruby 3.4.10 ships 0.7.1 on disk, which
 # CVE-2026-80212/-80213 (published 2026-08-29) made vulnerable, and there is no
 # newer Ruby to move to; #1065 was closed by moving 3.4.4 -> 3.4.10 and that
-# route is exhausted. The Gemfile already pins `resolv >= 0.7.2` so the LOADED
+# route is exhausted. (Ruby 3.4.12, #1333, now ships the patched 0.7.2; the
+# entry stays, since the bundle's 0.7.2 still shadows it.) The Gemfile already pins `resolv >= 0.7.2` so the LOADED
 # copy is patched, leaving a vulnerable copy on disk purely for scanners to find
 # — a standing CRITICAL/HIGH against a `high: 0` ratchet.
 #

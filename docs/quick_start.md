@@ -31,7 +31,7 @@ bin/rails db:create db:migrate db:seed
 bin/rails server
 ```
 
-**Prerequisites:** Ruby 3.4.10, PostgreSQL 15+, Bundler
+**Prerequisites:** Ruby 3.4.12, PostgreSQL 15+, Bundler
 
 Background jobs run on **Solid Queue** (database-backed) by default — no Redis
 required. In development they execute in-process; to run a dedicated worker,

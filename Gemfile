@@ -51,24 +51,26 @@ gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 #
 # Ruby 3.4.10 (up from 3.4.4, #1065) makes four of the five on-disk copies patched
 # at source, which is why the image's CRITICAL/HIGH residual is 0 rather than
-# dispositioned away. Versions below are what 3.4.10 ships:
+# dispositioned away. Ruby 3.4.12 (#1333, the Onigmo regex fixes for
+# CVE-2026-97229 and three sibling CVEs) ships the same default gems except
+# resolv, now 0.7.2. Versions below are what 3.4.12 ships:
 # resolv: CVE-2025-24294 (ReDoS) plus CVE-2026-80212/-80213, published 2026-08-29.
-# Ruby 3.4.10 ships 0.7.1 ON DISK, which those two advisories made vulnerable, so
-# the pin below fixes the copy Bundler LOADS. The on-disk copy no longer "waits on
-# upstream": there is no newer Ruby to move to, so bin/prune-shadowed-gems.rb now
-# DELETES the shadowed default copy — gemspec and code — because this pin proves
+# Ruby 3.4.10 shipped 0.7.1 ON DISK, which those two advisories made vulnerable, so
+# the pin below fixes the copy Bundler LOADS (3.4.12 now ships the patched 0.7.2).
+# The on-disk copy no longer "waits on upstream": bin/prune-shadowed-gems.rb
+# DELETES the shadowed default copy, gemspec and code, because this pin proves
 # the bundle carries a complete replacement. Removed, not dispositioned (#1065).
 gem "resolv", ">= 0.7.2"
-gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.10 ships 3.2.3, patched
-gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.10 ships 4.0.4.1, the upstream backport
-gem "uri", ">= 1.1.1"              # CVE-2025-61594        — 3.4.10 ships 1.0.4, patched (advisory: >= 1.0.4)
-# json is the ONE default gem Ruby 3.4.10 still ships vulnerable (2.9.1; fixed
+gem "zlib", ">= 3.2.3"             # CVE-2026-27820        — 3.4.12 ships 3.2.3, patched
+gem "erb", ">= 6.0.4"             # CVE-2026-41316        — 3.4.12 ships 4.0.4.1, the upstream backport
+gem "uri", ">= 1.1.1"              # CVE-2025-61594        — 3.4.12 ships 1.0.4, patched (advisory: >= 1.0.4)
+# json is the ONE default gem Ruby 3.4.12 still ships vulnerable (2.9.1; fixed
 # upstream in 2.19.9). It was invisible to #1065's original survey because that
 # was built from Trivy's CRITICAL/HIGH output and this is CVSS 3.7 LOW. The pin
 # matters on its own: json is purely TRANSITIVE here, and its binding constraints
 # (`~> 2.3`, `>= 2.16.0`) admit 2.16.0–2.19.8, every one of them vulnerable — so
 # a resolver change could legally walk back into the window. This forbids that.
-gem "json", ">= 2.19.9"            # CVE-2026-54696        — 3.4.10 ships 2.9.1, STILL VULNERABLE on disk
+gem "json", ">= 2.19.9"            # CVE-2026-54696        — 3.4.12 ships 2.9.1, STILL VULNERABLE on disk
 gem "net-imap", ">= 0.6.4"         # CVE-2026-42257/42258 (CRITICAL) + 42245/42246 (overrides bundled 0.5.8)
 gem "oauth2", ">= 2.0.22"          # GHSA-pp92-crg2-gfv9 (bumps transitive 2.0.18)
 gem "websocket-driver", ">= 0.8.2"  # CVE-2026-54463/54464/54465 + GHSA-2x63-gw47-w4mm DoS (bumps transitive 0.8.0)

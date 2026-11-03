@@ -78,7 +78,7 @@ Full release history — the current v1.x line plus the legacy v2.x–v3.x entri
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | Ruby 3.4.10, Rails 8.1.4 |
+| Framework | Ruby 3.4.12, Rails 8.1.4 |
 | Database | PostgreSQL 15 |
 | Background Jobs | Solid Queue (default) · Sidekiq + Redis (optional) |
 | Frontend | Hotwire (Turbo + Stimulus), Bootstrap 5.3 |
