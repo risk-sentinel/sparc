@@ -133,6 +133,7 @@ per phase PR:
 | 3. Shell, behind the switch | #1291, #1295, #1296, #1298, #1246 | Built on `feature/v1180rf_shell` |
 | 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) built |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | Plan approved 2026-10-31; 5a (#1307, #1297) built on `feature/v1180rf_shell` |
+| -rf.2 (from -rf.1 testing) | #1337, #1338, #1339, #1340 | Mockups and plan approved 2026-11-04; one branch, `feat/rf2_ux_bundle`. The same form treatment (#1340) on every other screen, baseline ODPs first, is the next update |
 
 **Phase 0** records what the navigation offers today, per viewer, before any
 navigation code changes: `tests/ui-smoke/nav_inventory.json` (signed out, signed
