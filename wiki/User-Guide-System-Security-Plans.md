@@ -100,9 +100,21 @@ Enrichment adds the OSCAL metadata an SSP needs beyond control narratives.
    - **Components** — title, type, description for each system component.
    - **System users** — title and description.
    - **Information types.**
-3. Save. The detail page now shows the **System Characteristics**,
-   **Components**, and **Users** cards, and the OSCAL badge flips to
-   **Enriched**.
+   **+ Add** adds a row; **Remove row** takes off a row you added and haven't
+   saved yet.
+3. Click **Save Enrichment Data**. You stay on the Enrich page, where you
+   were, with **SSP enrichment data saved.** above the form. The detail page
+   now shows the **System Characteristics**, **Components**, and **Users**
+   cards, and the OSCAL badge flips to **Enriched**.
+
+If anything can't be saved, nothing is saved. The page doesn't reload:
+- what you typed stays;
+- the message above the form names each row and field, for example
+  "Component 3: Title can't be blank";
+- each of those fields is outlined in red with its message under it;
+- a section holding one opens, and stays open until you fix the field or
+  remove the row;
+- sections you had open stay open.
 
 ### Declaring the roles an SSP uses
 

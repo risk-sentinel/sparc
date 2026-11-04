@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Drives the SSP "Enrich" form repeaters (epic #650):
-//   - add Information Type / Component / User rows
+//   - add Information Type / Component / User rows, and remove an added one
 //
 // Replaces the inline on* attribute handlers and the nonce'd <script> of
 // global addX() functions that strict CSP (script-src :self, no
@@ -18,6 +18,11 @@ export default class SspEnrichController extends Controller {
   addInfoType() { this.#append(this.infoTypesContainerTarget, this.infoTypeTemplateTarget) }
   addComponent() { this.#append(this.componentsContainerTarget, this.componentTemplateTarget) }
   addUser() { this.#append(this.usersContainerTarget, this.userTemplateTarget) }
+
+  // #1340 — take an added (unsaved) row off the form again.
+  removeRow(event) {
+    event.target.closest(".info-type-entry, .component-entry, .user-entry")?.remove()
+  }
 
   #append(container, template) {
     container.appendChild(template.content.cloneNode(true))
