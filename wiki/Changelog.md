@@ -20,6 +20,8 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
   - The section holding it stays open until it's fixed.
   - A good save leaves you where you were.
 - **Bring an SSP up to its baseline:** adds the controls and items an SSP lacks of its own baseline, after showing what will be added ([#1337](https://github.com/risk-sentinel/sparc/issues/1337)).
+- **OSCAL exports lead from SSP to baseline to catalog:** each `import-profile` and `imports` href resolves to a back-matter resource naming the document and linking to its OSCAL export ([#1342](https://github.com/risk-sentinel/sparc/issues/1342)).
+- **Login consent banner** behaviour covered by its own browser test ([#1341](https://github.com/risk-sentinel/sparc/issues/1341)).
 
 ---
 
