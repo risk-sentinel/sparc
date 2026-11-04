@@ -374,9 +374,19 @@ class SspDocumentsController < ApplicationController
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
 
   def enrich
+    load_enrich_rows
+    load_enrich_sources
+  end
+
+  # The Enrich page's repeated rows, as stored.
+  def load_enrich_rows
     @components       = @ssp_document.ssp_components.order(:title)
     @users            = @ssp_document.ssp_users.order(:title)
     @info_types       = @ssp_document.ssp_information_types.order(:title)
+  end
+
+  # What the Enrich page offers to import, above its form.
+  def load_enrich_sources
     # #737: canonical sources offered for import on the enrich form.
     @boundary_members = @ssp_document.authorization_boundary&.authorization_boundary_memberships&.order(:role, :user_name) || []
     # #1134: roles are declared from the boundary vocabulary, never typed.
@@ -391,6 +401,7 @@ class SspDocumentsController < ApplicationController
       .where.not(resourceable_type: "SspDocument", resourceable_id: @ssp_document.id)
       .order(:title).to_a.reject { |r| @ssp_back_matter_titles.include?(r.title.to_s) }
   end
+  private :load_enrich_rows, :load_enrich_sources
 
   # #737: link existing reusable (globally-available) back-matter resources by
   # copying them onto this SSP as managed resources so they export with it.
@@ -489,22 +500,32 @@ class SspDocumentsController < ApplicationController
     redirect_to enrich_ssp_document_path(@ssp_document)
   end
 
+  # #1340 — the form is redrawn in place (a Turbo frame), so the author stays
+  # where they were: on success with the saved values and a confirmation, on
+  # failure with their input kept and each refused field marked, named by
+  # row in the message above the form. Nothing is written unless all of it is
+  # valid (SspEnrichForm).
+  #
+  # NIST 800-53: SI-10 (refused input identified), AU-12 (ssp_document_updated).
   def update_enrich
-    ActiveRecord::Base.transaction do
-      @ssp_document.update!(enrich_params)
-      sync_information_types
-      sync_components
-      sync_users
+    form = SspEnrichForm.new(@ssp_document, params)
+    if form.save
+      @ssp_document.regenerate_oscal_uuid!
+      audit_log("ssp_document_updated", subject: @ssp_document,
+        metadata: { name: @ssp_document.name, enrichment: true })
+      @ssp_document.reload
+      load_enrich_rows
+      load_enrich_sources
+      @enrich_saved = true
+      render :enrich
+    else
+      @components = @ssp_document.ssp_components.this_system.to_a + form.components
+      @info_types = form.info_types
+      @users = form.users
+      @enrich_errors = form.error_messages
+      load_enrich_sources
+      render :enrich, status: :unprocessable_content
     end
-
-    @ssp_document.regenerate_oscal_uuid!
-    audit_log("ssp_document_updated", subject: @ssp_document,
-      metadata: { name: @ssp_document.name, enrichment: true })
-    flash[:success] = "SSP enrichment data saved."
-    redirect_to ssp_document_path(@ssp_document)
-  rescue StandardError => e
-    flash[:error] = "Error saving enrichment: #{e.message}"
-    redirect_to enrich_ssp_document_path(@ssp_document)
   end
 
   # ── Downloads ────────────────────────────────────────────────────
@@ -882,19 +903,6 @@ class SspDocumentsController < ApplicationController
     )
   end
 
-  def enrich_params
-    params.require(:ssp_document).permit(
-      :description, :system_name_short, :system_id,
-      :system_status, :date_authorized,
-      :security_sensitivity_level,
-      :security_objective_confidentiality,
-      :security_objective_integrity,
-      :security_objective_availability,
-      :authorization_boundary_description,
-      :network_architecture_description,
-      :data_flow_description
-    )
-  end
 
   def set_ssp_document
     @ssp_document = SspDocument.find_by!(slug: params[:id])
@@ -919,97 +927,6 @@ class SspDocumentsController < ApplicationController
 
     flash[:error] = "This SSP is published and read-only. Create a copy to make changes."
     redirect_to ssp_document_path(@ssp_document)
-  end
-
-  # ── Enrichment sync helpers ──────────────────────────────────────
-
-  def sync_information_types
-    incoming = params.dig(:ssp_document, :information_types) || []
-    existing_ids = @ssp_document.ssp_information_types.ids
-    seen_ids = []
-
-    incoming.each do |it_params|
-      it_params = it_params.permit(:id, :title, :description,
-                                   :confidentiality_impact_base, :integrity_impact_base,
-                                   :availability_impact_base)
-      if it_params[:id].present? && existing_ids.include?(it_params[:id].to_i)
-        record = @ssp_document.ssp_information_types.find(it_params[:id])
-        record.update!(it_params.except(:id))
-        seen_ids << record.id
-      else
-        record = @ssp_document.ssp_information_types.create!(
-          uuid: SecureRandom.uuid,
-          title: it_params[:title] || "Information Type",
-          description: it_params[:description] || "No description provided.",
-          confidentiality_impact_base: it_params[:confidentiality_impact_base],
-          integrity_impact_base: it_params[:integrity_impact_base],
-          availability_impact_base: it_params[:availability_impact_base]
-        )
-        seen_ids << record.id
-      end
-    end
-
-    @ssp_document.ssp_information_types.where.not(id: seen_ids).delete_all
-  end
-
-  def sync_components
-    incoming = params.dig(:ssp_document, :components) || []
-    existing_ids = @ssp_document.ssp_components.ids
-    seen_ids = []
-
-    incoming.each do |c_params|
-      # #998 — the validation pair. The model refuses these on a component that
-      # is not a validation, rather than storing them somewhere no exporter
-      # looks: an enum value with no supporting fields reads as support without
-      # being it.
-      c_params = c_params.permit(:id, :component_type, :title, :description, :status_state,
-                                 :validation_type, :validation_reference,
-                                 :validation_details_href, :validates_component_id)
-      if c_params[:id].present? && existing_ids.include?(c_params[:id].to_i)
-        record = @ssp_document.ssp_components.find(c_params[:id])
-        record.update!(c_params.except(:id))
-        seen_ids << record.id
-      else
-        record = @ssp_document.ssp_components.create!(
-          uuid: SecureRandom.uuid,
-          component_type: c_params[:component_type] || "software",
-          title: c_params[:title] || "Component",
-          description: c_params[:description] || "No description provided.",
-          status_state: c_params[:status_state] || "operational"
-        )
-        seen_ids << record.id
-      end
-    end
-
-    # Preserve "this-system" components that aren't in the form
-    protected_ids = @ssp_document.ssp_components.this_system.ids
-    @ssp_document.ssp_components.where.not(id: seen_ids + protected_ids).delete_all
-  end
-
-  def sync_users
-    incoming = params.dig(:ssp_document, :users) || []
-    existing_ids = @ssp_document.ssp_users.ids
-    seen_ids = []
-
-    incoming.each do |u_params|
-      u_params = u_params.permit(:id, :title, :description, :short_name, role_ids_data: [])
-      if u_params[:id].present? && existing_ids.include?(u_params[:id].to_i)
-        record = @ssp_document.ssp_users.find(u_params[:id])
-        record.update!(u_params.except(:id))
-        seen_ids << record.id
-      else
-        record = @ssp_document.ssp_users.create!(
-          uuid: SecureRandom.uuid,
-          title: u_params[:title],
-          description: u_params[:description],
-          short_name: u_params[:short_name],
-          role_ids_data: u_params[:role_ids_data] || []
-        )
-        seen_ids << record.id
-      end
-    end
-
-    @ssp_document.ssp_users.where.not(id: seen_ids).delete_all
   end
 
   # ── Heatmap ──────────────────────────────────────────────────────

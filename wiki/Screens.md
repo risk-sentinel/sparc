@@ -520,6 +520,15 @@ Multi-step creation flow: profile/baseline selector, CDEF selector, system detai
 
 Form for adding OSCAL-required metadata: system characteristics (description, sensitivity level, status, authorization boundary), components (title, type, description), system users (title, description), and information types.
 
+Saving redraws the form in place (#1340); the page doesn't reload.
+- **Success:** you stay on the page with a confirmation.
+- **Failure:** nothing is saved, and what you typed stays.
+  - The message above the form names each refused row and field.
+  - Each refused field is outlined, flagged invalid for screen readers, and has its message under it.
+  - Its section opens and can't be collapsed until the field is fixed.
+  - Sections you had open stay open.
+- **Added rows:** an added row has **Remove row**. An added row left empty is refused, never saved as an empty row.
+
 The **Import from canonical sources** panel adds boundary members as system
 users, imports components from component definitions, and links reusable back
 matter. Its **Declared roles** section lists the OSCAL roles the SSP declares

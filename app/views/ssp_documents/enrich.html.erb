@@ -112,10 +112,27 @@
     <% end %>
   </div>
 
-  <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch, local: true, html: { data: { controller: "ssp-enrich" } } do |f| %>
+  <%# #1340 — the form is redrawn in place on save (this frame), so the author
+      keeps their place: their input, scroll position and open sections. A
+      refused field is outlined with its message under it, and its section is
+      held open (field_errors_controller.js). %>
+  <%= turbo_frame_tag "ssp-enrich-form" do %>
+  <% if @enrich_saved %>
+    <div class="alert alert-success" role="status" data-testid="enrich-saved">SSP enrichment data saved.</div>
+  <% end %>
+  <% if @enrich_errors.present? %>
+    <div class="alert alert-danger" role="alert" data-testid="enrich-errors">
+      <div class="fw-semibold mb-1">Nothing was saved. Fix the highlighted fields:</div>
+      <ul class="mb-0">
+        <% @enrich_errors.each do |line| %><li><%= line %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+  <%= form_with model: @ssp_document, url: update_enrich_ssp_document_path(@ssp_document), method: :patch,
+                html: { data: { controller: "ssp-enrich field-errors", field_errors_key_value: "ssp-enrich-#{@ssp_document.id}" } } do |f| %>
 
     <%# ── System Information ── %>
-    <details open class="mb-3 sparc-enrich-section">
+    <details open class="mb-3 sparc-enrich-section" id="enrich-system-information">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         System Information
       </summary>
@@ -149,7 +166,7 @@
     </details>
 
     <%# ── Security Levels ── %>
-    <details class="mb-3 sparc-enrich-section">
+    <details class="mb-3 sparc-enrich-section" id="enrich-security-levels">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         Security Levels
       </summary>
@@ -188,7 +205,7 @@
     </details>
 
     <%# ── Authorization Boundary ── %>
-    <details class="mb-3 sparc-enrich-section">
+    <details class="mb-3 sparc-enrich-section" id="enrich-boundaries">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         Boundaries & Architecture
       </summary>
@@ -212,22 +229,25 @@
     </details>
 
     <%# ── Information Types ── %>
-    <details class="mb-3 sparc-enrich-section">
+    <details class="mb-3 sparc-enrich-section" id="enrich-information-types">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         Information Types (<%= @info_types.count %>)
       </summary>
       <div class="sparc-p-1r-125r" id="info-types-container" data-ssp-enrich-target="infoTypesContainer">
         <% @info_types.each_with_index do |it, idx| %>
+          <% it_id = "ssp-info-type-#{idx}" %>
           <div class="info-type-entry sparc-enrich-item-card-alt">
-            <input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>">
+            <% if it.persisted? %><input type="hidden" name="ssp_document[information_types][][id]" value="<%= it.id %>"><% end %>
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group sparc-mb-025">
-                <div class="sparc-fs-075">Title</div>
-                <input type="text" name="ssp_document[information_types][][title]" value="<%= it.title %>" aria-label="Information Type Title" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= it_id %>-title">Title</label>
+                <input type="text" id="<%= it_id %>-title" name="ssp_document[information_types][][title]" value="<%= it.title %>" class="form-control sparc-fs-085<%= field_invalid_class(it, :title) %>" <%= field_invalid_attributes(it, :title, "#{it_id}-title") %>>
+                <%= field_error_feedback(it, :title, "#{it_id}-title") %>
               </div>
               <div class="form-group sparc-mb-025">
-                <div class="sparc-fs-075">Description</div>
-                <input type="text" name="ssp_document[information_types][][description]" value="<%= it.description %>" aria-label="Information Type Description" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= it_id %>-description">Description</label>
+                <input type="text" id="<%= it_id %>-description" name="ssp_document[information_types][][description]" value="<%= it.description %>" class="form-control sparc-fs-085<%= field_invalid_class(it, :description) %>" <%= field_invalid_attributes(it, :description, "#{it_id}-description") %>>
+                <%= field_error_feedback(it, :description, "#{it_id}-description") %>
               </div>
               <div class="form-group sparc-mb-0">
                 <div class="sparc-fs-075">Confidentiality (Base)</div>
@@ -248,6 +268,7 @@
                 </select>
               </div>
             </div>
+            <% unless it.persisted? %><%= render "ssp_documents/enrich_remove_row" %><% end %>
           </div>
         <% end %>
         <template data-ssp-enrich-target="infoTypeTemplate">
@@ -280,6 +301,7 @@
                 </select>
               </div>
             </div>
+            <%= render "ssp_documents/enrich_remove_row" %>
           </div>
         </template>
         <button type="button" data-action="ssp-enrich#addInfoType" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
@@ -289,30 +311,34 @@
     </details>
 
     <%# ── Components ── %>
-    <details class="mb-3 sparc-enrich-section">
+    <details class="mb-3 sparc-enrich-section" id="enrich-components">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         Components (<%= @components.count %>)
       </summary>
       <div class="sparc-p-1r-125r" id="components-container" data-ssp-enrich-target="componentsContainer">
         <% @components.reject { |c| c.component_type == SspComponent::THIS_SYSTEM }.each_with_index do |comp, comp_idx| %>
+          <% c_id = "ssp-component-#{comp_idx}" %>
           <div class="component-entry sparc-enrich-item-card-alt">
-            <input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>">
+            <% if comp.persisted? %><input type="hidden" name="ssp_document[components][][id]" value="<%= comp.id %>"><% end %>
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group sparc-mb-025">
-                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-title">Title</label>
-                <input type="text" id="ssp-component-<%= comp_idx %>-title" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= c_id %>-title">Title</label>
+                <input type="text" id="<%= c_id %>-title" name="ssp_document[components][][title]" value="<%= comp.title %>" class="form-control sparc-fs-085<%= field_invalid_class(comp, :title) %>" <%= field_invalid_attributes(comp, :title, "#{c_id}-title") %>>
+                <%= field_error_feedback(comp, :title, "#{c_id}-title") %>
               </div>
               <div class="form-group sparc-mb-025">
-                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-type">Type</label>
-                <select id="ssp-component-<%= comp_idx %>-type" name="ssp_document[components][][component_type]" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= c_id %>-type">Type</label>
+                <select id="<%= c_id %>-type" name="ssp_document[components][][component_type]" class="form-control sparc-fs-085<%= field_invalid_class(comp, :component_type) %>" <%= field_invalid_attributes(comp, :component_type, "#{c_id}-type") %>>
                   <% SspComponent::COMPONENT_TYPES.reject { |t| t == SspComponent::THIS_SYSTEM }.each do |t| %>
                     <option value="<%= t %>" <%= "selected" if comp.component_type == t %>><%= t.titleize %></option>
                   <% end %>
                 </select>
+                <%= field_error_feedback(comp, :component_type, "#{c_id}-type") %>
               </div>
               <div class="form-group sparc-field-grid-span">
-                <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-description">Description</label>
-                <input type="text" id="ssp-component-<%= comp_idx %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= c_id %>-description">Description</label>
+                <input type="text" id="<%= c_id %>-description" name="ssp_document[components][][description]" value="<%= comp.description %>" class="form-control sparc-fs-085<%= field_invalid_class(comp, :description) %>" <%= field_invalid_attributes(comp, :description, "#{c_id}-description") %>>
+                <%= field_error_feedback(comp, :description, "#{c_id}-description") %>
               </div>
 
               <%# ── #998: what this validation validates ────────────────────
@@ -329,30 +355,35 @@
                   </div>
                   <div class="row row-cols-1 row-cols-md-2 g-2">
                     <div class="form-group">
-                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-type">Validation type</label>
-                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-type" name="ssp_document[components][][validation_type]" value="<%= comp.validation_type %>" class="form-control sparc-fs-085" placeholder="e.g. fips-140-2">
+                      <label class="sparc-fs-075" for="<%= c_id %>-validation-type">Validation type</label>
+                      <input type="text" id="<%= c_id %>-validation-type" name="ssp_document[components][][validation_type]" value="<%= comp.validation_type %>" class="form-control sparc-fs-085<%= field_invalid_class(comp, :validation_type) %>" <%= field_invalid_attributes(comp, :validation_type, "#{c_id}-validation-type") %> placeholder="e.g. fips-140-2">
+                      <%= field_error_feedback(comp, :validation_type, "#{c_id}-validation-type") %>
                     </div>
                     <div class="form-group">
-                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-reference">Certificate reference</label>
-                      <input type="text" id="ssp-component-<%= comp_idx %>-validation-reference" name="ssp_document[components][][validation_reference]" value="<%= comp.validation_reference %>" class="form-control sparc-fs-085" placeholder="e.g. 4282">
+                      <label class="sparc-fs-075" for="<%= c_id %>-validation-reference">Certificate reference</label>
+                      <input type="text" id="<%= c_id %>-validation-reference" name="ssp_document[components][][validation_reference]" value="<%= comp.validation_reference %>" class="form-control sparc-fs-085<%= field_invalid_class(comp, :validation_reference) %>" <%= field_invalid_attributes(comp, :validation_reference, "#{c_id}-validation-reference") %> placeholder="e.g. 4282">
+                      <%= field_error_feedback(comp, :validation_reference, "#{c_id}-validation-reference") %>
                     </div>
                     <div class="form-group">
-                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validation-details">Authoritative record (URL)</label>
-                      <input type="url" id="ssp-component-<%= comp_idx %>-validation-details" name="ssp_document[components][][validation_details_href]" value="<%= comp.validation_details_href %>" class="form-control sparc-fs-085" placeholder="https://…">
+                      <label class="sparc-fs-075" for="<%= c_id %>-validation-details">Authoritative record (URL)</label>
+                      <input type="url" id="<%= c_id %>-validation-details" name="ssp_document[components][][validation_details_href]" value="<%= comp.validation_details_href %>" class="form-control sparc-fs-085<%= field_invalid_class(comp, :validation_details_href) %>" <%= field_invalid_attributes(comp, :validation_details_href, "#{c_id}-validation-details") %> placeholder="https://…">
+                      <%= field_error_feedback(comp, :validation_details_href, "#{c_id}-validation-details") %>
                     </div>
                     <div class="form-group">
-                      <label class="sparc-fs-075" for="ssp-component-<%= comp_idx %>-validates">Validates which component</label>
-                      <select id="ssp-component-<%= comp_idx %>-validates" name="ssp_document[components][][validates_component_id]" class="form-control sparc-fs-085">
+                      <label class="sparc-fs-075" for="<%= c_id %>-validates">Validates which component</label>
+                      <select id="<%= c_id %>-validates" name="ssp_document[components][][validates_component_id]" class="form-control sparc-fs-085<%= field_invalid_class(comp, :validates_component_id) %>" <%= field_invalid_attributes(comp, :validates_component_id, "#{c_id}-validates") %>>
                         <option value="">— not linked to a product —</option>
-                        <% @components.reject { |other| other.id == comp.id || other.validation? }.each do |other| %>
+                        <% @components.reject { |other| !other.persisted? || other.id == comp.id || other.validation? }.each do |other| %>
                           <option value="<%= other.id %>" <%= "selected" if comp.validates_component_id == other.id %>><%= other.title %></option>
                         <% end %>
                       </select>
+                      <%= field_error_feedback(comp, :validates_component_id, "#{c_id}-validates") %>
                     </div>
                   </div>
                 </div>
               <% end %>
             </div>
+            <% unless comp.persisted? %><%= render "ssp_documents/enrich_remove_row" %><% end %>
           </div>
         <% end %>
         <template data-ssp-enrich-target="componentTemplate">
@@ -381,6 +412,7 @@
                 <input type="text" name="ssp_document[components][][description]" class="form-control sparc-fs-085" placeholder="Component description" aria-label="Component Description">
               </div>
             </div>
+            <%= render "ssp_documents/enrich_remove_row" %>
           </div>
         </template>
         <button type="button" data-action="ssp-enrich#addComponent" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
@@ -390,24 +422,28 @@
     </details>
 
     <%# ── Users ── %>
-    <details class="mb-3 sparc-enrich-section">
+    <details class="mb-3 sparc-enrich-section" id="enrich-users">
       <summary class="bg-body-secondary sparc-enrich-section-header">
         System Users (<%= @users.count %>)
       </summary>
       <div class="sparc-p-1r-125r" id="users-container" data-ssp-enrich-target="usersContainer">
         <% @users.each_with_index do |user, user_idx| %>
+          <% u_id = "ssp-user-#{user_idx}" %>
           <div class="user-entry sparc-enrich-item-card-alt">
-            <input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>">
+            <% if user.persisted? %><input type="hidden" name="ssp_document[users][][id]" value="<%= user.id %>"><% end %>
             <div class="row row-cols-1 row-cols-md-2 g-2">
               <div class="form-group sparc-mb-025">
-                <label class="sparc-fs-075" for="ssp-user-<%= user_idx %>-title">Title</label>
-                <input type="text" id="ssp-user-<%= user_idx %>-title" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= u_id %>-title">Title</label>
+                <input type="text" id="<%= u_id %>-title" name="ssp_document[users][][title]" value="<%= user.title %>" class="form-control sparc-fs-085<%= field_invalid_class(user, :title) %>" <%= field_invalid_attributes(user, :title, "#{u_id}-title") %>>
+                <%= field_error_feedback(user, :title, "#{u_id}-title") %>
               </div>
               <div class="form-group sparc-mb-0">
-                <label class="sparc-fs-075" for="ssp-user-<%= user_idx %>-description">Description</label>
-                <input type="text" id="ssp-user-<%= user_idx %>-description" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control sparc-fs-085">
+                <label class="sparc-fs-075" for="<%= u_id %>-description">Description</label>
+                <input type="text" id="<%= u_id %>-description" name="ssp_document[users][][description]" value="<%= user.description %>" class="form-control sparc-fs-085<%= field_invalid_class(user, :description) %>" <%= field_invalid_attributes(user, :description, "#{u_id}-description") %>>
+                <%= field_error_feedback(user, :description, "#{u_id}-description") %>
               </div>
             </div>
+            <% unless user.persisted? %><%= render "ssp_documents/enrich_remove_row" %><% end %>
           </div>
         <% end %>
         <template data-ssp-enrich-target="userTemplate">
@@ -422,6 +458,7 @@
                 <input type="text" name="ssp_document[users][][description]" class="form-control sparc-fs-085" placeholder="Description" aria-label="User Description">
               </div>
             </div>
+            <%= render "ssp_documents/enrich_remove_row" %>
           </div>
         </template>
         <button type="button" data-action="ssp-enrich#addUser" class="sparc-action sparc-action--positive sparc-action--solid sparc-enrich-item-action">
@@ -433,8 +470,10 @@
     <%# ── Submit ── %>
     <div class="d-flex gap-3 mt-3">
       <%= f.submit "Save Enrichment Data", class: "sparc-action sparc-action--primary sparc-action--solid" %>
-      <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+      <%= link_to "Cancel", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost",
+                  data: { turbo_frame: "_top" } %>
     </div>
 
+  <% end %>
   <% end %>
 </div>
