@@ -118,7 +118,7 @@
       held open (field_errors_controller.js). %>
   <%= turbo_frame_tag "ssp-enrich-form" do %>
   <% if @enrich_saved %>
-    <div class="alert alert-success" role="status" data-testid="enrich-saved">SSP enrichment data saved.</div>
+    <output class="alert alert-success d-block" data-testid="enrich-saved">SSP enrichment data saved.</output>
   <% end %>
   <% if @enrich_errors.present? %>
     <div class="alert alert-danger" role="alert" data-testid="enrich-errors">
