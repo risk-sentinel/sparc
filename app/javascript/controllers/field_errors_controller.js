@@ -50,7 +50,7 @@ export default class FieldErrorsController extends Controller {
   #holdOpen = (event) => {
     const summary = event.target.closest("summary")
     const section = summary?.parentElement
-    if (!section || section.tagName !== "DETAILS" || !section.open) return
+    if (section?.tagName !== "DETAILS" || !section.open) return
     if (section.querySelector(".is-invalid")) {
       event.preventDefault()
       summary.setAttribute("title", "Fix the highlighted fields before collapsing this section")

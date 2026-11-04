@@ -21,7 +21,7 @@ module FieldErrorMarkup
   FEEDBACK_CLASS = "invalid-feedback d-block"
   SKIPPED_TYPES = %w[hidden submit button].freeze
 
-  module_function
+  extend self
 
   def feedback_id(field_id) = "#{field_id}-error"
 

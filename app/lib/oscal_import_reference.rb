@@ -19,7 +19,7 @@
 module OscalImportReference
   MEDIA_TYPE = "application/json"
 
-  module_function
+  extend self
 
   def href(uuid) = "##{uuid}"
 

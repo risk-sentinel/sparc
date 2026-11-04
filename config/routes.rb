@@ -143,8 +143,8 @@ Rails.application.routes.draw do
       patch :change_baseline, action: :apply_baseline_change
       # #1337 — bring the SSP up to its own baseline: see what is added (GET),
       # then confirm it (PATCH).
-      get :bring_up_to_baseline
-      patch :bring_up_to_baseline, action: :apply_bring_up_to_baseline
+      get :bring_up_to_baseline, to: "ssp_documents#bring_up_to_baseline"
+      patch :bring_up_to_baseline, to: "ssp_documents#apply_bring_up_to_baseline"
       patch :update_metadata
       patch :update_statement
       patch :publish
@@ -670,8 +670,8 @@ Rails.application.routes.draw do
           post :change_baseline, action: :apply_baseline_change
           # #1337 — what bringing the SSP up to its baseline adds (GET), then
           # the addition (POST), through the web page's service.
-          get :bring_up_to_baseline
-          post :bring_up_to_baseline, action: :apply_bring_up_to_baseline
+          get :bring_up_to_baseline, to: "ssp_documents#bring_up_to_baseline"
+          post :bring_up_to_baseline, to: "ssp_documents#apply_bring_up_to_baseline"
           # #716 — bulk editable-field file import (preview → confirm).
           post field_import_preview, to: "ssp_documents#import_fields_preview", as: :import_fields_preview
           post field_import_confirm, to: "ssp_documents#import_fields_confirm", as: :import_fields_confirm
