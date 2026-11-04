@@ -5429,8 +5429,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-token__title,
 .sparc-token__actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-width: 0; }
 .sparc-token__title > span:first-child { overflow-wrap: anywhere; }
-.sparc-token__facts,
-.sparc-detail-strip {
+.sparc-token__facts {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 2rem;
@@ -5442,7 +5441,7 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-detail-strip dt { font-weight: 400; color: var(--bs-secondary-color); }
 .sparc-token__fact dd { margin: 0; overflow-wrap: anywhere; }
 /* The account strip: each label above its value. */
-.sparc-detail-strip { gap: 0.75rem 3rem; font-size: 1rem; }
+.sparc-detail-strip { display: flex; flex-wrap: wrap; gap: 0.75rem 3rem; margin: 0; font-size: 1rem; }
 .sparc-detail-strip > div { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .sparc-detail-strip dt { font-size: 0.8rem; }
 .sparc-detail-strip dd { margin: 0; overflow-wrap: anywhere; }
