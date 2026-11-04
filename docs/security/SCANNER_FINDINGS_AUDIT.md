@@ -1,8 +1,58 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-10-27 (v1.17.4 — net-ssh 7.3.8 for seven advisories; no base change)
+**Last reviewed:** 2026-11-04 (v1.17.7 — Rails 8.1.4.1 for 21 advisories; covers v1.17.5 and v1.17.6, which shipped without a refresh)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.7 rescan (2026-11-04).** Real rescan of the built `sparc:v1.17.7`
+> image (arm64, `8771a4ae1fd6`, the release code with Rails 8.1.4.1), not an
+> SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-04) and Trivy 0.74.0. This
+> is the first refresh since v1.17.4: v1.17.5 and v1.17.6 shipped without one.
+> Their images (`95b0fcd49bdd`, `833116c7e8aa`) were rescanned with the same
+> database for the comparison below.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB v6.1.10 built 2026-11-04) | **0** | **2** | 51 | 34 |
+> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (111 grype matches, 87 ids).
+>
+> - **Compared id by id:** v1.17.7 and v1.17.6 differ by no CVE id.
+> - **v1.17.5 → v1.17.6:** the one difference is the Critical CVE-2026-97229 in
+>   Ruby's regular-expression engine, removed by Ruby 3.4.12 (#1333).
+> - **Against v1.17.4's 78:** the earlier audit used the 2026-10-26 database
+>   and its image is not at hand, so the rise to 87 cannot be split between
+>   image changes and newer advisory data. It is not attributed here.
+> - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1 (CVE-2026-54696;
+>   the app loads 3.1.0).
+>
+> - **The two Highs:** CVE-2026-119373 and CVE-2026-119586 in the base image's
+>   `sqlite-libs` 3.46.1, no upstream fix. Nothing in the image loads SQLite
+>   and the sqlite3 shell is not installed. Both are recorded as approved
+>   deviations (v1.17.6, #1309) and listed in the register.
+> - **Gems taken: Rails 8.1.4 → 8.1.4.1 (#1344).** bundle-audit
+>   (ruby-advisory-db of 2026-11-04) reported 21 advisories against the Rails
+>   8.1.4 gems:
+>   - activestorage: 1 Critical (GHSA-f3w6-w445-fwh9), 1 High (GHSA-v924-7rp8-4mxh)
+>     and 5 Medium/Low;
+>   - actionpack: 2 High (GHSA-2gff-2mmg-m73p, GHSA-wm3x-v3qw-4jh3) and 5
+>     Medium/Low;
+>   - activesupport: 1 High (GHSA-8474-xrp6-wh69) and 1 Medium;
+>   - actionview: 4 Medium;
+>   - actionmailbox: 1 Low.
+>
+>   8.1.4.1 fixes all 21, and bundle-audit is clean. grype's advisory data does
+>   not carry them yet: it reports nothing for the Rails gems on the v1.17.6
+>   image either, so the image scan neither found them there nor proves them
+>   gone here. bundle-audit is the evidence.
+> - **v1.17.6's gem fixes,** recorded here because that release had no audit:
+>   rack 3.2.8 (a High), loofah 2.25.3, nokogiri 1.19.7 and
+>   rails-html-sanitizer 1.7.2.
+> - **Register:** 9 entries (7 deferred, 2 false_positive), none
+>   `RELEASE-BLOCKING`. Every `next_review_date` is in the future; the
+>   earliest are 2026-11-15 and 2026-11-16. The false_positive entries carry
+>   the 365-day window. `.trivyignore` holds no active entry.
 
 > **v1.17.4 rescan (2026-10-27).** Real rescan of the built `sparc:v1.17.4`
 > image (arm64, `5807623677f0`, the release code with net-ssh 7.3.8), not an
