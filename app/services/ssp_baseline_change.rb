@@ -14,6 +14,12 @@
 # web page and the API both preview with #delta and apply with #apply!, so the
 # two cannot disagree about what a change does.
 #
+# #1337 — "Bring up to baseline" is the same change with the SSP's own
+# baseline (SspBaselineChange.fill): it only adds. Controls the baseline
+# selects that the SSP lacks are created, with their items, and the items
+# missing from controls it already has are added. Nothing that exists is
+# changed or removed, and controls outside the baseline are left alone.
+#
 # NIST SP 800-53 Rev 5: PL-2 (the SSP follows its baseline), CM-3 (the change
 # is previewed, confirmed and audited).
 class SspBaselineChange
@@ -32,12 +38,24 @@ class SspBaselineChange
   STATEMENT_ANSWERS = %i[implementation_prose implementation_status control_origination
                          responsible_roles_data remarks expected_completion].freeze
 
-  attr_reader :document, :profile
+  attr_reader :document, :profile, :items_added
 
-  def initialize(document, profile)
+  def initialize(document, profile, fill_only: false)
     @document = document
     @profile = profile
+    @fill_only = fill_only
   end
+
+  # #1337 — bring the SSP up to its own baseline.
+  def self.fill(document) = new(document, document.profile_document, fill_only: true)
+
+  def fill_only? = @fill_only
+
+  # #1337 — items (statement rows) the SSP's existing controls lack.
+  def missing_items = SspStatementRows.new(document).pending_count
+
+  # #1337 — anything to add: a control, or an item of one the SSP has.
+  def needed? = delta.added.any? || missing_items.positive?
 
   # The baselines an SSP can be moved to: published, with a resolved catalog.
   def self.choices = ProfileDocument.ssp_ready.order(:name)
@@ -48,7 +66,8 @@ class SspBaselineChange
     target = target_control_ids
     target_set = target.to_set
     outside = current.keys.reject { target_set.include?(_1) }
-    kept, removed = outside.partition { answered?(current[_1]) }
+    # Filling never touches a control outside the baseline.
+    kept, removed = fill_only? ? [ [], [] ] : outside.partition { answered?(current[_1]) }
 
     Delta.new(added: target.reject { current.key?(_1) }, unchanged: target.select { current.key?(_1) },
               kept: kept, removed: removed)
@@ -58,6 +77,8 @@ class SspBaselineChange
   # @return [Delta] what was applied
   def apply!
     refuse_unless_allowed!
+    return fill! if fill_only?
+
     change = delta
     current = current_controls
 
@@ -83,6 +104,8 @@ class SspBaselineChange
   end
 
   def refuse_unless_allowed!
+    return refuse_fill_unless_allowed! if fill_only?
+
     raise Refused, "Choose a baseline." if profile.nil?
     if document.published_lifecycle?
       raise Refused, "This SSP is published and its baseline is fixed. Create a copy to change it."
@@ -92,6 +115,24 @@ class SspBaselineChange
   end
 
   private
+
+  def refuse_fill_unless_allowed!
+    raise Refused, "This SSP has no baseline. Choose one with Change baseline." if profile.nil?
+    raise Refused, "This SSP is published and can't be changed. Create a copy to change it." if document.published_lifecycle?
+    return if self.class.choices.exists?(id: profile.id)
+
+    raise Refused, "This SSP's baseline is not published with a resolved catalog, so its controls can't be read."
+  end
+
+  # Add what is missing; change nothing else. A second run adds nothing.
+  def fill!
+    change = delta
+    ActiveRecord::Base.transaction do
+      SspFromProfileService.new(profile).add_controls(document, change.added)
+      @items_added = SspStatementRows.ensure!(document)
+    end
+    change
+  end
 
   # canonical control id => root SspControl
   def current_controls

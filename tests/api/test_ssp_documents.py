@@ -19,6 +19,8 @@ deletes it in teardown. Tests that need an existing document use the
 # api-inventory: covers ssp_documents#import_fields_confirm
 # POST change_baseline routes to apply_baseline_change (#1330); TestChangeBaseline.
 # api-inventory: covers ssp_documents#apply_baseline_change
+# api-inventory: covers ssp_documents#bring_up_to_baseline
+# api-inventory: covers ssp_documents#apply_bring_up_to_baseline
 
 from __future__ import annotations
 
@@ -248,6 +250,93 @@ class TestChangeBaseline:
         for method in ("get", "post"):
             resp = getattr(anon_client, method)(f"{PATH}/{ssp_doc['slug']}/change_baseline",
                                                 params={"profile_document_id": 1})
+            assert resp.status_code == 401, resp.text
+
+
+def _missing_controls(client: httpx.Client, slug: str) -> list[str]:
+    resp = client.get(f"{PATH}/{slug}/bring_up_to_baseline")
+    assert resp.status_code == 200, resp.text
+    return resp.json()["data"]["controls_added"]
+
+
+class TestBringUpToBaseline:
+    """#1337 — GET previews what an SSP lacks of its own baseline and changes
+    nothing; POST adds it and changes nothing that exists. A second POST adds
+    nothing. Both go through SspBaselineChange.fill."""
+
+    @pytest.fixture
+    def short_of_baseline(
+        self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> dict[str, Any]:
+        """An SSP that names a published baseline but holds none of its
+        controls, as an import that declared its baseline can."""
+        for profile_id in _published_profile_ids(admin_client):
+            resp = admin_client.patch(f"{PATH}/{ssp_doc['slug']}",
+                                      json={PARAM_KEY: {"profile_document_id": profile_id}})
+            assert resp.status_code == 200, resp.text
+            preview = admin_client.get(f"{PATH}/{ssp_doc['slug']}/bring_up_to_baseline")
+            if preview.status_code == 200 and preview.json()["data"]["controls_added"]:
+                return ssp_doc
+        pytest.skip("needs a published baseline with a resolved catalog")
+
+    @pytest.mark.happy
+    def test_preview_lists_what_is_missing_and_changes_nothing(
+        self, admin_client: httpx.Client, short_of_baseline: dict[str, Any]
+    ) -> None:
+        slug = short_of_baseline["slug"]
+        first = admin_client.get(f"{PATH}/{slug}/bring_up_to_baseline")
+        second = admin_client.get(f"{PATH}/{slug}/bring_up_to_baseline")
+        assert first.status_code == 200, first.text
+        data = first.json()["data"]
+        assert isinstance(data["controls_added"], list) and data["controls_added"], data
+        assert isinstance(data["items_added"], int), data
+        again = second.json()["data"]["controls_added"]
+        assert again == data["controls_added"], "the preview changed the SSP"
+
+    @pytest.mark.happy
+    def test_apply_adds_what_the_preview_listed_and_a_second_call_adds_nothing(
+        self, admin_client: httpx.Client, short_of_baseline: dict[str, Any]
+    ) -> None:
+        slug = short_of_baseline["slug"]
+        expected = _missing_controls(admin_client, slug)
+
+        resp = admin_client.post(f"{PATH}/{slug}/bring_up_to_baseline")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["data"]["controls_added"] == expected
+
+        again = admin_client.post(f"{PATH}/{slug}/bring_up_to_baseline")
+        assert again.status_code == 200, again.text
+        assert again.json()["data"]["controls_added"] == []
+        assert again.json()["data"]["items_added"] == 0
+
+    @pytest.mark.validation
+    def test_an_ssp_with_no_baseline_is_refused_with_422(
+        self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> None:
+        for method in ("get", "post"):
+            resp = getattr(admin_client, method)(f"{PATH}/{ssp_doc['slug']}/bring_up_to_baseline")
+            assert_error_envelope(resp, expected_status=422)
+            assert "no baseline" in resp.json()["error"]
+
+    @pytest.mark.auth
+    def test_apply_is_refused_to_a_read_only_user(
+        self, admin_client: httpx.Client, user_client: httpx.Client,
+        short_of_baseline: dict[str, Any],
+    ) -> None:
+        slug = short_of_baseline["slug"]
+        before = _missing_controls(admin_client, slug)
+        resp = user_client.post(f"{PATH}/{slug}/bring_up_to_baseline")
+        # 403 for a user who may read the boundary; 404 when it is not even
+        # visible to them. Either way nothing is added.
+        assert resp.status_code in (403, 404), resp.text
+        assert _missing_controls(admin_client, slug) == before
+
+    @pytest.mark.auth
+    def test_bring_up_to_baseline_requires_token(
+        self, anon_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> None:
+        for method in ("get", "post"):
+            resp = getattr(anon_client, method)(f"{PATH}/{ssp_doc['slug']}/bring_up_to_baseline")
             assert resp.status_code == 401, resp.text
 
 

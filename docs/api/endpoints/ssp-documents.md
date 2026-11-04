@@ -17,6 +17,8 @@ System Security Plan (SSP) documents capture the security controls implemented f
 | `POST` | `/api/v1/ssp_documents/:id/populate_from_profile` | Populate an empty SSP from a published profile | `ssp.write` |
 | `GET` | `/api/v1/ssp_documents/:id/change_baseline` | What changing the SSP's baseline would do (#1330) | `ssp.write` |
 | `POST` | `/api/v1/ssp_documents/:id/change_baseline` | Change the SSP's baseline (#1330) | `ssp.write` |
+| `GET` | `/api/v1/ssp_documents/:id/bring_up_to_baseline` | What bringing the SSP up to its own baseline would add (#1337) | `ssp.write` |
+| `POST` | `/api/v1/ssp_documents/:id/bring_up_to_baseline` | Add the controls and items the SSP's baseline selects that it lacks (#1337) | `ssp.write` |
 
 ---
 
@@ -731,6 +733,64 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{ "profile_document_id": 7 }' \
   "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/change_baseline" | jq .
+```
+
+### GET /api/v1/ssp_documents/:id/bring_up_to_baseline
+
+What bringing the SSP up to its own baseline would add, without adding it (#1337). An SSP can hold fewer controls than its baseline selects: an imported SSP, or one whose baseline was declared after it was built. The SSP page shows the same before the author confirms.
+
+#### Response Body
+
+```json
+{
+  "data": {
+    "ssp_document_id": 42,
+    "profile_document_id": 7,
+    "profile_document_name": "NIST SP 800-53 Rev 5 HIGH Baseline",
+    "controls_added": ["ac-2.1", "ac-2.2"],
+    "items_added": 3
+  }
+}
+```
+
+- `controls_added`: controls the baseline selects that the SSP lacks. They are created, with a statement row for every item.
+- `items_added`: how many items the SSP's existing controls lack. A row is added for each.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | What would be added (both empty when the SSP already holds everything) |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` for the boundary |
+| `422 Unprocessable Entity` | Refused, with `error`: the SSP has no baseline, is published, or its baseline is not published with a resolved catalog |
+
+### POST /api/v1/ssp_documents/:id/bring_up_to_baseline
+
+Add the controls and items the SSP's baseline selects that the SSP lacks (#1337), and audit it (`ssp_document_brought_up_to_baseline`, with what was added).
+- Nothing that exists is changed or removed, answers included.
+- Controls outside the baseline are left alone.
+- A second call adds nothing.
+
+#### Response Body
+
+What was added, in the `GET` shape. `items_added` counts every row added, including the items of added controls.
+
+#### Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200 OK` | Added (both empty when nothing was missing) |
+| `401 Unauthorized` | Missing or invalid Bearer token |
+| `403 Forbidden` | Caller lacks `ssp.write` for the boundary |
+| `422 Unprocessable Entity` | Refused: as for `GET` |
+
+#### cURL Example
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN_HERE" \
+  "https://sparc.example.com/api/v1/ssp_documents/acme-cloud-platform-ssp/bring_up_to_baseline" | jq .
 ```
 
 ---

@@ -479,7 +479,9 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `DELETE` | `/api/v1/ssp_documents/:id` | `ssp_documents#destroy` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id` | `ssp_documents#show` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `PATCH/PUT` | `/api/v1/ssp_documents/:id` | `ssp_documents#update` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
+| `GET` | `/api/v1/ssp_documents/:id/bring_up_to_baseline` | `ssp_documents#bring_up_to_baseline` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/change_baseline` | `ssp_documents#change_baseline` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
+| `POST` | `/api/v1/ssp_documents/:id/bring_up_to_baseline` | `ssp_documents#apply_bring_up_to_baseline` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `POST` | `/api/v1/ssp_documents/:id/change_baseline` | `ssp_documents#apply_baseline_change` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `GET` | `/api/v1/ssp_documents/:id/export` | `ssp_documents#export` | [`ssp-documents.md`](endpoints/ssp-documents.md) | yes | yes |
 | `POST` | `/api/v1/ssp_documents/:id/fields/import/confirm` | `ssp_documents#import_fields_confirm` | prose only — [`field-import.md`](endpoints/field-import.md) | yes | yes |

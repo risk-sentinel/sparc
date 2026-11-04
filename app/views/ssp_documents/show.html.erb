@@ -37,7 +37,8 @@
 
 <%# 1.18.0-rf #1304 — the shared document header
     (shared/_document_header); Enrich, Change baseline (#1330; not on a
-    published SSP, whose baseline is fixed) and Refresh Inherited beside it. %>
+    published SSP, whose baseline is fixed), Bring up to baseline (#1337; only
+    when controls are missing) and Refresh Inherited beside it. %>
   <%= render "shared/document_header", document: @ssp_document, type: :ssp, version: @ssp_document.ssp_version,
         rename: { update_path: update_metadata_ssp_document_path(@ssp_document), version_field: :ssp_version },
         title_extra: (tag.span("Incomplete — needs content", class: "badge bg-warning text-dark",
@@ -47,6 +48,9 @@
           { label: "Enrich", look: "info outline", path: enrich_ssp_document_path(@ssp_document) },
           ({ label: "Change baseline", look: "info outline", path: change_baseline_ssp_document_path(@ssp_document),
              data: { testid: "change-baseline-link" } } if signed_in? && !@ssp_document.published_lifecycle?),
+          # #1337 — only when the SSP lacks controls its baseline selects.
+          ({ label: "Bring up to baseline", look: "info outline", path: bring_up_to_baseline_ssp_document_path(@ssp_document),
+             data: { testid: "bring-up-to-baseline-link" } } if signed_in? && @baseline_gap.positive?),
           ({ label: "Refresh Inherited", look: "caution solid", path: refresh_inherited_statements_ssp_document_path(@ssp_document), method: :post } if
             signed_in? && @ssp_document.ssp_components.where.not(cdef_document_id: nil).exists?)
         ].compact,

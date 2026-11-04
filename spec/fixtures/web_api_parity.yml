@@ -49,6 +49,8 @@ controllers:
       populate_from_profile: ["POST /api/v1/ssp_documents/:id/populate_from_profile"]
       change_baseline: ["GET /api/v1/ssp_documents/:id/change_baseline"]  # #1330 — what the change does
       apply_baseline_change: ["POST /api/v1/ssp_documents/:id/change_baseline"]  # #1330
+      bring_up_to_baseline: ["GET /api/v1/ssp_documents/:id/bring_up_to_baseline"]  # #1337 — what is added
+      apply_bring_up_to_baseline: ["POST /api/v1/ssp_documents/:id/bring_up_to_baseline"]  # #1337
       create_from_profile: ["POST /api/v1/ssp_documents", "POST /api/v1/ssp_documents/:id/populate_from_profile"]
       declare_role: ["POST /api/v1/ssp_documents/:ssp_document_id/roles"]
       import_back_matter: ["GET /api/v1/back_matter_resources/:id", "POST /api/v1/back_matter_resources"]

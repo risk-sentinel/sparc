@@ -319,6 +319,28 @@ and the change is recorded in the audit log. A **published** SSP's baseline is
 fixed: create a copy to change it. The API does the same through
 `GET` / `POST /api/v1/ssp_documents/:id/change_baseline`.
 
+## Bringing an SSP up to its baseline
+
+An SSP can hold fewer controls than its baseline selects. For example, an
+imported SSP with 41 controls on a baseline that selects 370 shows
+"0 of 370 responses answered" but lists only its 41 controls. While anything
+is missing, the SSP page offers **Bring up to baseline** (not on a published
+SSP). It shows, before anything changes:
+
+- the controls the baseline selects that the SSP lacks, added with every item
+  ready to answer;
+- the items missing from controls the SSP already has, added.
+
+Nothing that exists is changed or removed, answers included, and controls
+outside the baseline are left alone. Confirm with **Add … controls and …
+items**. The SSP page then says what was added, and the addition is recorded
+in the audit log. Running it again adds nothing. The API does the same through
+`GET` / `POST /api/v1/ssp_documents/:id/bring_up_to_baseline`.
+
+Items come from the stored catalog behind the baseline. If a control's items
+(a., b., c., …) still don't appear, that catalog holds no item breakdown for
+the control; re-import the catalog with its parts.
+
 ## How to export an SSP
 
 On the detail page use **Export OSCAL** (for the OSCAL `system-security-plan`)

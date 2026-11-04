@@ -26,9 +26,9 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
   # #1181 — OSCAL export over the API, shared with CDEF/SAP/SAR/POA&M.
   include OscalApiExport
 
-  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change ]
+  before_action :set_document, only: [ :show, :update, :destroy, :update_fields, :export, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change, :bring_up_to_baseline, :apply_bring_up_to_baseline ]
   before_action :authorize_document_read!, only: [ :show, :export ]
-  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change ]
+  before_action :authorize_document_write!, only: [ :create, :update, :destroy, :convert, :update_fields, :populate_from_profile, :import_fields_preview, :import_fields_confirm, :change_baseline, :apply_baseline_change, :bring_up_to_baseline, :apply_bring_up_to_baseline ]
 
   # #716 — FieldImportable hook: the loaded, write-authorized document.
   def field_import_document = @document
@@ -159,7 +159,37 @@ class Api::V1::SspDocumentsController < Api::V1::DocumentBaseController
     render json: { error: e.message }, status: :unprocessable_content
   end
 
+  # GET /api/v1/ssp_documents/:id/bring_up_to_baseline — #1337: what bringing
+  # the SSP up to its own baseline would add, and why it would be refused, if
+  # it would. Changes nothing. The web page shows the same.
+  def bring_up_to_baseline
+    fill = SspBaselineChange.fill(@document)
+    refusal = fill.refusal
+    return render(json: { error: refusal }, status: :unprocessable_content) if refusal
+
+    render json: { data: bring_up_json(fill.delta, fill.profile, items: fill.missing_items) }
+  end
+
+  # POST /api/v1/ssp_documents/:id/bring_up_to_baseline — #1337: add the
+  # controls and items the SSP lacks. Nothing that exists is changed or
+  # removed; a second call adds nothing.
+  def apply_bring_up_to_baseline
+    fill = SspBaselineChange.fill(@document)
+    delta = fill.apply!
+
+    audit_log("ssp_document_brought_up_to_baseline", subject: @document,
+              metadata: { profile_document_id: fill.profile.id, added: delta.added, items_added: fill.items_added })
+    render json: { data: bring_up_json(delta, fill.profile, items: fill.items_added) }
+  rescue SspBaselineChange::Refused => e
+    render json: { error: e.message }, status: :unprocessable_content
+  end
+
   private
+
+  def bring_up_json(delta, profile, items:)
+    { ssp_document_id: @document.id, profile_document_id: profile.id, profile_document_name: profile.name,
+      controls_added: delta.added, items_added: items }
+  end
 
   def baseline_change_json(delta, profile)
     { ssp_document_id: @document.id, profile_document_id: profile.id, profile_document_name: profile.name,
