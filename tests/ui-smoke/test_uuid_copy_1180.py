@@ -43,8 +43,9 @@ class TestUuidBadgeRenders:
         badges = authed_page.locator(UUID_BADGE)
         assert badges.count() >= 1, "no copyable UUID badge on the organization screen"
 
-        # The header badge is the organization's own, and says so.
-        header = authed_page.locator(f"h1 ~ div {UUID_BADGE}, .d-flex {UUID_BADGE}").first
+        # The header badge is the organization's own, and says so. Since #1346 the
+        # header is the shared page header, which carries it in its meta line.
+        header = authed_page.locator(f"[data-testid=page-header] {UUID_BADGE}").first
         assert "UUID" in header.inner_text(), "header badge lost its UUID label"
 
         # Every badge must carry a value to copy, and it must match what is shown.
