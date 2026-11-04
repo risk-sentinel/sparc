@@ -1,0 +1,80 @@
+<%# #1338 — one token list for the user and service account pages.
+    Each token is one entry: name and status with its buttons, then its facts
+    as labelled pairs that wrap. Nothing scrolls sideways at any width.
+
+    Locals:
+      owner         — the User (or service account) the tokens belong to
+      tokens        — the tokens to list, in display order
+      show_created  — also show when each token was created (user page)
+      show_revoke   — also offer Revoke (user page)
+      empty_text    — what to say when there are none %>
+<% show_created = local_assigns.fetch(:show_created, false) %>
+<% show_revoke  = local_assigns.fetch(:show_revoke, false) %>
+<% if tokens.any? %>
+  <ul class="sparc-token-list" data-testid="api-token-list">
+    <% tokens.each do |token| %>
+      <li class="sparc-token" data-testid="api-token">
+        <div class="sparc-token__head">
+          <div class="sparc-token__title">
+            <span class="fw-semibold"><%= token.name %></span>
+            <%= token_status_badge(token) %>
+          </div>
+          <div class="sparc-token__actions">
+            <% unless token.expired? %>
+              <%# #1233 — change this token's limits without reissuing it. %>
+              <%= link_to "Edit limits", edit_admin_user_api_token_path(owner, token),
+                    class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
+                    data: { testid: "edit-token-limits" } %>
+              <%= button_to "Renew", renew_admin_user_api_token_path(owner, token),
+                    method: :post, form_class: "d-inline",
+                    class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                    data: { turbo_confirm: "Renew '#{token.name}'? A new token is issued with the same limits; this one keeps working for up to #{SparcConfig.api_token_renewal_grace_days} more days." } %>
+            <% end %>
+            <%= button_to "Reissue", reissue_admin_user_api_token_path(owner, token),
+                  method: :post, form_class: "d-inline",
+                  class: "sparc-action sparc-action--caution sparc-action--outline sparc-action--sm",
+                  data: { turbo_confirm: "Reissue '#{token.name}'? It stops working now, and a new token with the same limits replaces it." } %>
+            <% if show_revoke %>
+              <%= button_to "Revoke", admin_user_api_token_path(owner, token),
+                    method: :delete, form_class: "d-inline",
+                    class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+                    data: { turbo_confirm: "Revoke token '#{token.name}'?" } %>
+            <% end %>
+          </div>
+        </div>
+        <dl class="sparc-token__facts" data-testid="token-limits">
+          <div class="sparc-token__fact">
+            <dt><%= token.expired? ? "Expired" : "Expires" %></dt>
+            <dd><%= token.expires_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></dd>
+          </div>
+          <% if show_created %>
+            <div class="sparc-token__fact">
+              <dt>Created</dt>
+              <dd><%= token.created_at.strftime("%Y-%m-%d %H:%M UTC") %></dd>
+            </div>
+          <% end %>
+          <div class="sparc-token__fact">
+            <dt>Last used</dt>
+            <dd>
+              <% if token.last_used_at %>
+                <time datetime="<%= token.last_used_at.iso8601 %>" title="<%= token.last_used_at.strftime("%Y-%m-%d %H:%M UTC") %>"><%= time_ago_in_words(token.last_used_at) %> ago</time><% if token.last_used_ip %>, from <%= token.last_used_ip %><% end %>
+              <% else %>
+                Never
+              <% end %>
+            </dd>
+          </div>
+          <div class="sparc-token__fact">
+            <dt>Endpoints</dt>
+            <dd><%= token.endpoint_summary.join("; ") %></dd>
+          </div>
+          <div class="sparc-token__fact">
+            <dt>CIDRs</dt>
+            <dd><%= token.allowed_cidrs.presence&.join(", ") || "Any address" %></dd>
+          </div>
+        </dl>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-body-secondary small mb-0"><%= empty_text %></p>
+<% end %>

@@ -97,7 +97,7 @@ class TestEndpointPicker:
             assert m, f"expected the account page, got {authed_page.url}"
             created_id = int(m.group(1))
 
-            limits = authed_page.locator("tr.sparc-token-limits").first.inner_text()
+            limits = authed_page.get_by_test_id("token-limits").first.inner_text()
             assert "System security plans (SSP): Read" in limits, limits
             assert "Write" not in limits, f"only Read was ticked: {limits}"
             assert authed_page.get_by_role("button", name="Renew").count() == 1

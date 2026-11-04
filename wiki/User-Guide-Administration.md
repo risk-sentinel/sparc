@@ -183,9 +183,13 @@ UUID-based audit traceability.
 5. The plaintext `sparc_sa_<token>` is shown **once** at creation (only a
    SHA-256 digest is stored), so copy it immediately.
 
-Each token on the account page shows its status (**Active**, **Expires soon**
-within 14 days, **Never expires**, **Expired**), its endpoint and CIDR limits,
-and these actions:
+Each token on the account page is one entry: its name and status (**Active**,
+**Expires soon** within 14 days, **Never expires**, **Expired**), then when it
+expires (or expired), when it was last used and from which address, and its
+endpoint and CIDR limits. A person's page in **Settings → Users** lists their
+tokens the same way, adding when each was created and **Revoke**. Nothing on
+either page scrolls sideways; on a narrow screen the details wrap and the
+buttons move below them. The actions:
 
 - **Edit limits** changes the token's allowed endpoints and CIDRs **in place**.
   The token keeps its value, so nothing using it has to change, and the new
