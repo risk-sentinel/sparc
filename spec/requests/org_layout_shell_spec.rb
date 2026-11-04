@@ -95,7 +95,9 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
 
   describe "the Overview" do
     # The classic home page's inventory tiles and counted cards, recorded before
-    # #1297 removed it (spec/fixtures/main_look.yml): every one stays (owner rule).
+    # #1297 removed it (spec/fixtures/main_look.yml): every one stays (owner rule),
+    # except the Families and Controls tiles the owner removed on 2026-11-04 so
+    # the strip fits one row (#1339; the catalog list keeps both totals).
     # That each count equals its list's is org_overview_1302_spec.rb's.
     it "keeps the inventory and every homepage card the classic page had" do
       main = YAML.load_file(Rails.root.join("spec/fixtures/main_look.yml")).fetch("home")
@@ -103,7 +105,7 @@ RSpec.describe "Organization layout (1.18.0-rf)", type: :request do
       get "/"
       boxes = page.css("[data-testid=org-box]").map { _1["data-box"] }
 
-      expect(page.css("[data-home-tile]").map { _1["data-home-tile"] }).to eq(main.fetch("tiles"))
+      expect(page.css("[data-home-tile]").map { _1["data-home-tile"] }).to eq(main.fetch("tiles") - %w[families controls])
       expect(boxes).to include(*main.fetch("counts"))
       expect(page.css("[data-testid=org-lane]").map { _1["data-layer"] }).to eq(%w[controls implementation assessment enterprise])
     end
