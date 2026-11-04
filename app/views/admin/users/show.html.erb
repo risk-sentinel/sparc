@@ -1,12 +1,12 @@
 <div class="my-4">
-  <div class="d-flex justify-content-between align-items-start mb-4">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
     <div>
       <h1 class="h3 fw-bold mb-1"><%= @user.display_label %></h1>
       <%# #1180 — moved out of the details list into the header, so the UUID
           sits in the same place on every screen that has one. %>
       <%= render "shared/uuid_badge", uuid: @user.uuid, label: "UUID", name: "user UUID" %>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
       <%= link_to "Edit", edit_admin_user_path(@user), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
       <% if @user.active? && @user != current_user %>
         <%= button_to "Suspend", suspend_admin_user_path(@user), method: :patch,
@@ -186,60 +186,10 @@
         </div>
       <% end %>
 
-      <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Expires</th>
-              <th>Created</th>
-              <th>Last Used</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @user.api_tokens.order(created_at: :desc).each do |token| %>
-              <tr>
-                <td><%= token.name %></td>
-                <td><%= token_status_badge(token) %></td>
-                <td class="small"><%= token.expires_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
-                <td class="small"><%= token.created_at.strftime("%Y-%m-%d %H:%M UTC") %></td>
-                <td class="small"><%= token.last_used_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
-                <td class="text-nowrap">
-                  <% unless token.expired? %>
-                    <%# #1233 — change this token's limits without reissuing it. %>
-                    <%= link_to "Edit limits", edit_admin_user_api_token_path(@user, token),
-                          class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
-                          data: { testid: "edit-token-limits" } %>
-                    <%= button_to "Renew", renew_admin_user_api_token_path(@user, token),
-                          method: :post, form_class: "d-inline",
-                          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-                          data: { turbo_confirm: "Renew '#{token.name}'? A new token is issued with the same limits; this one keeps working for up to #{SparcConfig.api_token_renewal_grace_days} more days." } %>
-                  <% end %>
-                  <%= button_to "Reissue", reissue_admin_user_api_token_path(@user, token),
-                        method: :post, form_class: "d-inline",
-                        class: "sparc-action sparc-action--caution sparc-action--outline sparc-action--sm",
-                        data: { turbo_confirm: "Reissue '#{token.name}'? It stops working now, and a new token with the same limits replaces it." } %>
-                  <%= button_to "Revoke", admin_user_api_token_path(@user, token),
-                        method: :delete, form_class: "d-inline",
-                        class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-                        data: { turbo_confirm: "Revoke token '#{token.name}'?" } %>
-                </td>
-              </tr>
-              <tr class="sparc-token-limits">
-                <td colspan="6" class="small text-body-secondary border-top-0 pt-0">
-                  <span class="fw-semibold">Endpoints:</span> <%= token.endpoint_summary.join("; ") %>
-                  &middot; <span class="fw-semibold">CIDRs:</span> <%= token.allowed_cidrs.presence&.join(", ") || "Any address" %>
-                </td>
-              </tr>
-            <% end %>
-            <% if @user.api_tokens.empty? %>
-              <tr><td colspan="6" class="text-center text-body-secondary small py-3">No API tokens.</td></tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+      <%# #1338 — the same token list as the service account page. %>
+      <%= render "admin/api_tokens/token_list", owner: @user,
+                 tokens: @user.api_tokens.order(created_at: :desc),
+                 show_created: true, show_revoke: true, empty_text: "No API tokens." %>
 
       <hr>
 

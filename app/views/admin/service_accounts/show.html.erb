@@ -1,5 +1,5 @@
 <div class="container-fluid py-4">
-  <div class="d-flex justify-content-between align-items-start mb-4">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
     <div>
       <h2><%= @service_account.display_label %></h2>
       <p class="text-muted mb-1"><%= @service_account.email %></p>
@@ -7,7 +7,7 @@
           UUID sits in the same place on every screen that has one. %>
       <%= render "shared/uuid_badge", uuid: @service_account.uuid, label: "UUID", name: "service account UUID" %>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
       <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "sparc-action sparc-action--primary sparc-action--outline" %>
       <% if @service_account.disabled? %>
         <%= button_to "Enable", enable_admin_service_account_path(@service_account), method: :patch, class: "sparc-action sparc-action--positive sparc-action--solid" %>
@@ -28,101 +28,53 @@
     </div>
   <% end %>
 
-  <div class="row g-4">
-    <%# Account Details %>
-    <div class="col-md-6">
-      <div class="card sparc-card">
-        <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
-        <div class="card-body">
-          <table class="table table-sm mb-0">
-            <tr><th>Status</th><td>
-              <% if @service_account.disabled? %>
-                <span class="badge bg-danger">Disabled</span>
-                <small class="text-muted ms-2">(<%= @service_account.disabled_reason %>)</small>
-              <% elsif @service_account.active? %>
-                <span class="badge bg-success">Active</span>
-              <% else %>
-                <span class="badge bg-warning"><%= @service_account.status.titleize %></span>
-              <% end %>
-            </td></tr>
-            <tr><th>Owner</th><td><%= @service_account.owner&.display_label || "—" %></td></tr>
-            <tr><th>Created</th><td><%= @service_account.created_at.strftime("%Y-%m-%d %H:%M UTC") %></td></tr>
-            <% if @service_account.disabled_at %>
-              <tr><th>Disabled At</th><td><%= @service_account.disabled_at.strftime("%Y-%m-%d %H:%M UTC") %></td></tr>
+  <%# #1338 — the cards stack: Account Details is a compact strip, and API
+      Tokens and Recent Activity each take the full width. %>
+  <div class="card sparc-card">
+    <div class="card-header"><h5 class="mb-0">Account Details</h5></div>
+    <div class="card-body">
+      <dl class="sparc-detail-strip mb-0">
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <% if @service_account.disabled? %>
+              <span class="badge bg-danger">Disabled</span>
+              <small class="text-muted ms-2">(<%= @service_account.disabled_reason %>)</small>
+            <% elsif @service_account.active? %>
+              <span class="badge bg-success">Active</span>
+            <% else %>
+              <span class="badge bg-warning"><%= @service_account.status.titleize %></span>
             <% end %>
-          </table>
+          </dd>
         </div>
-      </div>
+        <div><dt>Owner</dt><dd><%= @service_account.owner&.display_label || "—" %></dd></div>
+        <div><dt>Created</dt><dd><%= @service_account.created_at.strftime("%Y-%m-%d %H:%M UTC") %></dd></div>
+        <% if @service_account.disabled_at %>
+          <div><dt>Disabled At</dt><dd><%= @service_account.disabled_at.strftime("%Y-%m-%d %H:%M UTC") %></dd></div>
+        <% end %>
+      </dl>
     </div>
+  </div>
 
-    <%# API Tokens %>
-    <div class="col-md-6">
-      <div class="card sparc-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">API Tokens</h5>
-          <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
-                method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm",
-                data: { turbo_confirm: "Regenerate token? Every current token is revoked at once. The new token keeps the newest token's endpoint and CIDR limits and lifetime." } %>
+  <%# API Tokens %>
+  <div class="card sparc-card mt-4">
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <h5 class="mb-0">API Tokens</h5>
+      <%= button_to "Regenerate Token", regenerate_token_admin_service_account_path(@service_account),
+            method: :post, class: "sparc-action sparc-action--caution sparc-action--solid sparc-action--sm",
+            data: { turbo_confirm: "Regenerate token? Every current token is revoked at once. The new token keeps the newest token's endpoint and CIDR limits and lifetime." } %>
+    </div>
+    <div class="card-body">
+      <% if @tokens.any?(&:never_expires?) %>
+        <%# Rendered with the page, not updated live, so no live-region role. %>
+        <div class="alert alert-warning small">
+          This account holds a token that never expires, issued before service-account tokens
+          had to. Renew it to replace it with one that expires
+          (<%= ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS %> days) and keeps its limits.
         </div>
-        <div class="card-body">
-          <% if @tokens.any?(&:never_expires?) %>
-            <%# Rendered with the page, not updated live, so no live-region role. %>
-            <div class="alert alert-warning small">
-              This account holds a token that never expires, issued before service-account tokens
-              had to. Renew it to replace it with one that expires
-              (<%= ApiToken::DEFAULT_SERVICE_ACCOUNT_DAYS %> days) and keeps its limits.
-            </div>
-          <% end %>
-          <% if @tokens.any? %>
-            <table class="table table-sm mb-0 align-middle">
-              <thead>
-                <tr><th>Name</th><th>Status</th><th>Expires</th><th>Last Used</th><th><span class="visually-hidden">Actions</span></th></tr>
-              </thead>
-              <tbody>
-                <% @tokens.each do |token| %>
-                  <tr>
-                    <td><%= token.name %></td>
-                    <td><%= token_status_badge(token) %></td>
-                    <td><%= token.expires_at&.strftime("%Y-%m-%d %H:%M UTC") || "Never" %></td>
-                    <td>
-                      <% if token.last_used_at %>
-                        <%= time_ago_in_words(token.last_used_at) %> ago
-                        <% if token.last_used_ip %><br><small class="text-muted"><%= token.last_used_ip %></small><% end %>
-                      <% else %>
-                        Never
-                      <% end %>
-                    </td>
-                    <td class="text-end text-nowrap">
-                      <% unless token.expired? %>
-                        <%# #1233 — change this token's limits without reissuing it. %>
-                        <%= link_to "Edit limits", edit_admin_user_api_token_path(@service_account, token),
-                              class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
-                              data: { testid: "edit-token-limits" } %>
-                        <%= button_to "Renew", renew_admin_user_api_token_path(@service_account, token),
-                              method: :post, form_class: "d-inline",
-                              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-                              data: { turbo_confirm: "Renew '#{token.name}'? A new token is issued with the same limits; this one keeps working for up to #{SparcConfig.api_token_renewal_grace_days} more days." } %>
-                      <% end %>
-                      <%= button_to "Reissue", reissue_admin_user_api_token_path(@service_account, token),
-                            method: :post, form_class: "d-inline",
-                            class: "sparc-action sparc-action--caution sparc-action--outline sparc-action--sm",
-                            data: { turbo_confirm: "Reissue '#{token.name}'? It stops working now, and a new token with the same limits replaces it." } %>
-                    </td>
-                  </tr>
-                  <tr class="sparc-token-limits">
-                    <td colspan="5" class="small text-body-secondary border-top-0 pt-0">
-                      <span class="fw-semibold">Endpoints:</span> <%= token.endpoint_summary.join("; ") %>
-                      &middot; <span class="fw-semibold">CIDRs:</span> <%= token.allowed_cidrs.presence&.join(", ") || "Any address" %>
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          <% else %>
-            <p class="text-muted mb-0">No tokens generated.</p>
-          <% end %>
-        </div>
-      </div>
+      <% end %>
+      <%= render "admin/api_tokens/token_list", owner: @service_account, tokens: @tokens,
+                 empty_text: "No tokens generated." %>
     </div>
   </div>
 

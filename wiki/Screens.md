@@ -1169,7 +1169,7 @@ Manage organization entities (UUID-based audit traceability) for multi-org insta
 | **Auth** | Instance Admin |
 | **Reached from** | **Settings → Service accounts** |
 
-Create non-interactive automation identities and issue, renew, reissue and revoke their `sparc_sa_<token>` Bearer tokens. **Edit limits** changes a token's allowed endpoints and CIDRs without reissuing it. The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
+Create non-interactive automation identities and issue, renew, reissue and revoke their `sparc_sa_<token>` Bearer tokens. **Edit limits** changes a token's allowed endpoints and CIDRs without reissuing it. The account page shows Account Details as one strip, with API Tokens and Recent Activity each at full width below it. Tokens are listed one entry each, with their facts as labelled pairs that wrap, never as a sideways-scrolling table. A person's page in **Settings → Users** uses the same list (#1338). The plaintext token is shown **once** on creation; only a SHA-256 digest is stored. Service accounts authenticate the REST API and can bridge to a UI session via `POST /api/v1/sessions/from_token`.
 
 #### Data Migrations
 
