@@ -30,12 +30,13 @@ class SspDocumentsController < ApplicationController
     :update_statement,
     :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed,
     :attach_profile, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter,
-    :attach_boundary, :change_baseline, :apply_baseline_change
+    :attach_boundary, :change_baseline, :apply_baseline_change,
+    :bring_up_to_baseline, :apply_bring_up_to_baseline
   ]
   before_action :ensure_editable!, only: [ :update, :update_metadata, :publish, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter ]
   # #738: boundary-scoped access (AC-3)
   before_action :authorize_document_read!, only: [ :show, :download_json, :download_oscal, :download_oscal_validated, :download_oscal_unvalidated, :download_yaml, :download_xml, :validate_oscal_export, :status, :edit, :enrich, :attach_profile, :publish_check ]
-  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary, :change_baseline, :apply_baseline_change ]
+  before_action :authorize_document_write!, only: [ :create, :set_baseline, :create_from_wizard, :create_from_profile, :update, :update_metadata, :update_enrich, :publish, :destroy, :create_control_resource, :link_control_resource, :unlink_control_resource, :update_statement, :refresh_inherited_statements, :reset_inherited_statement, :mark_statement_reviewed, :populate_from_profile, :import_boundary_users, :declare_role, :import_cdef_components, :import_back_matter, :attach_boundary, :change_baseline, :apply_baseline_change, :bring_up_to_baseline, :apply_bring_up_to_baseline ]
 
   def index
     scope = boundary_scoped_relation(SspDocument).order(created_at: :desc)
@@ -93,6 +94,7 @@ class SspDocumentsController < ApplicationController
     if @response_progress.rowless_items? && SspStatementRows.ensure!(@ssp_document).positive?
       @response_progress = SspResponseProgress.new(@ssp_document)
     end
+    @baseline_gap = baseline_gap
 
     # Load root controls only; provider statements eagerly loaded via association
     @controls = @ssp_document.ssp_controls
@@ -369,6 +371,34 @@ class SspDocumentsController < ApplicationController
   rescue SspBaselineChange::Refused => e
     flash[:error] = e.message
     redirect_to change_baseline_ssp_document_path(@ssp_document, profile_document_id: params[:profile_document_id].presence)
+  end
+
+  # GET /ssp_documents/:id/bring_up_to_baseline — #1337: what bringing the SSP
+  # up to its own baseline adds (controls it lacks, items its controls lack),
+  # for the author to confirm. Changes nothing.
+  def bring_up_to_baseline
+    fill = SspBaselineChange.fill(@ssp_document)
+    @refusal = fill.refusal
+    return if @refusal
+
+    @delta = fill.delta
+    @missing_items = fill.missing_items
+  end
+
+  # PATCH /ssp_documents/:id/bring_up_to_baseline — #1337: add what the author
+  # confirmed. Nothing that exists is changed or removed. The API's POST goes
+  # through the same service.
+  def apply_bring_up_to_baseline
+    fill = SspBaselineChange.fill(@ssp_document)
+    delta = fill.apply!
+
+    audit_log("ssp_document_brought_up_to_baseline", subject: @ssp_document,
+              metadata: { profile_document_id: fill.profile.id, added: delta.added, items_added: fill.items_added })
+    flash[:success] = "Brought up to '#{fill.profile.name}': #{delta.added.size} controls and #{fill.items_added} items added."
+    redirect_to ssp_document_path(@ssp_document)
+  rescue SspBaselineChange::Refused => e
+    flash[:error] = e.message
+    redirect_to bring_up_to_baseline_ssp_document_path(@ssp_document)
   end
 
   # ── Enrichment (uplift legacy SSPs) ──────────────────────────────
@@ -920,6 +950,17 @@ class SspDocumentsController < ApplicationController
       redirect_path: ssp_document_path(@ssp_document),
       label: "SSP"
     }
+  end
+
+  # #1337 — how many controls the SSP's baseline counts (the controls the
+  # progress bar says are owed) that the SSP doesn't hold. When any are
+  # missing, the page offers Bring up to baseline. Read from what the page has
+  # already computed; no catalog is parsed to draw the page.
+  def baseline_gap
+    return 0 if @ssp_document.profile_document_id.nil? || @ssp_document.published_lifecycle?
+
+    held = @ssp_document.ssp_controls.where(parent_id: nil).pluck(:control_id).to_set { ControlId.canonical(_1) }
+    @response_progress.required.keys.count { !held.include?(_1) }
   end
 
   def ensure_editable!

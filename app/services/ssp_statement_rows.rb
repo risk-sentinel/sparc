@@ -30,13 +30,7 @@ class SspStatementRows
 
   # @return [Integer] rows added
   def ensure!
-    controls = @document.ssp_controls.where(parent_id: nil).includes(:ssp_control_statements).to_a
-    return 0 if controls.empty?
-
-    texts = ControlRequirementText.for_profile(@document.profile_document)
-                                  .for_controls(controls.map(&:control_id))
-    now = Time.current
-    rows = controls.flat_map { |control| missing_rows(control, texts[ControlId.canonical(control.control_id)], now) }
+    rows = pending_rows
     return 0 if rows.empty?
 
     # Unique on (ssp_control_id, statement_id): a concurrent run adds nothing twice.
@@ -44,7 +38,20 @@ class SspStatementRows
     rows.size
   end
 
+  # #1337 — how many rows #ensure! would add, without adding them.
+  def pending_count = pending_rows.size
+
   private
+
+  def pending_rows
+    controls = @document.ssp_controls.where(parent_id: nil).includes(:ssp_control_statements).to_a
+    return [] if controls.empty?
+
+    texts = ControlRequirementText.for_profile(@document.profile_document)
+                                  .for_controls(controls.map(&:control_id))
+    now = Time.current
+    controls.flat_map { |control| missing_rows(control, texts[ControlId.canonical(control.control_id)], now) }
+  end
 
   def missing_rows(control, text, now)
     return [] if text.nil? || text.rows.blank?

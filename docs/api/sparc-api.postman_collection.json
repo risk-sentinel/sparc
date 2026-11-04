@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 331 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 333 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -13946,6 +13946,58 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "Preview Bring SSP Up to Baseline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/bring_up_to_baseline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "bring_up_to_baseline"
+              ]
+            },
+            "description": "Show what bringing this SSP up to its own baseline would add, without changing anything (#1337): `controls_added` (controls the baseline selects that the SSP lacks) and `items_added` (items its existing controls lack). 422 with `error` when the SSP has no baseline, is published, or its baseline has no resolved catalog."
+          }
+        },
+        {
+          "name": "Bring SSP Up to Baseline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ssp_documents/{{ssp_slug}}/bring_up_to_baseline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ssp_documents",
+                "{{ssp_slug}}",
+                "bring_up_to_baseline"
+              ]
+            },
+            "description": "Add the controls and items this SSP's baseline selects that the SSP lacks, and return what was added (#1337). Nothing that exists is changed or removed, and a second call adds nothing. Audited. A published SSP is refused with 422; a caller without ssp.write gets 403."
           }
         },
         {

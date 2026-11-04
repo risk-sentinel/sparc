@@ -93,6 +93,7 @@ class AuditEvent < ApplicationRecord
     sparc_hash_rotated
     ssp_document_baseline_declared
     ssp_document_baseline_changed
+    ssp_document_brought_up_to_baseline
     sar_document_baseline_declared
     sap_document_baseline_declared
     poam_document_baseline_declared
@@ -455,6 +456,7 @@ class AuditEvent < ApplicationRecord
     "SSP Documents" => %w[ssp_document_created ssp_document_updated ssp_document_deleted
                           ssp_document_delete_blocked ssp_document_exported ssp_document_imported
                           ssp_document_published ssp_document_baseline_declared ssp_document_baseline_changed
+                          ssp_document_brought_up_to_baseline
                           ssp_document_boundary_attached
                           boundary_less_documents_reported
                           unscoped_authoritative_back_matter_reported

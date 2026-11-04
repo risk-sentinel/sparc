@@ -555,6 +555,17 @@ link on the product pointing back at it.
 
 Moves an SSP to another published baseline (#1330). Shows what the change does first: controls added, controls in both, controls kept for their answers (marked **Not in baseline**, left out of the OSCAL export) and controls removed. A published SSP's baseline is fixed.
 
+#### SSP Bring Up to Baseline
+
+| | |
+|---|---|
+| **Route** | `GET /ssp_documents/:id/bring_up_to_baseline` (preview), `PATCH /ssp_documents/:id/bring_up_to_baseline` (confirm) |
+| **Controller** | `SspDocumentsController#bring_up_to_baseline`, `#apply_bring_up_to_baseline` |
+| **Auth** | `ssp.write` on the SSP's boundary |
+| **Reached from** | **Bring up to baseline** on the SSP Detail page, shown while the SSP lacks controls its baseline selects |
+
+Adds what an SSP lacks of its own baseline (#1337): the controls it selects, with their items, and the items missing from controls the SSP already has. It shows the counts first. Nothing that exists is changed or removed; a published SSP is refused.
+
 #### SSP Editor
 
 | | |

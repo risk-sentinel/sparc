@@ -1,0 +1,38 @@
+<%# #1337 — bring an SSP up to its own baseline: see what is added, then
+    confirm. Only adds; nothing that exists is changed or removed.
+    SspBaselineChange.fill computes the same here and on the API. %>
+<div class="card" data-testid="bring-up-to-baseline">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+    <h2>Bring "<%= @ssp_document.name %>" up to its baseline</h2>
+    <%= link_to "Back to System Security Plan", ssp_document_path(@ssp_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  </div>
+
+  <p class="text-body-secondary mb-3">
+    Baseline:
+    <strong data-testid="current-baseline"><%= @ssp_document.profile_document&.name || "none" %></strong>
+  </p>
+
+  <% if @refusal %>
+    <div class="alert alert-warning mb-0" role="alert" data-testid="bring-up-refused"><%= @refusal %></div>
+  <% elsif @delta.added.empty? && @missing_items.zero? %>
+    <p class="mb-0" data-testid="bring-up-nothing">This SSP already holds every control and item its baseline selects.</p>
+  <% else %>
+    <div class="border rounded p-3" data-testid="bring-up-delta">
+      <ul class="mb-3">
+        <li data-testid="bring-up-controls"><strong><%= @delta.added.size %></strong> controls the baseline selects that this SSP lacks, added with each item ready to answer</li>
+        <li data-testid="bring-up-items"><strong><%= @missing_items %></strong> items missing from controls this SSP already has, added</li>
+        <li>Nothing that exists is changed or removed, answers included. Controls outside the baseline are left alone.</li>
+      </ul>
+      <% if @delta.added.any? %>
+        <details class="mb-3">
+          <summary>Controls added (<%= @delta.added.size %>)</summary>
+          <p class="sparc-mono small mb-0"><%= @delta.added.map(&:upcase).join(", ") %></p>
+        </details>
+      <% end %>
+      <%= button_to "Add #{pluralize(@delta.added.size, 'control')} and #{pluralize(@missing_items, 'item')}",
+            bring_up_to_baseline_ssp_document_path(@ssp_document), method: :patch,
+            class: "sparc-action sparc-action--primary sparc-action--solid",
+            form: { data: { testid: "confirm-bring-up" } } %>
+    </div>
+  <% end %>
+</div>
