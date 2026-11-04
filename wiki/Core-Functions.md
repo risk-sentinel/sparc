@@ -246,7 +246,7 @@ Each document type has a dedicated OSCAL export service:
 Builds a complete OSCAL System Security Plan JSON document (1.2.3 by default). The top-level structure includes:
 
 - **metadata** -- title, version, oscal-version, last-modified, roles, parties, revisions.
-- **import-profile** -- reference to the baseline profile.
+- **import-profile** -- `#<uuid>` of a back-matter resource naming the SSP's baseline, with a link to that baseline's OSCAL export, so any OSCAL tool can follow SSP → baseline. The baseline's own export does the same for each catalog it imports (`imports[].href`), completing SSP → baseline → catalog (#1342).
 - **system-characteristics** -- system IDs, name, description, security sensitivity level, security impact levels, system status, authorization boundary, network architecture, data flow.
 - **system-implementation** -- users, components (including `this-system`), leveraged authorizations, inventory items.
 - **control-implementation** -- implemented requirements with by-components, statements (private/public/inherited), and props (status, control type, origination, responsible entities).

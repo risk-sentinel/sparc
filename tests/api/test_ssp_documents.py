@@ -568,6 +568,34 @@ class TestExport:
         payload = response.json()
         assert isinstance(payload, dict) and len(payload) > 0
 
+    @pytest.mark.happy
+    def test_oscal_import_profile_resolves_to_the_baseline(
+        self, admin_client: httpx.Client, ssp_doc: dict[str, Any]
+    ) -> None:
+        """#1342 — `import-profile.href` is `#<uuid>` of a back-matter
+        resource naming the SSP's baseline, so OSCAL tools can follow it."""
+        ids = _published_profile_ids(admin_client)
+        if not ids:
+            pytest.skip("needs a published baseline")
+        slug = ssp_doc["slug"]
+        resp = admin_client.patch(f"{PATH}/{slug}",
+                                  json={PARAM_KEY: {"profile_document_id": ids[0]}})
+        assert resp.status_code == 200, resp.text
+        profile = admin_client.get(f"/api/v1/profile_documents/{ids[0]}").json()["data"]
+
+        exported = admin_client.get(f"{PATH}/{slug}/export",
+                                    params={"format": "oscal", "validate": "false"})
+        assert exported.status_code == 200, exported.text
+        ssp = exported.json()["system-security-plan"]
+        href = ssp["import-profile"]["href"]
+        assert href.startswith("#"), f"import-profile is not a #uuid reference: {href}"
+        resources = ssp.get("back-matter", {}).get("resources", [])
+        named = [r for r in resources if r["uuid"] == href[1:]]
+        assert len(named) == 1, f"{href} names {len(named)} back-matter resources"
+        assert named[0]["uuid"] == profile["uuid"], named[0]
+        links = [link["href"] for link in named[0].get("rlinks", [])]
+        assert any("download_oscal" in link for link in links), named[0]
+
     @pytest.mark.auth
     def test_no_token_returns_401(self, anon_client: httpx.Client) -> None:
         response = anon_client.get(f"{PATH}/anything/export")

@@ -93,12 +93,13 @@ class OscalProfileExportService
     end.presence || [ { "href" => import_href(primary, []), "include-controls" => [ { "with-ids" => [] } ] } ]
   end
 
-  # #395 P2: prefer `uuid:<catalog.oscal_uuid>` so the catalog reference is
-  # round-trip-stable. Without a catalog, the import's own href as the file
-  # gave it (#1234: per import, so an unlinked one keeps its own), then the
-  # first import's, then "#" as the schema-required last resort.
+  # #1342 — `#<catalog.oscal_uuid>`, the back-matter resource naming the
+  # catalog (build_back_matter), so the link resolves; `uuid:` did not.
+  # Without a catalog, the import's own href as the file gave it (#1234: per
+  # import, so an unlinked one keeps its own), then the first import's, then
+  # "#" as the schema-required last resort.
   def import_href(catalog, members)
-    return "uuid:#{catalog.oscal_uuid}" if catalog&.oscal_uuid.present?
+    return OscalImportReference.href(catalog.oscal_uuid) if catalog&.oscal_uuid.present?
 
     ids = members.map(&:control_id)
     recorded = Array(@document.import_metadata&.dig("imports"))
@@ -201,33 +202,17 @@ class OscalProfileExportService
     params
   end
 
+  # A resource per source catalog, so each import href resolves (#1234: every
+  # imported catalog, primary first), and the source profile of a tailored
+  # one. #1342: each links to SPARC's OSCAL export of that document
+  # (OscalImportReference); before, a bare file name that resolved nowhere.
   def build_back_matter
     base = @document.build_oscal_back_matter
-    resources = base["resources"] || []
-
-    # Add a resource entry per source catalog so each import href resolves
-    # (#1234: every imported catalog, primary first, not only the primary).
     primary_id = @document.control_catalog_id
-    source_catalogs.values.sort_by { |c| [ c.id == primary_id ? 0 : 1, c.id ] }.reverse_each do |catalog|
-      resources.unshift({
-        "uuid"        => catalog.oscal_uuid,
-        "title"       => catalog.name,
-        "description" => "Source catalog for this profile",
-        "rlinks"      => [ { "href" => "#{catalog.name.parameterize}.json", "media-type" => "application/json" } ]
-      })
-    end
+    catalogs = source_catalogs.values.sort_by { |c| [ c.id == primary_id ? 0 : 1, c.id ] }
+    ours = [ OscalImportReference.for_profile(@document.source_profile, description: "Source profile this was tailored from"),
+             *catalogs.map { OscalImportReference.for_catalog(_1) } ]
 
-    # Add source profile resource entry if this is a tailored profile
-    source = @document.source_profile
-    if source
-      resources.unshift({
-        "uuid"        => source.uuid,
-        "title"       => source.name,
-        "description" => "Source profile this was tailored from",
-        "rlinks"      => [ { "href" => "#{source.name.parameterize}.json", "media-type" => "application/json" } ]
-      })
-    end
-
-    { "resources" => resources }
+    { "resources" => OscalImportReference.merge(ours, base["resources"]) }
   end
 end
