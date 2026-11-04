@@ -46,8 +46,6 @@ def test_inventory_shows_and_each_badge_opens_its_list(authed_page, base_url):
     labels = inventory.locator(".sparc-inventory-name").all_text_contents()
     for label in (
         "Catalogs",
-        "Families",
-        "Controls",
         "Baselines",
         "Mappings",
         "SSPs",
@@ -60,6 +58,9 @@ def test_inventory_shows_and_each_badge_opens_its_list(authed_page, base_url):
         "Auth Boundaries",
     ):
         assert label in labels, f"inventory tile {label!r} missing; found {labels}"
+    # #1339 — the strip fits one row; the catalog list keeps these totals.
+    for gone in ("Families", "Controls"):
+        assert gone not in labels, f"inventory tile {gone!r} should be gone; found {labels}"
     badges = _badges(page)
     assert len(badges) >= 11, f"expected a badge on every layer card, found {badges}"
 
@@ -89,7 +90,7 @@ def test_each_inventory_tile_opens_its_list(authed_page, base_url):
     page.wait_for_load_state("domcontentloaded")
 
     tiles = _tiles(page)
-    assert len(tiles) >= 13, f"expected a tile per inventory count, found {tiles}"
+    assert len(tiles) >= 11, f"expected a tile per inventory count, found {tiles}"
     badges = dict(_badges(page))
     for key, href in tiles:
         if key in badges:
@@ -117,3 +118,36 @@ def test_non_admin_sees_no_organizations_card(user_authed_page, base_url):
     assert page.locator("[data-testid=org-box] a[href^='/admin/organizations']").count() == 0
     assert page.locator("a[data-home-count='authorization_boundaries']").count() == 1
     assert_no_csp_violations(page, during="the homepage as a non-administrator")
+
+
+def test_inventory_strip_is_one_row_at_1280(authed_page, base_url):
+    """#1339 — the four layer cards sit on one row, and no card's numbers wrap."""
+    page = authed_page
+    record_csp(page)
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{base_url}/")
+    page.wait_for_load_state("domcontentloaded")
+
+    layout = page.locator("[data-home-inventory]").evaluate(
+        """strip => [...strip.querySelectorAll('.sparc-home-strip__card')].map(card => {
+             const tiles = [...card.querySelectorAll('a[data-home-tile]')];
+             const tops = new Set(tiles.map(t => Math.round(t.getBoundingClientRect().top)));
+             const counts = tiles.map(t => {
+               const n = t.querySelector('.sparc-inventory-count').getBoundingClientRect();
+               const l = t.querySelector('.sparc-inventory-name').getBoundingClientRect();
+               return Math.abs((n.left + n.right) / 2 - (l.left + l.right) / 2);
+             });
+             return { label: card.getAttribute('aria-label'),
+                      top: Math.round(card.getBoundingClientRect().top),
+                      rows: tops.size, offCentre: Math.max(0, ...counts) };
+           })"""
+    )
+    assert len(layout) == 4, layout
+    tops = {card["top"] for card in layout}
+    assert len(tops) == 1, f"layer cards wrap to more than one row: {layout}"
+    for card in layout:
+        assert card["rows"] == 1, f"{card['label']}: its numbers wrap onto a second line: {layout}"
+        assert card["offCentre"] <= 1, (
+            f"{card['label']}: a number is not centred over its label: {layout}"
+        )
+    assert_no_csp_violations(page, during="the homepage inventory strip at 1280px")

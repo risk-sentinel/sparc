@@ -195,7 +195,7 @@ Current password and new password fields. Also used for forced password reset on
 The home page is the organization's Overview (1.18.0-rf). From top to bottom:
 
 - **Organization header** -- the organization's name (or "All organizations" when you belong to none or several) with a two-letter tile, then links to its boundary count and people count, and the organization's contact person and email when set. The people count links to the Users screen for an instance administrator.
-- **Inventory strip** -- four cards, one per OSCAL layer, each with thin count tiles: Controls (Catalogs, Families, Controls, Baselines, Mappings), Implementation (SSPs, CDEFs, Converters), Assessment (SAPs, Evidence, SARs, POA&Ms) and Enterprise (Organizations, Auth Boundaries). Each tile links to its list and counts what the signed-in user may see (Families and Controls open the catalog list, which totals them). Organizations appears only to someone the administrator screen admits.
+- **Inventory strip** -- four cards, one per OSCAL layer, each with thin count tiles: Controls (Catalogs, Baselines, Mappings), Implementation (SSPs, CDEFs, Converters), Assessment (SAPs, Evidence, SARs, POA&Ms) and Enterprise (Organizations, Auth Boundaries), on one row, each number centred over its label. Each tile links to its list and counts what the signed-in user may see; family and control totals are on the catalog list. Organizations appears only to someone the administrator screen admits.
 - **Layer cards** -- one card per layer (Controls, Implementation, Assessment, Enterprise routing), with one row per screen: icon, name, count and **+ New** (shown only where the user may create that kind of record). Controls: Control Catalogs, Baselines / Profiles, Control Mapping. Implementation: SSPs, CDEFs, Converters. Assessment: SAPs, Evidence, SARs, POA&Ms. Enterprise routing: Organizations (administrators), Auth Boundaries, Federation Peers and Authoritative Sources (each when you may open it). Counts follow the same scoping as the lists: SSPs, SAPs, SARs, Evidence and POA&Ms through boundary scoping, Auth Boundaries through the boundaries you may see, the shared library in full. An instance administrator, or a deployment with authentication disabled, sees full totals.
 - **Right-hand column**:
   - **Waiting on you** (approvers only) -- up to five documents submitted for your review, and a link to the Review Queue with the full count; "Nothing is waiting for your review." when empty.
@@ -215,7 +215,7 @@ The home page is the organization's Overview (1.18.0-rf). From top to bottom:
 | **Route** | `GET /control_catalogs` |
 | **Controller** | `ControlCatalogsController#index` |
 | **Auth** | Public |
-| **Reached from** | **Library → Control Catalogs**; the Catalogs, Families and Controls tiles on the Overview |
+| **Reached from** | **Library → Control Catalogs**; the Catalogs tile on the Overview |
 
 Summary tiles showing total catalogs, families, and controls. Table listing all catalogs with name, version, source, family count, control count, creation date, and action buttons. Header buttons: **New Catalog** and **Import from File** (links to `/control_catalogs/import`), shown to users who may write catalogs.
 
