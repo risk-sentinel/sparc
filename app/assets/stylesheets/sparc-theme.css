@@ -3869,20 +3869,28 @@ a.link-purple { color: var(--sparc-purple); }
 }
 .sparc-shell .sparc-list-card table.table > :last-child > tr:last-child > * { border-bottom: 0; }
 /* A list table fits beside the left column with no sideways scroll (owner,
-   2026-10-31): cells take Bootstrap's 8px side padding, the record's name
-   keeps a readable width, a date and time stack (.sparc-stamp,
+   2026-10-31): cells take 6px side padding, the record's name keeps a
+   readable width, a date and time stack (.sparc-stamp,
    CollectionCardHelper#collection_timestamp) and a long secondary name shows
-   two lines, the rest on hover. Headings keep main's own one-line classes. */
+   two lines, the rest on hover. Headings keep main's own one-line classes.
+   6px, not Bootstrap's 8px: with the system font the widths were measured in
+   (San Francisco) 8px fitted, but a wider fallback font (DejaVu Sans, the
+   Linux default) made the SSP and SAP tables 18px and 24px too wide, which
+   the v1.18.0-rf.1 publish check caught. */
 .sparc-shell .sparc-list-card table.table th,
-.sparc-shell .sparc-list-card table.table td { padding-inline: 0.5rem; }
+.sparc-shell .sparc-list-card table.table td { padding-inline: 0.375rem; }
 .sparc-shell .sparc-list-card table.table .sparc-col-name { min-width: 9rem; }
 .sparc-shell .sparc-stamp > span { display: block; }
 .sparc-shell .sparc-stamp__second { font-size: 0.8rem; color: var(--bs-secondary-color); }
 /* The Baselines table has fixed column widths; beside the left column its
    one-line Version and Controls headings need a little more of the Name
-   column's share (22% -> 18.5%). */
+   column's share (22% -> 18.5%), and the Baseline heading needs room for the
+   word in a wider fallback font (9% -> 10.5%), taken from Source Catalog,
+   whose long names are cut to one line anyway (18% -> 16.5%). */
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(1) { width: 18.5%; }
+.sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(2) { width: 10.5%; }
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(3) { width: 9%; }
+.sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(5) { width: 16.5%; }
 .sparc-shell .sparc-baselines-table > thead > tr > th:nth-child(6) { width: 9.5%; }
 /* 1.18.0-rf — the Evidence table beside the left column (owner, 11-01): one
    control id per line, never split, and a long type badge on two lines. */
