@@ -17,7 +17,7 @@ erDiagram
         object back_matter
     }
     IMPORT {
-        string href "references source catalog"
+        string href "the catalog back-matter resource by uuid, linking to its OSCAL export"
         array include_controls
     }
     INCLUDE_CONTROL {

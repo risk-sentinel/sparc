@@ -203,14 +203,21 @@ class OscalSspExportService
 
   # ── Import Profile ─────────────────────────────────────────────────
 
+  # #1342 — `#<uuid>` of the back-matter resource naming the attached
+  # baseline (OscalImportReference), so the link resolves. `uuid:<uuid>` did
+  # not. With no baseline, the href the imported file gave, then "#" as the
+  # schema-required last resort.
   def build_import_profile
-    # #395 P2: prefer `uuid:<profile.uuid>` from the linked ProfileDocument
-    # FK. Fall back to the raw `import_profile_href` round-trip column,
-    # then "#" as the schema-required last resort.
-    href = OscalMetadata.import_href_for(@document.profile_document) ||
+    href = baseline_resource&.dig("uuid")&.then { OscalImportReference.href(_1) } ||
            @document.import_profile_href.presence ||
            "#"
     { "href" => href }
+  end
+
+  def baseline_resource
+    return @baseline_resource if defined?(@baseline_resource)
+
+    @baseline_resource = OscalImportReference.for_profile(@document.profile_document)
   end
 
   # ── System Characteristics ─────────────────────────────────────────
@@ -611,8 +618,11 @@ class OscalSspExportService
 
   # ── Back matter ────────────────────────────────────────────────────
 
+  # #1342 — the baseline's resource first, so `import-profile` resolves.
   def build_back_matter
-    @document.build_oscal_back_matter
+    base = @document.build_oscal_back_matter || {}
+    resources = OscalImportReference.merge([ baseline_resource ], base["resources"])
+    resources.any? ? base.merge("resources" => resources) : base.presence
   end
 
   # ── Helpers ────────────────────────────────────────────────────────

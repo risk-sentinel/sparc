@@ -82,7 +82,7 @@ replaced by the derived value, never emitted beside it.
 
 | Internal Field | OSCAL JSON Path | Required | Notes |
 |---------------|----------------|----------|-------|
-| `SspDocument#import_profile_href` | `system-security-plan.import-profile.href` | Yes | Defaults to `"#"` if blank |
+| `SspDocument#profile_document` (the attached baseline) | `system-security-plan.import-profile.href` | Yes | `#<baseline uuid>`, resolving to a back-matter resource that names the baseline and links to its OSCAL export (`/profile_documents/:id/download_oscal`) (#1342). With no baseline attached, `import_profile_href` as the imported file gave it, else `"#"` |
 
 ## Field Mapping -- System Characteristics
 

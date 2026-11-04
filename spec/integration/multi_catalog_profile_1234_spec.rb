@@ -102,7 +102,8 @@ RSpec.describe "A profile importing two catalogs (#1234)" do
 
       imports = exported.dig("profile", "imports")
       expect(imports.map { |i| [ i["href"], i.dig("include-controls", 0, "with-ids") ] }).to eq(
-        [ [ "uuid:#{nist.oscal_uuid}", %w[ac-1 ac-2 au-2] ], [ "uuid:#{custom.oscal_uuid}", %w[dp-1 dp-1.1] ] ]
+        # #1342 — `#<uuid>`, the back-matter resource naming the catalog (below).
+        [ [ "##{nist.oscal_uuid}", %w[ac-1 ac-2 au-2] ], [ "##{custom.oscal_uuid}", %w[dp-1 dp-1.1] ] ]
       )
       resources = exported.dig("profile", "back-matter", "resources").map { |r| r["uuid"] }
       expect(resources).to include(nist.oscal_uuid, custom.oscal_uuid)
@@ -145,7 +146,7 @@ RSpec.describe "A profile importing two catalogs (#1234)" do
       expect(doc.control_catalog).to eq(nist)
       expect(doc.profile_controls.distinct.pluck(:source_catalog_id)).to eq([ nist.id ])
       expect(exported.dig("profile", "imports").size).to eq(1)
-      expect(exported.dig("profile", "imports", 0, "href")).to eq("uuid:#{nist.oscal_uuid}")
+      expect(exported.dig("profile", "imports", 0, "href")).to eq("##{nist.oscal_uuid}") # #1342
     end
   end
 end
