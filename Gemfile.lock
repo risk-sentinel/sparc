@@ -437,7 +437,7 @@ GEM
       io-console (~> 0.5)
     resolv (0.8.0)
     rexml (3.4.4)
-    roo (3.0.0)
+    roo (4.0.0)
       base64 (~> 0.2)
       csv (~> 3)
       logger (~> 1)
@@ -649,7 +649,7 @@ DEPENDENCIES
   rails (~> 8.1.4)
   redis (~> 6.0)
   resolv (>= 0.7.2)
-  roo (~> 3.0.0)
+  roo (~> 4.0.0)
   rspec-rails (~> 8.0.4)
   rubocop-rails-omakase
   rubyzip (~> 3.7.0)
