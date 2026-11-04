@@ -6,7 +6,8 @@ or whenever a new suppression is added.
 
 > **v1.17.7 rescan (2026-11-04).** Real rescan of the built `sparc:v1.17.7`
 > image (arm64, `8771a4ae1fd6`, the release code with Rails 8.1.4.1), not an
-> SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-04) and Trivy 0.74.0. This
+> SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-04) and Trivy 0.74.0 (DB
+> built 2026-11-04 13:16 UTC, downloaded fresh for this scan). This
 > is the first refresh since v1.17.4: v1.17.5 and v1.17.6 shipped without one.
 > Their images (`95b0fcd49bdd`, `833116c7e8aa`) were rescanned with the same
 > database for the comparison below.
@@ -14,7 +15,7 @@ or whenever a new suppression is added.
 > | Scanner | Critical | High | Medium | Low |
 > |---|---|---|---|---|
 > | Grype 0.114.0 (image, DB v6.1.10 built 2026-11-04) | **0** | **2** | 51 | 34 |
-> | Trivy 0.74.0 (image, vuln scanner) | 0 | 0 | 0 | 1 |
+> | Trivy 0.74.0 (image, DB built 2026-11-04 13:16 UTC) | 0 | 0 | 0 | 1 |
 >
 > Distinct CVEs (111 grype matches, 87 ids).
 >
@@ -42,10 +43,11 @@ or whenever a new suppression is added.
 >   - actionview: 4 Medium;
 >   - actionmailbox: 1 Low.
 >
->   8.1.4.1 fixes all 21, and bundle-audit is clean. grype's advisory data does
->   not carry them yet: it reports nothing for the Rails gems on the v1.17.6
->   image either, so the image scan neither found them there nor proves them
->   gone here. bundle-audit is the evidence.
+>   8.1.4.1 fixes all 21, and bundle-audit is clean. Neither image scanner's
+>   data carries them yet: grype and Trivy, each on its newest database, report
+>   nothing for the Rails gems on the v1.17.6 image either. So the image scans
+>   neither found them there nor prove them gone here. bundle-audit is the
+>   evidence.
 > - **v1.17.6's gem fixes,** recorded here because that release had no audit:
 >   rack 3.2.8 (a High), loofah 2.25.3, nokogiri 1.19.7 and
 >   rails-html-sanitizer 1.7.2.
