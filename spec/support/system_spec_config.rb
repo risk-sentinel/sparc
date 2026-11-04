@@ -99,6 +99,7 @@ module SystemConsentBanner
                     "the consent banner is configured (SPARC_BANNER) but was not shown " \
                     "within #{CONSENT_WAIT}s, so the login form stays hidden"
 
+    wait_for_consent_modal_settled
     click_button "Proceed"
     # proceed() synchronously un-hides the login card (so the form is ready)
     # and calls bsModal.hide(). But in headless Chrome the Bootstrap fade-out's
@@ -120,6 +121,26 @@ module SystemConsentBanner
     expect(page).to have_no_css(".modal-backdrop")
     expect(page).to have_css("#{CONSENT_LOGIN_CARD}:not(.d-none)"),
                     "Proceed was clicked but the login form was not revealed"
+  end
+
+  # #1341 — wait until the consent modal has finished appearing. Bootstrap
+  # adds `.show` at the START of its fade, and the dialog slides in for another
+  # 0.3s. During that window a click can land on the page beneath (under the
+  # full suite's load one did, and the browser left /login for the signed-out
+  # home page), and Bootstrap ignores Escape. Wait for the end state: shown,
+  # opaque, in place.
+  def wait_for_consent_modal_settled
+    settled = <<~JS
+      (() => {
+        const modal = document.querySelector("#{CONSENT_MODAL}");
+        const dialog = modal && modal.querySelector(".modal-dialog");
+        if (!modal || !dialog || !modal.classList.contains("show")) return false;
+        return getComputedStyle(modal).opacity === "1" && getComputedStyle(dialog).transform === "none";
+      })()
+    JS
+    page.document.synchronize(CONSENT_WAIT) do
+      raise Capybara::ExpectationNotMet, "the consent modal never finished appearing" unless page.evaluate_script(settled)
+    end
   end
 
   private
