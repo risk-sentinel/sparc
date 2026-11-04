@@ -4,6 +4,16 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.7 -- Rails 8.1.4.1 Security Release (2026-11-04)
+
+A security patch release.
+
+- **Rails 8.1.4.1** (was 8.1.4, [#1344](https://github.com/risk-sentinel/sparc/issues/1344)), Rails' security release of 2026-11-04, for 21 advisories against Rails 8.1.4: 1 critical (Active Storage), 4 high, and the rest medium and low, across Active Storage, Action Pack, Active Support, Action View and Action Mailbox.
+
+**Upgrading:** an image swap from v1.17.6. No migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.7).
+
 ## v1.17.6 -- Every SSP Item Answerable, One Copy of Each Item, Change an SSP's Baseline (2026-11-03)
 
 A patch release from a customer's SSP, where Edit offered only Notes.
