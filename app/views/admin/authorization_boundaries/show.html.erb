@@ -1,28 +1,20 @@
 <div class="my-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h1 class="h3 fw-bold mb-1"><%= @authorization_boundary.name %></h1>
-      <div class="d-flex align-items-center gap-2">
-        <% badge_class = case @authorization_boundary.status
-           when "active" then "success"
-           when "draft" then "secondary"
-           when "authorized" then "primary"
-           when "deauthorized" then "danger"
-           else "secondary"
-           end %>
-        <span class="badge text-bg-<%= badge_class %>"><%= @authorization_boundary.status.capitalize %></span>
-        <% if @authorization_boundary.organization %>
-          <span class="text-body-secondary small">
-            Org: <%= link_to @authorization_boundary.organization.name, admin_organization_path(@authorization_boundary.organization), class: "text-decoration-none" %>
-          </span>
-        <% end %>
-      </div>
-    </div>
-    <div class="d-flex gap-2">
-      <%= link_to "Edit", edit_admin_authorization_boundary_path(@authorization_boundary), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-      <%= link_to "Back to Auth Boundaries", admin_authorization_boundaries_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-    </div>
-  </div>
+  <%# #1346 — the shared page header, as every other Settings screen. The status
+      badge keeps its colours. %>
+  <% badge_class = case @authorization_boundary.status
+     when "active" then "success"
+     when "draft" then "secondary"
+     when "authorized" then "primary"
+     when "deauthorized" then "danger"
+     else "secondary"
+     end %>
+  <% org = @authorization_boundary.organization %>
+  <% status_badge = tag.span(@authorization_boundary.status.capitalize, class: "badge text-bg-#{badge_class}") %>
+  <% org_link = (safe_join([ "Org: ", link_to(org.name, admin_organization_path(org), class: "text-decoration-none") ]) if org) %>
+  <%= render "shared/page_header", title: @authorization_boundary.name, title_extra: status_badge,
+        meta: [ org_link ].compact,
+        secondary: [ { label: "Edit", look: "primary outline", path: edit_admin_authorization_boundary_path(@authorization_boundary) },
+                     { label: "Back to Auth Boundaries", look: "neutral ghost", path: admin_authorization_boundaries_path } ] %>
 
   <%# ── Details ──────────────────────────────────────────── %>
   <% if @authorization_boundary.description.present? || @authorization_boundary.authorization_boundary_description.present? %>

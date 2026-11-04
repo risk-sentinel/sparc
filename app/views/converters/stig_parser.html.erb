@@ -13,7 +13,7 @@
         Analyze DISA STIG XCCDF XML files client-side. Preview SV/V-IDs, severities, CCIs, and resolved NIST controls before importing.
       </p>
     </div>
-    <%= link_to "All Converters", converters_path, class: "btn btn-sm btn-outline-secondary" %>
+    <%= link_to "All Converters", converters_path, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
   </div>
 </div>
 
@@ -102,7 +102,7 @@
 
     <% %w[all high medium low].each_with_index do |sev, i| %>
       <button type="button"
-              class="btn btn-sm btn-outline-secondary sparc-stig-filter-btn <%= 'active' if i == 0 %>"
+              class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm sparc-stig-filter-btn <%= 'active' if i == 0 %>"
               data-stig-parser-target="severityFilter"
               data-severity="<%= sev %>"
               data-action="click->stig-parser#filterBySeverity">
@@ -119,11 +119,11 @@
     </label>
 
     <div class="ms-auto d-flex gap-2">
-      <button type="button" class="btn btn-sm btn-outline-primary sparc-mono sparc-fs-075"
+      <button type="button" class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-mono sparc-fs-075"
               data-action="click->stig-parser#exportCsv">
         &#11015; CSV
       </button>
-      <button type="button" class="btn btn-sm btn-outline-primary sparc-mono sparc-fs-075"
+      <button type="button" class="sparc-action sparc-action--primary sparc-action--outline sparc-action--sm sparc-mono sparc-fs-075"
               data-action="click->stig-parser#exportJson">
         &#11015; JSON
       </button>

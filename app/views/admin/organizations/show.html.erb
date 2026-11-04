@@ -1,33 +1,18 @@
 <div class="my-4">
-  <%# ── Header ──────────────────────────────────────────── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h1 class="h3 fw-bold mb-1"><%= @organization.name %></h1>
-      <div class="d-flex align-items-center gap-2">
-        <%= render "shared/uuid_badge", uuid: @organization.uuid, label: "UUID", name: "organization UUID" %>
-        <% if @organization.active? %>
-          <span class="badge badge-ok">Active</span>
-        <% else %>
-          <span class="badge badge-neutral">Inactive</span>
-        <% end %>
-      </div>
-    </div>
-    <div class="d-flex gap-2">
-      <%= link_to "Edit", edit_admin_organization_path(@organization), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-      <% if @organization.active? %>
-        <%= button_to "Deactivate", deactivate_admin_organization_path(@organization),
-              method: :patch,
-              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-              data: { turbo_confirm: "Deactivate #{@organization.name}? The organization will be marked inactive but preserved for audit purposes." } %>
-      <% else %>
-        <%= button_to "Reactivate", reactivate_admin_organization_path(@organization),
-              method: :patch,
-              class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
-              data: { turbo_confirm: "Reactivate #{@organization.name}?" } %>
-      <% end %>
-      <%= link_to "Back to Organizations", admin_organizations_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-    </div>
-  </div>
+  <%# ── Header (#1346: the shared page header) ─────────────── %>
+  <% actions = [ { label: "Edit", look: "primary outline", path: edit_admin_organization_path(@organization) } ] %>
+  <% if @organization.active? %>
+    <% actions << { label: "Deactivate", look: "danger outline", path: deactivate_admin_organization_path(@organization), method: :patch,
+                    confirm: "Deactivate #{@organization.name}? The organization will be marked inactive but preserved for audit purposes." } %>
+  <% else %>
+    <% actions << { label: "Reactivate", look: "positive solid", path: reactivate_admin_organization_path(@organization), method: :patch,
+                    confirm: "Reactivate #{@organization.name}?" } %>
+  <% end %>
+  <% actions << { label: "Back to Organizations", look: "neutral ghost", path: admin_organizations_path } %>
+  <% status_badge = @organization.active? ? tag.span("Active", class: "badge badge-ok") : tag.span("Inactive", class: "badge badge-neutral") %>
+  <%= render "shared/page_header", title: @organization.name, title_extra: status_badge,
+        meta: [ render("shared/uuid_badge", uuid: @organization.uuid, label: "UUID", name: "organization UUID") ],
+        secondary: actions %>
 
   <%# ── Organization Details ─────────────────────────────── %>
   <div class="card mb-4">

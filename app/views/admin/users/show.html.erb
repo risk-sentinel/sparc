@@ -1,62 +1,54 @@
 <div class="my-4">
-  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
-    <div>
-      <h1 class="h3 fw-bold mb-1"><%= @user.display_label %></h1>
-      <%# #1180 — moved out of the details list into the header, so the UUID
-          sits in the same place on every screen that has one. %>
-      <%= render "shared/uuid_badge", uuid: @user.uuid, label: "UUID", name: "user UUID" %>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <%= link_to "Edit", edit_admin_user_path(@user), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-      <% if @user.active? && @user != current_user %>
-        <%= button_to "Suspend", suspend_admin_user_path(@user), method: :patch,
-              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-              data: { turbo_confirm: "Suspend #{@user.email}?" } %>
-        <%= button_to "Deactivate", deactivate_admin_user_path(@user), method: :patch,
-              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-              data: { turbo_confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
-      <% elsif @user.suspended? %>
-        <%= button_to "Reactivate", reactivate_admin_user_path(@user), method: :patch,
-              class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
-        <%= button_to "Deactivate", deactivate_admin_user_path(@user), method: :patch,
-              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-              data: { turbo_confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
-      <% elsif @user.deactivated? %>
-        <%= form_with url: reactivate_admin_user_path(@user), method: :patch, class: "d-inline" do |f| %>
-          <div class="d-inline-flex align-items-center gap-2">
-            <div class="form-check form-check-inline mb-0">
-              <%= f.check_box :force_password_reset, { class: "form-check-input", id: "force_pw_reset" }, "1", "0" %>
-              <label class="form-check-label small" for="force_pw_reset">Force password reset</label>
-            </div>
-            <%= f.submit "Reactivate", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm" %>
-          </div>
-        <% end %>
-      <% end %>
-      <%# #841 — password lockout recovery. The counterpart to "Reset security
-          keys" below: FIDO2 had a recovery path and passwords did not, so a
-          forgotten password could only be cleared from a Rails console.
-          Two routes, because deployments differ — email needs SMTP, the
-          temporary password works anywhere. %>
-      <% if SparcConfig.enable_local_login? && @user.active? %>
-        <%= button_to "Issue temporary password", reset_password_admin_user_path(@user), method: :patch,
-              class: "btn btn-sm btn-outline-warning",
-              data: { turbo_confirm: "Issue a temporary password for #{@user.email}? " \
-                                     "You will hand it over yourself, and they must change it when they sign in. " \
-                                     "Their current password stops working immediately." } %>
-        <% if SparcConfig.enable_smtp? %>
-          <%= button_to "Email reset link", email_password_reset_admin_user_path(@user), method: :patch,
-                class: "btn btn-sm btn-outline-secondary",
-                data: { turbo_confirm: "Email a one-time reset link to #{@user.email}?" } %>
-        <% end %>
-      <% end %>
-      <% if SparcConfig.fido2_enabled? && @user.webauthn_registered? %>
-        <%= button_to "Reset security keys", reset_security_keys_admin_user_path(@user), method: :delete,
-              class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm",
-              data: { turbo_confirm: "Remove all of #{@user.email}'s security keys? They will need to re-enroll to sign in with a key." } %>
-      <% end %>
-      <%= link_to "Back to Users", admin_users_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-    </div>
-  </div>
+  <%# #1346 — the shared page header (shared/_page_header), as every other
+      Settings screen: one row of same-sized actions that fold into "More
+      actions" on a narrow screen. Each action keeps the look it had. %>
+  <% actions = [ { label: "Edit", look: "primary outline", path: edit_admin_user_path(@user) } ] %>
+  <% if @user.active? && @user != current_user %>
+    <% actions << { label: "Suspend", look: "danger outline", path: suspend_admin_user_path(@user), method: :patch,
+                    confirm: "Suspend #{@user.email}?" } %>
+    <% actions << { label: "Deactivate", look: "danger outline", path: deactivate_admin_user_path(@user), method: :patch,
+                    confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
+  <% elsif @user.suspended? %>
+    <% actions << { label: "Reactivate", look: "positive solid", path: reactivate_admin_user_path(@user), method: :patch } %>
+    <% actions << { label: "Deactivate", look: "danger outline", path: deactivate_admin_user_path(@user), method: :patch,
+                    confirm: "Deactivate #{@user.email}? This will soft-delete the account." } %>
+  <% end %>
+  <%# #841 — password lockout recovery. The counterpart to "Reset security
+      keys" below: FIDO2 had a recovery path and passwords did not, so a
+      forgotten password could only be cleared from a Rails console.
+      Two routes, because deployments differ — email needs SMTP, the
+      temporary password works anywhere. %>
+  <% if SparcConfig.enable_local_login? && @user.active? %>
+    <% actions << { label: "Issue temporary password", look: "caution outline", path: reset_password_admin_user_path(@user),
+                    method: :patch,
+                    confirm: "Issue a temporary password for #{@user.email}? " \
+                             "You will hand it over yourself, and they must change it when they sign in. " \
+                             "Their current password stops working immediately." } %>
+    <% if SparcConfig.enable_smtp? %>
+      <% actions << { label: "Email reset link", look: "neutral outline", path: email_password_reset_admin_user_path(@user),
+                      method: :patch, confirm: "Email a one-time reset link to #{@user.email}?" } %>
+    <% end %>
+  <% end %>
+  <% if SparcConfig.fido2_enabled? && @user.webauthn_registered? %>
+    <% actions << { label: "Reset security keys", look: "neutral ghost", path: reset_security_keys_admin_user_path(@user),
+                    method: :delete,
+                    confirm: "Remove all of #{@user.email}'s security keys? They will need to re-enroll to sign in with a key." } %>
+  <% end %>
+  <% actions << { label: "Back to Users", look: "neutral ghost", path: admin_users_path } %>
+  <%# A deactivated account is reactivated with a choice (force a password
+      reset), so that one action is a small form rather than a button. %>
+  <% reactivate_form = if @user.deactivated?
+       form_with(url: reactivate_admin_user_path(@user), method: :patch, class: "d-inline-flex align-items-center gap-2") do |f|
+         tag.div(class: "form-check form-check-inline mb-0") do
+           f.check_box(:force_password_reset, { class: "form-check-input", id: "force_pw_reset" }, "1", "0") +
+             tag.label("Force password reset", class: "form-check-label small", for: "force_pw_reset")
+         end + f.submit("Reactivate", class: "sparc-action sparc-action--positive sparc-action--solid")
+       end
+     end %>
+  <%# #1180 — the UUID sits in the same place on every screen that has one. %>
+  <%= render "shared/page_header", title: @user.display_label,
+        meta: [ render("shared/uuid_badge", uuid: @user.uuid, label: "UUID", name: "user UUID") ],
+        secondary: actions, extra: reactivate_form %>
 
   <%# Shown once and never stored — the database keeps only a bcrypt digest, so
       this cannot be retrieved again, only re-issued. %>

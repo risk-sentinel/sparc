@@ -50,7 +50,7 @@
                 <td><code class="small"><%= row[:example_grant] %></code></td>
                 <td class="text-end text-nowrap">
                   <% if hint %>
-                    <%= link_to hint.label, hint.path, class: "btn btn-outline-primary btn-sm",
+                    <%= link_to hint.label, hint.path, class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm",
                           title: "Creates a record whose slug must be #{hint.required_slug}" %>
                   <% end %>
                   <%= button_to "Reject", dismiss_admin_idp_grants_path,

@@ -47,7 +47,7 @@
             include_blank: "Choose a #{choice[:label].downcase}…",
             id: "baseline_#{choice[:attribute]}",
             class: "form-select form-select-sm w-auto" %>
-      <%= f.submit submit_label, class: "btn btn-primary btn-sm" %>
+      <%= f.submit submit_label, class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
     <% end %>
   <% elsif show_empty_notice %>
     <%# SPARC never invents a baseline from the document's own controls —

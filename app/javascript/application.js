@@ -17,7 +17,7 @@ Turbo.config.forms.confirm = (message, element) => {
     const method = (form?.querySelector("input[name='_method']")?.value || form?.method || "").toUpperCase()
     const isDestructive = method === "DELETE" || element?.dataset?.turboConfirmDestructive === "true"
     const buttonLabel = isDestructive ? "Delete" : "Confirm"
-    const buttonClass = isDestructive ? "btn btn-danger" : "btn btn-primary"
+    const buttonClass = isDestructive ? "sparc-action sparc-action--danger sparc-action--solid" : "sparc-action sparc-action--primary sparc-action--solid"
 
     const wrapper = document.createElement("div")
     wrapper.innerHTML = [
@@ -30,7 +30,7 @@ Turbo.config.forms.confirm = (message, element) => {
       '      </div>',
       '      <div class="modal-body"></div>',
       '      <div class="modal-footer">',
-      '        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>',
+      '        <button type="button" class="sparc-action sparc-action--neutral sparc-action--solid" data-bs-dismiss="modal">Cancel</button>',
       '        <button type="button" class="' + buttonClass + '" id="' + modalId + '-confirm">' + buttonLabel + '</button>',
       '      </div>',
       '    </div>',
