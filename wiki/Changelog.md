@@ -13,6 +13,13 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 - **A new Overview** (the home page): every inventory count, a card per layer with "+ New", what is waiting on you, quick actions and your boundaries' activity.
 - **Settings** gathers the administration screens in one left menu (Access, Organization, Records). See [Administration](User-Guide-Administration).
 - **Accessibility:** a "Jump to page content" link, labelled filters, keyboard focus shown on every control, motion stopped when the system asks for less, and dark-mode badges and text at WCAG AA contrast.
+- **Overview strip in one row:** Catalogs, Baselines and Mappings in the Controls card, each number centred over its label ([#1339](https://github.com/risk-sentinel/sparc/issues/1339)).
+- **API tokens listed without sideways scrolling** on the user and service account pages: one list for both ([#1338](https://github.com/risk-sentinel/sparc/issues/1338)).
+- **SSP Enrich saves in place** ([#1340](https://github.com/risk-sentinel/sparc/issues/1340)).
+  - A failed save keeps what you typed, outlines each refused field with its message, and names its row.
+  - The section holding it stays open until it's fixed.
+  - A good save leaves you where you were.
+- **Bring an SSP up to its baseline:** adds the controls and items an SSP lacks of its own baseline, after showing what will be added ([#1337](https://github.com/risk-sentinel/sparc/issues/1337)).
 
 ---
 
