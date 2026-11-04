@@ -39,7 +39,7 @@
             hint: "Terraform state (.tfstate) or plan JSON (terraform show -json plan.tfplan). Upload every state that makes up the boundary — analysing one state of several reports the others' services as unused." %>
 
       <div class="d-flex gap-3 mt-3">
-        <%= f.submit "Analyze coverage", class: "btn btn-success" %>
+        <%= f.submit "Analyze coverage", class: "sparc-action sparc-action--positive sparc-action--solid" %>
         <%= link_to "Cancel", (@boundary ? authorization_boundary_path(@boundary) : cdef_documents_path),
               class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
       </div>

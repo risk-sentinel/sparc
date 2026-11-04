@@ -1,9 +1,8 @@
 <div class="row justify-content-center my-4">
   <div class="col-lg-8">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 fw-bold mb-0">Audit Event #<%= @audit_event.id %></h1>
-      <%= link_to "Back to Audit Log", admin_audit_logs_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-    </div>
+    <%# #1346 — the shared page header, as every other Settings screen. %>
+    <%= render "shared/page_header", title: "Audit Event ##{@audit_event.id}",
+          secondary: [ { label: "Back to Audit Log", look: "neutral ghost", path: admin_audit_logs_path } ] %>
 
     <%# ── Event Details ──────────────────────────────────── %>
     <div class="card mb-3">

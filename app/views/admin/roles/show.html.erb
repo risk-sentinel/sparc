@@ -1,16 +1,12 @@
 <div class="my-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 fw-bold mb-0"><%= @role.display_name %></h1>
-    <div class="d-flex gap-2">
-      <%= link_to "Edit", edit_admin_role_path(@role), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-      <% unless @role.user_roles.exists? %>
-        <%= button_to "Delete", admin_role_path(@role), method: :delete,
-              class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-              data: { turbo_confirm: "Delete role '#{@role.display_name}'? This cannot be undone." } %>
-      <% end %>
-      <%= link_to "Back to Roles", admin_roles_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-    </div>
-  </div>
+  <%# #1346 — the shared page header, as every other Settings screen. %>
+  <% actions = [ { label: "Edit", look: "primary outline", path: edit_admin_role_path(@role) } ] %>
+  <% unless @role.user_roles.exists? %>
+    <% actions << { label: "Delete", look: "danger outline", path: admin_role_path(@role), method: :delete,
+                    confirm: "Delete role '#{@role.display_name}'? This cannot be undone." } %>
+  <% end %>
+  <% actions << { label: "Back to Roles", look: "neutral ghost", path: admin_roles_path } %>
+  <%= render "shared/page_header", title: @role.display_name, secondary: actions %>
 
   <div class="row g-4">
     <%# ── Role Details ──────────────────────────────────── %>

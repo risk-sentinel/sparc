@@ -127,12 +127,12 @@ export default class OscalExportController extends Controller {
       ${errorHtml}
       <div class="d-flex justify-content-center gap-2" style="margin-top:1.25rem;">
         <button id="oscal-export-cancel-btn" type="button"
-                class="btn btn-outline-secondary"
+                class="sparc-action sparc-action--neutral sparc-action--outline"
                 style="min-width:100px;font-weight:500;">
           Cancel
         </button>
         <button id="oscal-export-continue-btn" type="button"
-                class="btn btn-warning"
+                class="sparc-action sparc-action--caution sparc-action--solid"
                 style="min-width:100px;font-weight:500;">
           Continue
         </button>

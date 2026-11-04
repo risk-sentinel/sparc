@@ -49,7 +49,7 @@
              parties: poam_document.oscal_parties %>
 
   <div class="d-flex gap-3 mt-3">
-    <%= f.submit poam_remediation.persisted? ? "Update Remediation" : "Add Remediation", class: "btn btn-success" %>
+    <%= f.submit poam_remediation.persisted? ? "Update Remediation" : "Add Remediation", class: "sparc-action sparc-action--positive sparc-action--solid" %>
     <%= link_to "Cancel", poam_document_path(poam_document), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
   </div>
 <% end %>

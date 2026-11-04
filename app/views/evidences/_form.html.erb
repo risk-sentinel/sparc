@@ -238,7 +238,7 @@
       </div>
 
       <div class="d-flex gap-2">
-        <%= f.submit(@evidence.persisted? ? "Update Evidence" : "Upload Evidence", class: "btn btn-primary") %>
+        <%= f.submit(@evidence.persisted? ? "Update Evidence" : "Upload Evidence", class: "sparc-action sparc-action--primary sparc-action--solid") %>
         <%# #868 — collecting evidence is inherently repetitive: a control often
             needs several screenshots or exports. Landing on the show page after
             every save meant a full round-trip back to this form each time. This

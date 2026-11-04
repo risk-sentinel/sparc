@@ -101,7 +101,7 @@ export default class PublishModalController extends Controller {
       </p>
       <div style="text-align:center;">
         <button id="prioritization-warning-ok-btn" type="button"
-                class="btn btn-warning"
+                class="sparc-action sparc-action--caution sparc-action--solid"
                 style="min-width:180px;font-weight:500;">
           Return to Baseline
         </button>
@@ -156,7 +156,7 @@ export default class PublishModalController extends Controller {
       </p>
       <div style="text-align:center;">
         <button id="parameter-warning-ok-btn" type="button"
-                class="btn btn-warning"
+                class="sparc-action sparc-action--caution sparc-action--solid"
                 style="min-width:180px;font-weight:500;">
           Return to Baseline
         </button>

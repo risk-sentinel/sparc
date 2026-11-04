@@ -181,7 +181,7 @@
             </td>
             <td>
               <details data-controller="hdf-triage">
-                <summary class="btn btn-outline-secondary btn-sm">Disposition</summary>
+                <summary class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm">Disposition</summary>
                 <%= form_with url: triage_disposition_authorization_boundary_path(@boundary), method: :post,
                       data: { turbo: false }, class: "mt-2" do |f| %>
                   <%= hidden_field_tag :finding_uuid, finding.uuid %>

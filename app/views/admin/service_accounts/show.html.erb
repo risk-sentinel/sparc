@@ -1,23 +1,20 @@
 <div class="container-fluid py-4">
-  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
-    <div>
-      <h2><%= @service_account.display_label %></h2>
-      <p class="text-muted mb-1"><%= @service_account.email %></p>
-      <%# #1180 — moved out of the Account Details table into the header, so the
-          UUID sits in the same place on every screen that has one. %>
-      <%= render "shared/uuid_badge", uuid: @service_account.uuid, label: "UUID", name: "service account UUID" %>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <%= link_to "Edit", edit_admin_service_account_path(@service_account), class: "sparc-action sparc-action--primary sparc-action--outline" %>
-      <% if @service_account.disabled? %>
-        <%= button_to "Enable", enable_admin_service_account_path(@service_account), method: :patch, class: "sparc-action sparc-action--positive sparc-action--solid" %>
-      <% else %>
-        <%= button_to "Disable", disable_admin_service_account_path(@service_account), method: :patch, class: "sparc-action sparc-action--danger sparc-action--outline", data: { turbo_confirm: "Disable this service account? It will no longer be able to authenticate." } %>
-      <% end %>
-      <%= button_to "Delete", admin_service_account_path(@service_account), method: :delete, class: "sparc-action sparc-action--danger sparc-action--outline", data: { turbo_confirm: "Permanently deactivate this service account?" } %>
-      <%= link_to "Back", admin_service_accounts_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
-    </div>
-  </div>
+  <%# #1346 — the shared page header, as every other Settings screen. #1180: the
+      UUID sits in the same place on every screen that has one. %>
+  <% actions = [ { label: "Edit", look: "primary outline", path: edit_admin_service_account_path(@service_account) } ] %>
+  <% if @service_account.disabled? %>
+    <% actions << { label: "Enable", look: "positive solid", path: enable_admin_service_account_path(@service_account), method: :patch } %>
+  <% else %>
+    <% actions << { label: "Disable", look: "danger outline", path: disable_admin_service_account_path(@service_account), method: :patch,
+                    confirm: "Disable this service account? It will no longer be able to authenticate." } %>
+  <% end %>
+  <% actions << { label: "Delete", look: "danger outline", path: admin_service_account_path(@service_account), method: :delete,
+                  confirm: "Permanently deactivate this service account?" } %>
+  <% actions << { label: "Back", look: "neutral ghost", path: admin_service_accounts_path } %>
+  <%= render "shared/page_header", title: @service_account.display_label,
+        meta: [ @service_account.email,
+                render("shared/uuid_badge", uuid: @service_account.uuid, label: "UUID", name: "service account UUID") ],
+        secondary: actions %>
 
   <%# Show-once token display %>
   <% if flash[:api_token] %>

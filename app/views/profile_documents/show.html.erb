@@ -136,7 +136,7 @@
         <%= form_with url: url_for(action: :set_baseline, id: @profile_document), method: :patch, local: true,
                       class: "d-inline-block mb-2" do %>
           <%= hidden_field_tag "profile_document[control_catalog_id]", catalog.id, id: nil %>
-          <%= submit_tag "Confirm catalog", class: "btn btn-success btn-sm", data: { testid: "confirm-catalog" } %>
+          <%= submit_tag "Confirm catalog", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm", data: { testid: "confirm-catalog" } %>
         <% end %>
         <%= render "shared/baseline_picker", document: @profile_document, submit_label: "Change catalog" %>
       <% else %>

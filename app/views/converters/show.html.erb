@@ -7,7 +7,7 @@
         <%= link_to "Edit", edit_converter_path(@converter), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
       <% end %>
       <% if @converter.converter_type == "cci_to_nist" && can_write_converters? %>
-        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+        <button type="button" class="sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold"
                 data-bs-toggle="modal" data-bs-target="#refreshCciModal"
                 <%= "disabled" if @converter.status == "processing" %>>
           Refresh from DISA
@@ -15,7 +15,7 @@
       <% end %>
       <%# #494 — AWS Config Rule refresh button %>
       <% if @converter.converter_type == "aws_config_to_nist" && can_write_converters? %>
-        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+        <button type="button" class="sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold"
                 data-bs-toggle="modal" data-bs-target="#refreshAwsConfigModal"
                 <%= "disabled" if @converter.status == "processing" %>>
           Refresh from MITRE
@@ -23,7 +23,7 @@
       <% end %>
       <%# #494 — AWS Security Hub refresh button %>
       <% if @converter.converter_type == "aws_security_hub_to_nist" && can_write_converters? %>
-        <button type="button" class="btn btn-warning btn-sm fw-semibold"
+        <button type="button" class="sparc-action sparc-action--caution sparc-action--solid sparc-action--sm fw-semibold"
                 data-bs-toggle="modal" data-bs-target="#refreshAwsSecurityHubModal"
                 <%= "disabled" if @converter.status == "processing" %>>
           Refresh from AWS docs
