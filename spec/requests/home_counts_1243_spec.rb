@@ -118,7 +118,7 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
       get root_path
 
       expect(page.at_css("[data-home-inventory]")).to be_present
-      expect(inventory.keys).to eq([ "Catalogs", "Families", "Controls", "Baselines", "Mappings",
+      expect(inventory.keys).to eq([ "Catalogs", "Baselines", "Mappings",
                                     "SSPs", "CDEFs", "Converters",
                                     "SAPs", "Evidence", "SARs", "POA&Ms",
                                     "Auth Boundaries" ])
@@ -126,10 +126,15 @@ RSpec.describe "Homepage counts (#1243)", type: :request do
         expect(inventory[label]).to eq(badge(key).text), label
         expect(tile(key)["href"]).to eq(badge(key)["href"]), "#{label}: tile and card open different lists"
       end
-      expect(tile(:families)["href"]).to eq(control_catalogs_path)
-      expect(tile(:controls)["href"]).to eq(control_catalogs_path)
-      expect(inventory["Families"]).to eq(ActiveSupport::NumberHelper.number_to_delimited(ControlCatalog.family_count))
-      expect(inventory["Controls"]).to eq(ActiveSupport::NumberHelper.number_to_delimited(ControlCatalog.control_count))
+      # #1339 — no Families or Controls tile; the catalog list keeps both totals.
+      expect(tile(:families)).to be_nil
+      expect(tile(:controls)).to be_nil
+    end
+
+    it "still finds the family and control totals on the catalog list (#1339)" do
+      get control_catalogs_path
+
+      expect(response.body).to include("Unique Families", "Unique Controls")
     end
 
     it "is offered New only where the create action would admit them" do

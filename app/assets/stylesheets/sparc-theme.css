@@ -3590,7 +3590,8 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-home-strip .sparc-inventory-tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;  /* #1339 — each number centred over the label it counts */
+  text-align: center;
   min-width: 0;
   padding: 0;
   background: none;

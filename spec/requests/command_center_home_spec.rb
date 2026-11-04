@@ -28,7 +28,8 @@ RSpec.describe "Command-center home (1.18.0-rf)", type: :request do
         .to eq(%w[sparc-heading-controls sparc-heading-implementation sparc-heading-assessment sparc-heading-enterprise])
       expect(cards.map { _1["class"][/sparc-accent--\w+/] })
         .to eq(%w[sparc-accent--blue sparc-accent--green sparc-accent--carrot sparc-accent--purple])
-      expect(strip.css("a[data-home-tile]").size).to eq(14)
+      # #1339 — 14 less the Families and Controls tiles.
+      expect(strip.css("a[data-home-tile]").size).to eq(12)
     end
   end
 

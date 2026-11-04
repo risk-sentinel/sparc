@@ -35,11 +35,6 @@ class HomeController < ApplicationController
       authorization_boundaries: AuthorizationBoundary.visible_to(current_user).count
     }
     @counts[:organizations] = Organization.count if helpers.admin_access?
-
-    # The Families and Controls inventory tiles, from the expressions the
-    # catalog page's own tiles use.
-    @family_count  = ControlCatalog.family_count
-    @control_count = ControlCatalog.control_count
   end
 
   def oscal_overview
