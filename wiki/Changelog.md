@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.8 -- Dependency Updates (2026-11-04)
+
+A maintenance release: the November dependency updates, together.
+
+- **Gems, patch:** csv, resolv, zlib, uri, net-imap, faraday, tzinfo-data and bootsnap.
+- **Gems, minor:** the AWS SDK gems (S3, Secrets Manager, RDS), oauth2 2.1.0 and selenium-webdriver.
+- **activerecord-import 3.0.1** (was 2.3.0) and **roo 4.0.0** (was 3.0.0): major versions whose breaking changes drop old Ruby and Rails versions SPARC no longer uses.
+- **CI:** 13 GitHub Actions, minor and patch.
+
+**Upgrading:** an image swap from v1.17.7. No migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.8).
+
 ## v1.17.7 -- Rails 8.1.4.1 Security Release (2026-11-04)
 
 A security patch release.
