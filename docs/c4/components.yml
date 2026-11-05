@@ -19,7 +19,7 @@
 # retired, then record the review below.
 container: sparc-prod
 image: sparc-prod
-image_tag: v1.17.7
+image_tag: v1.17.8
 source: first-party
 source_ref: "https://github.com/risk-sentinel/sparc"
 technology: "Ruby on Rails 8.1 / Puma (UBI 10), listen :3000"
