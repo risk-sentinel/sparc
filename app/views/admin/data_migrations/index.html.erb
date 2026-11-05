@@ -50,7 +50,6 @@
             <th>Status</th>
             <th>Started</th>
             <th>Completed</th>
-            <th>Duration</th>
             <th>Records</th>
             <th>Error</th>
           </tr>
@@ -74,8 +73,11 @@
               </td>
               <%# #1349 — date over time, so the table fits beside the settings menu. %>
               <td><%= collection_timestamp(run.started_at, seconds: true) %></td>
-              <td><%= collection_timestamp(run.completed_at, seconds: true) %></td>
-              <td><%= run.duration_seconds ? "#{run.duration_seconds}s" : "—" %></td>
+              <td>
+                <%= collection_timestamp(run.completed_at, seconds: true) %>
+                <%# #1349 — how long it took, under when it finished: one column fewer. %>
+                <% if run.duration_seconds %><div class="small text-body-secondary"><%= run.duration_seconds %>s</div><% end %>
+              </td>
               <td><%= run.records_processed %></td>
               <td class="small text-muted"><%= run.error_message&.truncate(120) %></td>
             </tr>
