@@ -1,8 +1,40 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-04 (v1.17.7 — Rails 8.1.4.1 for 21 advisories; covers v1.17.5 and v1.17.6, which shipped without a refresh)
+**Last reviewed:** 2026-11-05 (v1.17.8 — the November dependency updates; no CVE change)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
+> image (arm64, `df41343ea694`, the release code with the November dependency
+> updates), not an SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-05 06:21
+> UTC) and Trivy 0.74.0 (DB built 2026-11-05 07:00 UTC, downloaded fresh). The
+> v1.17.7 image was rescanned with the same databases for the comparison.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB built 2026-11-05) | **0** | **2** | 50 | 34 |
+> | Trivy 0.74.0 (image, DB built 2026-11-05) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (110 grype matches, 86 ids).
+>
+> - **Compared id by id:** v1.17.8 and v1.17.7 differ by no CVE id. The
+>   dependency updates removed no finding and added none.
+> - **One fewer Medium than the v1.17.7 block's 51:** today's database
+>   rescores one advisory, and v1.17.7 shows the same 50 on it.
+> - **The two Highs:** still the base image's `sqlite-libs` approved
+>   deviations.
+> - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
+>
+> - **Gems taken:**
+>   - the patch group: csv, resolv, zlib, uri, net-imap, faraday,
+>     tzinfo-data, bootsnap;
+>   - the minor group: the AWS SDK gems, oauth2 2.1.0 with its helpers, and
+>     selenium-webdriver;
+>   - activerecord-import 3.0.1 and roo 4.0.0.
+>
+>   bundle-audit (advisory db of 2026-11-04) reports no vulnerabilities.
+> - **Register:** unchanged, 9 entries, none `RELEASE-BLOCKING`. The earliest
+>   review dates, 2026-11-15 and 2026-11-16, fall within the next 11 days.
 
 > **v1.17.7 rescan (2026-11-04).** Real rescan of the built `sparc:v1.17.7`
 > image (arm64, `8771a4ae1fd6`, the release code with Rails 8.1.4.1), not an
