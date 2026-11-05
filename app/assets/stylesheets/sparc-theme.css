@@ -3880,6 +3880,13 @@ a.link-purple { color: var(--sparc-purple); }
    the v1.18.0-rf.1 publish check caught. */
 .sparc-shell .sparc-list-card table.table th,
 .sparc-shell .sparc-list-card table.table td { padding-inline: 0.375rem; }
+/* #1349 — the first and last cells keep 1rem from the table's edge (owner,
+   2026-11-05: 6px left text and buttons against the border); the columns
+   between keep 6px. The same on a Settings screen's table outside a list card. */
+.sparc-shell .sparc-list-card table.table tr > :first-child,
+.sparc-settings-frame table.table tr > :first-child { padding-left: 1rem; }
+.sparc-shell .sparc-list-card table.table tr > :last-child,
+.sparc-settings-frame table.table tr > :last-child { padding-right: 1rem; }
 .sparc-shell .sparc-list-card table.table .sparc-col-name { min-width: 9rem; }
 .sparc-shell .sparc-stamp > span { display: block; }
 .sparc-shell .sparc-stamp__second { font-size: 0.8rem; color: var(--bs-secondary-color); }
@@ -3906,6 +3913,9 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-settings-frame table.table td > .badge { white-space: normal; text-align: left; }
 .sparc-settings-frame table.table .sparc-cell-break,
 .sparc-settings-frame table.table .sparc-cell-break code { overflow-wrap: anywhere; }
+/* An email breaks after its "@" (CollectionCardHelper#collection_email) or at a
+   hyphen, and only mid-word when nothing else fits. */
+.sparc-settings-frame table.table .sparc-cell-email { overflow-wrap: break-word; }
 .sparc-shell .sparc-cell-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;

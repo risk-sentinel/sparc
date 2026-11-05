@@ -96,12 +96,14 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         admin.update!(last_sign_in_at: Time.zone.parse("2026-11-05 15:20"))
         get admin_users_path
         heads = page.css(".sparc-list-card thead th").map { _1.text.strip }
-        expect(heads).to eq(["Email", "Name", "Status", "Roles", "Sign\u2011ins", "Last active", ""])
+        expect(heads).to eq(["Email", "Name", "Status", "Roles", "Sign\u2011ins", "Last\u00a0active", ""])
         row = page.css(".sparc-list-card tbody tr").find { _1.text.include?(admin.email) }
         status = row.css("td")[2]
         expect(status.css(".badge").map { _1.text.strip }).to include("Active", "Admin")
         expect(row.css("td").size).to eq(heads.size)
-        expect(row.at_css("td.sparc-cell-break").text.strip).to eq(admin.email)
+        email = row.at_css("td.sparc-cell-email")
+        expect(email.text.strip).to eq(admin.email)
+        expect(email.inner_html).to include("@<wbr>")
         expect(row.css("td")[5].css(".sparc-stamp > span").map(&:text)).to eq(%w[2026-11-05 15:20])
       end
 
@@ -120,8 +122,9 @@ RSpec.describe "Admin settings (#1303)", type: :request do
 
         expect([ tab_count("all"), tab_count("active"), tab_count("suspended") ]).to eq([ 2, 1, 1 ])
         get page.at_css("[data-testid=status-tab][data-tab=suspended]")["href"]
-        expect(response.body).to include("sam.suspended@example.com")
-        expect(response.body).not_to include("sam.active@example.com", "other@example.com")
+        # Read the cells' text: an email carries a <wbr> after its "@" (#1349).
+        listed = page.css(".sparc-list-card tbody td.sparc-cell-email").map { _1.text.strip }
+        expect(listed).to eq([ "sam.suspended@example.com" ])
         expect(page.css("[data-testid=filter-token]").map { _1.text.squish }).to eq([ "search: sam" ])
       end
 
