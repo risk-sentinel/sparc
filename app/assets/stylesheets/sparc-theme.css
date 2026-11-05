@@ -3899,10 +3899,13 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-shell .sparc-evidence-table td > .badge { white-space: normal; text-align: left; }
 /* #1349 — a Settings list fits beside the settings menu at 1024px. A badge
    wraps instead of stretching its column, and a cell marked
-   .sparc-cell-break (an email, a role's key) may break inside a long word.
-   Narrower than that, the table scrolls in its own box; the page never does. */
-.sparc-settings-frame .sparc-list-card table.table td > .badge { white-space: normal; text-align: left; }
-.sparc-settings-frame .sparc-list-card table.table .sparc-cell-break { overflow-wrap: anywhere; }
+   .sparc-cell-break (an email, a role's key, a migration's class name) may
+   break inside a long word; its <code> too, whose own break-word would
+   otherwise keep the word whole. Narrower than that, the table scrolls in its
+   own box; the page never does. */
+.sparc-settings-frame table.table td > .badge { white-space: normal; text-align: left; }
+.sparc-settings-frame table.table .sparc-cell-break,
+.sparc-settings-frame table.table .sparc-cell-break code { overflow-wrap: anywhere; }
 .sparc-shell .sparc-cell-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;
