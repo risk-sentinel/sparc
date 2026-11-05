@@ -123,7 +123,7 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         expect([ tab_count("all"), tab_count("active"), tab_count("suspended") ]).to eq([ 2, 1, 1 ])
         get page.at_css("[data-testid=status-tab][data-tab=suspended]")["href"]
         # Read the cells' text: an email carries a <wbr> after its "@" (#1349).
-        listed = page.css(".sparc-list-card tbody td.sparc-cell-email").map { _1.text.strip }
+        listed = page.css(".sparc-list-card tbody td:first-child").map { _1.text.strip }
         expect(listed).to eq([ "sam.suspended@example.com" ])
         expect(page.css("[data-testid=filter-token]").map { _1.text.squish }).to eq([ "search: sam" ])
       end

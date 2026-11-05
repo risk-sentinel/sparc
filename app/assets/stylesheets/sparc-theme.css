@@ -3887,7 +3887,9 @@ a.link-purple { color: var(--sparc-purple); }
 .sparc-settings-frame table.table tr > :first-child { padding-left: 1rem; }
 .sparc-shell .sparc-list-card table.table tr > :last-child,
 .sparc-settings-frame table.table tr > :last-child { padding-right: 1rem; }
-.sparc-shell .sparc-list-card table.table .sparc-col-name { min-width: 9rem; }
+/* 8.75rem, not 9rem: room for the 1rem edge cells (#1349) in the Linux
+   fallback font, where the SAP table was 2px over at 1280px. */
+.sparc-shell .sparc-list-card table.table .sparc-col-name { min-width: 8.75rem; }
 .sparc-shell .sparc-stamp > span { display: block; }
 .sparc-shell .sparc-stamp__second { font-size: 0.8rem; color: var(--bs-secondary-color); }
 /* The Baselines table has fixed column widths; beside the left column its

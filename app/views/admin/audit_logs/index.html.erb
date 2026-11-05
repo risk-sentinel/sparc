@@ -71,7 +71,6 @@
           <th>Time</th>
           <th>User</th>
           <th>Action</th>
-          <th>Category</th>
           <th>Subject</th>
           <th>IP Address</th>
           <th></th>
@@ -99,8 +98,9 @@
                  else "text-bg-secondary"
                  end %>
               <span class="badge <%= badge_class %>"><%= event.action.humanize %></span>
+              <%# #1349 — the category sits under its action: one column fewer. %>
+              <div class="small text-body-secondary"><%= event.category %></div>
             </td>
-            <td class="small text-body-secondary"><%= event.category %></td>
             <td class="small">
               <% if event.subject_type.present? %>
                 <span class="text-body-secondary"><%= event.subject_type.underscore.humanize %></span>
@@ -117,7 +117,7 @@
         <% end %>
         <% if @audit_events.empty? %>
           <tr>
-            <td colspan="7" class="text-center text-body-secondary small py-4">
+            <td colspan="6" class="text-center text-body-secondary small py-4">
               No audit events found matching your filters.
             </td>
           </tr>

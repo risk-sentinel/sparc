@@ -49,7 +49,7 @@
           <tbody>
             <% @report.rows.each do |row| %>
               <tr>
-                <td class="text-nowrap"><%= row.type_label %></td>
+                <td><%= row.type_label %></td>
                 <td>
                   <%# The fix lives on the document's own page, where the author
                       has the context to choose correctly. SPARC never picks a

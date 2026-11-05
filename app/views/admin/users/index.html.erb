@@ -21,7 +21,8 @@
         <% @users.each do |user| %>
           <tr>
             <td class="sparc-cell-email"><%= collection_email(user.email) %></td>
-            <td><%= user.display_label %></td>
+            <%# A name may be an email (display_label falls back to it). %>
+            <td class="sparc-cell-email"><%= collection_email(user.display_label) %></td>
             <td>
               <% case user.status %>
               <% when "active" %>
