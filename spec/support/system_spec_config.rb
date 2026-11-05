@@ -107,8 +107,13 @@ module SystemConsentBanner
     # teardown — the `.modal.show` element and `.modal-backdrop` linger and
     # intercept clicks on the now-visible login form. Finish the teardown
     # explicitly (the real consent→reveal already happened via #proceed).
+    #
+    # Select the consent modal by id, not by `.modal.show`: hide() removes
+    # `.show` at once and starts a 0.15s fade-out, so `.modal.show` matched
+    # nothing and the modal stayed on screen, half-faded, while the next step
+    # ran (axe then measured its faded text as low contrast, 4 runs in 10).
     page.execute_script(<<~JS)
-      document.querySelectorAll(".modal.show").forEach((m) => {
+      document.querySelectorAll("#{CONSENT_MODAL}, .modal.show").forEach((m) => {
         m.classList.remove("show");
         m.style.display = "none";
         m.setAttribute("aria-hidden", "true");
@@ -118,6 +123,7 @@ module SystemConsentBanner
       document.body.style.overflow = "";
     JS
     expect(page).to have_no_css(".modal.show")
+    expect(page).to have_no_css(CONSENT_MODAL, visible: :visible)
     expect(page).to have_no_css(".modal-backdrop")
     expect(page).to have_css("#{CONSENT_LOGIN_CARD}:not(.d-none)"),
                     "Proceed was clicked but the login form was not revealed"
