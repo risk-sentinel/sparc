@@ -58,7 +58,7 @@
         <tbody>
           <% @data_migration_runs.each do |run| %>
             <tr>
-              <td><code><%= run.name %></code></td>
+              <td class="sparc-cell-break"><code><%= run.name %></code></td>
               <td><%= run.version %></td>
               <td>
                 <% case run.status %>
@@ -72,8 +72,9 @@
                   <span class="badge bg-danger">failed</span>
                 <% end %>
               </td>
-              <td><%= run.started_at&.iso8601 || "—" %></td>
-              <td><%= run.completed_at&.iso8601 || "—" %></td>
+              <%# #1349 — date over time, so the table fits beside the settings menu. %>
+              <td><%= collection_timestamp(run.started_at, seconds: true) %></td>
+              <td><%= collection_timestamp(run.completed_at, seconds: true) %></td>
               <td><%= run.duration_seconds ? "#{run.duration_seconds}s" : "—" %></td>
               <td><%= run.records_processed %></td>
               <td class="small text-muted"><%= run.error_message&.truncate(120) %></td>
