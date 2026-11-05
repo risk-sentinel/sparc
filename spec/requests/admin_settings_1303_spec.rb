@@ -96,7 +96,7 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         admin.update!(last_sign_in_at: Time.zone.parse("2026-11-05 15:20"))
         get admin_users_path
         heads = page.css(".sparc-list-card thead th").map { _1.text.strip }
-        expect(heads).to eq(["Email", "Name", "Status", "Roles", "Sign\u2011ins", "Last\u00a0active", ""])
+        expect(heads).to eq([ "Email", "Name", "Status", "Roles", "Sign\u2011ins", "Last\u00a0active", "" ])
         row = page.css(".sparc-list-card tbody tr").find { _1.text.include?(admin.email) }
         status = row.css("td")[2]
         expect(status.css(".badge").map { _1.text.strip }).to include("Active", "Admin")
