@@ -80,8 +80,9 @@
       <tbody>
         <% @audit_events.each do |event| %>
           <tr>
-            <td class="small text-nowrap"><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
-            <td class="small">
+            <%# #1349 — date over time, so the list fits beside the settings menu. %>
+            <td class="small"><%= collection_timestamp(event.created_at, seconds: true) %></td>
+            <td class="small sparc-cell-break">
               <% if event.user %>
                 <%= link_to event.user.email, admin_user_path(event.user), class: "text-decoration-none" %>
               <% else %>

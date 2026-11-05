@@ -13,11 +13,13 @@
 # NIST SP 800-53 Rev 5: AC-3, AC-6 — shown only to whoever the screens admit.
 module AdminSettingsHelper
   Item = Struct.new(:key, :label, :path, :icon, :description, :controller, keyword_init: true)
-  Section = Struct.new(:title, :items, keyword_init: true)
+  # #1349 — each section carries one of the home page's group colours
+  # (ApplicationHelper::COLOR_*); the overview draws it with accent_class.
+  Section = Struct.new(:title, :color, :items, keyword_init: true)
 
   def admin_settings_sections
     [
-      Section.new(title: "Access", items: [
+      Section.new(title: "Access", color: ApplicationHelper::COLOR_BLUE, items: [
         Item.new(key: :users, label: "Users", path: admin_users_path, icon: "user", controller: "admin/users",
                  description: "Accounts, their status, roles and API tokens"),
         Item.new(key: :roles, label: "Roles", path: admin_roles_path, icon: "shield", controller: "admin/roles",
@@ -27,7 +29,7 @@ module AdminSettingsHelper
         Item.new(key: :idp_grants, label: "Unmatched IdP grants", path: admin_idp_grants_path, icon: "inbox",
                  controller: "admin/idp_grants", description: "Identity-provider grants that matched no role")
       ]),
-      Section.new(title: "Organization", items: [
+      Section.new(title: "Organization", color: ApplicationHelper::COLOR_PURPLE, items: [
         Item.new(key: :organizations, label: "Organizations", path: admin_organizations_path, icon: "building-2",
                  controller: "admin/organizations", description: "Organizations and their contacts"),
         Item.new(key: :authorization_boundaries, label: "Authorization boundaries", path: admin_authorization_boundaries_path,
@@ -37,7 +39,7 @@ module AdminSettingsHelper
                  icon: "clipboard-list", controller: "admin/remediation_timelines",
                  description: "Days to remediate, by baseline and criticality")
       ]),
-      Section.new(title: "Records", items: [
+      Section.new(title: "Records", color: ApplicationHelper::COLOR_CARROT, items: [
         Item.new(key: :audit_logs, label: "Audit log", path: admin_audit_logs_path, icon: "file-text",
                  controller: "admin/audit_logs", description: "Who did what, and when"),
         Item.new(key: :reconciliation, label: "Catalog lineage", path: admin_reconciliation_index_path, icon: "list-checks",

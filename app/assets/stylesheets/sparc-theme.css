@@ -3897,6 +3897,12 @@ a.link-purple { color: var(--sparc-purple); }
    control id per line, never split, and a long type badge on two lines. */
 .sparc-shell .sparc-evidence-table__controls code { display: block; white-space: nowrap; }
 .sparc-shell .sparc-evidence-table td > .badge { white-space: normal; text-align: left; }
+/* #1349 — a Settings list fits beside the settings menu at 1024px. A badge
+   wraps instead of stretching its column, and a cell marked
+   .sparc-cell-break (an email, a role's key) may break inside a long word.
+   Narrower than that, the table scrolls in its own box; the page never does. */
+.sparc-settings-frame .sparc-list-card table.table td > .badge { white-space: normal; text-align: left; }
+.sparc-settings-frame .sparc-list-card table.table .sparc-cell-break { overflow-wrap: anywhere; }
 .sparc-shell .sparc-cell-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -4037,9 +4043,12 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-body-color);
   text-decoration: none;
 }
-.sparc-settings-overview__item:hover { border-color: var(--sparc-border); background: var(--sparc-surface-alt); }
+.sparc-settings-overview__item:hover { border-color: var(--sparc-accent, var(--sparc-border)); background: var(--sparc-surface-alt); }
 .sparc-settings-overview__item:focus-visible { outline: 2px solid var(--sparc-i-primary); outline-offset: 1px; }
-.sparc-settings-overview__icon { color: var(--bs-secondary-color); padding-top: 0.1rem; }
+.sparc-settings-overview__icon { color: var(--sparc-accent, var(--bs-secondary-color)); padding-top: 0.1rem; }
+/* #1349 — each section wears one of the home page's group colours
+   (AdminSettingsHelper): the heading's bar, the card's border and its icon. */
+.sparc-settings-overview .sparc-rail-title { display: flex; align-items: center; gap: 0.5rem; }
 .sparc-settings-overview__label { display: block; font-weight: 650; }
 .sparc-settings-overview__desc { display: block; color: var(--bs-secondary-color); font-size: 0.85rem; }
 

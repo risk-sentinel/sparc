@@ -134,6 +134,7 @@ per phase PR:
 | 4. Screens | #1299, #1300, #1301, #1302, #1303, #1304 | Plan approved 2026-10-30; 4a (#1299, #1300, #1302, #1303) built on `feature/v1180rf_shell`; page frame approved 2026-10-31; 4b (#1301, #1304) built |
 | 5. Finish | #1297, #1306, #1307, #1308, #1309 | Plan approved 2026-10-31; 5a (#1307, #1297) built on `feature/v1180rf_shell` |
 | -rf.3 | #1346 | Settings show-page headers on the shared page header; the remaining Bootstrap buttons on sparc-action roles; a guard spec (owner, 2026-11-04) |
+| -rf.3 | #1349 | Settings lists fit beside the menu at 1024px (Admin badge joins Status, date over time, emails and badges wrap; Save under its day box); the overview's sections take the home page's group colours, blue / purple / carrot (owner, 2026-11-05) |
 | -rf.2 (from -rf.1 testing) | #1337, #1338, #1339, #1340, #1341, #1342 | Mockups and plan approved 2026-11-04; one branch, `feat/rf2_ux_bundle`. The same form treatment (#1340) on every other screen, baseline ODPs first, is the next update |
 
 **Phase 0** records what the navigation offers today, per viewer, before any

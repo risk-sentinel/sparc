@@ -41,6 +41,22 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         expect(page.at_css("[data-testid=shell-tab][aria-current=page]")["data-tab"]).to eq("settings")
       end
 
+      # #1349 — the home page's group colours, one per section: the heading's
+      # bar and every card's accent, from existing accent classes only.
+      it "colours each section with one of the home page's group colours" do
+        get admin_settings_path
+        sections = page.css("[data-testid=admin-settings-section]")
+        colours = sections.map { |sec| sec["class"][/sparc-accent--\w+/] }
+        expect(sections.map { _1.at_css("h2").text.strip }).to eq(%w[Access Organization Records])
+        expect(colours).to eq(%w[sparc-accent--blue sparc-accent--purple sparc-accent--carrot])
+        sections.each do |sec|
+          expect(sec.at_css("h2 .sparc-group-bar")).to be_present
+          items = sec.css("[data-testid=admin-settings-item]")
+          expect(items).not_to be_empty
+          expect(items.map { _1["class"].split }).to all(include("sparc-section-card--accented"))
+        end
+      end
+
       it "opens every screen it lists" do
         admin_screens.each_value do |path|
           get path
@@ -73,6 +89,28 @@ RSpec.describe "Admin settings (#1303)", type: :request do
 
     describe "the admin lists" do
       before { sign_in_as(admin) }
+
+      # #1349 — the users list fits beside the menu: the Admin badge sits in the
+      # Status column, and the last sign-in stacks its date over its time.
+      it "shows a user's Admin badge with their status, in one fewer column" do
+        admin.update!(last_sign_in_at: Time.zone.parse("2026-11-05 15:20"))
+        get admin_users_path
+        heads = page.css(".sparc-list-card thead th").map { _1.text.strip }
+        expect(heads).to eq(["Email", "Name", "Status", "Roles", "Sign-ins", "Last active", ""])
+        row = page.css(".sparc-list-card tbody tr").find { _1.text.include?(admin.email) }
+        status = row.css("td")[2]
+        expect(status.css(".badge").map { _1.text.strip }).to include("Active", "Admin")
+        expect(row.css("td").size).to eq(heads.size)
+        expect(row.at_css("td.sparc-cell-break").text.strip).to eq(admin.email)
+        expect(row.css("td")[5].css(".sparc-stamp > span").map(&:text)).to eq(%w[2026-11-05 15:20])
+      end
+
+      it "stacks an audit event's date over its time, seconds kept" do
+        create(:audit_event, created_at: Time.zone.parse("2026-11-05 15:20:42"))
+        get admin_audit_logs_path
+        stamps = page.css(".sparc-list-card tbody td .sparc-stamp").map { |st| st.css("> span").map(&:text) }
+        expect(stamps).to include(%w[2026-11-05 15:20:42])
+      end
 
       it "counts users by status, narrows by tab and keeps the search" do
         create(:user, email: "sam.active@example.com")

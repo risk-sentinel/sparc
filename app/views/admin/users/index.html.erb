@@ -11,17 +11,16 @@
           <th>Email</th>
           <th>Name</th>
           <th>Status</th>
-          <th>Admin</th>
           <th>Roles</th>
-          <th>Sign&#8209;ins</th>
-          <th>Last&nbsp;Active</th>
+          <th>Sign-ins</th>
+          <th>Last active</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <% @users.each do |user| %>
           <tr>
-            <td><%= user.email %></td>
+            <td class="sparc-cell-break"><%= user.email %></td>
             <td><%= user.display_label %></td>
             <td>
               <% case user.status %>
@@ -32,8 +31,7 @@
               <% when "deactivated" %>
                 <span class="badge text-bg-secondary">Deactivated</span>
               <% end %>
-            </td>
-            <td>
+              <%# #1349 — the Admin badge sits with the status: one column fewer. %>
               <% if user.admin? %>
                 <span class="badge text-bg-danger">Admin</span>
               <% end %>
@@ -44,7 +42,7 @@
               <% end %>
             </td>
             <td><%= user.sign_in_count %></td>
-            <td><%= user.last_sign_in_at&.strftime("%Y-%m-%d %H:%M") || "Never" %></td>
+            <td><%= user.last_sign_in_at ? collection_timestamp(user.last_sign_in_at) : "Never" %></td>
             <td>
               <%= link_to "View", admin_user_path(user), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
             </td>

@@ -5,6 +5,7 @@
   <%= render "shared/page_header", title: "Remediation timelines",
         subtitle: "Days to remediate by profile baseline × NIST criticality. Used to validate amendments when a control has no profile ODP remediation value (#809)." %>
 
+<%# #1349 — Save sits under its day box, so the grid fits beside the settings menu. %>
 <div class="card sparc-list-card">
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0" id="remediation-timelines-grid">
@@ -22,7 +23,7 @@
               <% cell = @grid[baseline][criticality] %>
               <td class="text-center">
                 <%= form_with url: admin_remediation_timelines_path, method: :patch,
-                      data: { turbo: false }, class: "d-inline-flex align-items-center gap-1" do %>
+                      data: { turbo: false }, class: "d-inline-flex flex-column align-items-center gap-1" do %>
                   <%= hidden_field_tag :baseline_level, baseline %>
                   <%= hidden_field_tag :criticality, criticality %>
                   <%= number_field_tag :days, cell[:days], min: 0, class: "form-control form-control-sm",
