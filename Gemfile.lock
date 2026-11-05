@@ -123,7 +123,7 @@ GEM
     bigdecimal (4.1.3)
     bindata (2.5.1)
     bindex (0.8.1)
-    bootsnap (1.26.0)
+    bootsnap (1.26.1)
       msgpack (~> 1.5)
     brakeman (8.1.0)
       racc
@@ -152,7 +152,7 @@ GEM
       cbor (~> 0.5.9)
       openssl-signature_algorithm (~> 1.0)
     crass (1.0.8)
-    csv (3.3.6)
+    csv (3.3.7)
     date (3.5.1)
     debug (1.11.1)
       irb (~> 1.10)
@@ -178,7 +178,7 @@ GEM
       railties (>= 6.1.0)
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
-    faraday (2.15.0)
+    faraday (2.15.1)
       faraday-net_http (>= 2.0, < 3.6)
       json
       logger
@@ -264,7 +264,7 @@ GEM
       bigdecimal (>= 3.1, < 5)
     net-http (0.9.1)
       uri (>= 0.11.1)
-    net-imap (0.6.7)
+    net-imap (0.6.8)
       date
       net-protocol
     net-ldap (0.21.0)
@@ -435,7 +435,7 @@ GEM
     regexp_parser (2.11.3)
     reline (0.7.0)
       io-console (~> 0.5)
-    resolv (0.8.0)
+    resolv (0.8.1)
     rexml (3.4.4)
     roo (3.0.0)
       base64 (~> 0.2)
@@ -553,12 +553,12 @@ GEM
       railties (>= 7.1.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    tzinfo-data (1.2026.5)
+    tzinfo-data (1.2026.6)
       tzinfo (>= 1.0.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
-    uri (1.1.1)
+    uri (1.1.2)
     useragent (0.16.11)
     validate_url (1.0.15)
       activemodel (>= 3.0.0)
@@ -589,7 +589,7 @@ GEM
       nokogiri (~> 1.8)
     yaml (0.4.0)
     zeitwerk (2.8.3)
-    zlib (3.2.3)
+    zlib (3.2.4)
 
 PLATFORMS
   aarch64-linux
@@ -599,7 +599,6 @@ PLATFORMS
   arm-linux-musl
   arm64-darwin-24
   arm64-darwin-25
-  arm64-darwin-27
   x86_64-linux
   x86_64-linux-gnu
   x86_64-linux-musl
