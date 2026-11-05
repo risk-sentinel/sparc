@@ -103,3 +103,31 @@ def test_the_overview_sections_carry_the_home_colours(authed_page):
     # Access blue (#3498db), Organization purple (#9b59b6), Records carrot (#e67e22).
     assert seen == ["rgb(52, 152, 219)", "rgb(155, 89, 182)", "rgb(230, 126, 34)"], seen
     assert_no_csp_violations(page, during="settings overview")
+
+
+# The first and last cells keep 1rem from the table's edge; the columns between
+# keep 6px (owner, 2026-11-05). Checked on Settings lists and a document list.
+EDGE_LISTS = ["/admin/users", "/admin/roles", "/admin/data_migrations", "/ssp_documents?view=table"]
+
+EDGE_JS = """() => {
+  const t = document.querySelector('.sparc-list-card table, main table');
+  if (!t || !t.querySelector('tbody tr td')) return null;
+  const px = (el, side) => parseFloat(getComputedStyle(el)['padding' + side]);
+  return [...t.querySelectorAll('tr')].flatMap(tr => {
+    const cells = [...tr.children];
+    return [px(cells[0], 'Left'), px(cells[cells.length - 1], 'Right')];
+  });
+}"""
+
+
+@pytest.mark.parametrize("path", EDGE_LISTS)
+def test_a_list_table_keeps_room_at_its_edges(authed_page, path):
+    page = authed_page
+    page.set_viewport_size({"width": 1280, "height": 900})
+    record_csp(page)
+    resp = page.goto(path)
+    assert resp is not None and resp.ok, f"{path} returned {resp and resp.status}"
+    edges = page.evaluate(EDGE_JS)
+    if edges is None:
+        pytest.skip(f"{path}: no rows on this deployment")
+    assert min(edges) >= 16, f"{path}: an edge cell has {min(edges)}px of padding, under 16px"

@@ -82,9 +82,9 @@
           <tr>
             <%# #1349 — date over time, so the list fits beside the settings menu. %>
             <td class="small"><%= collection_timestamp(event.created_at, seconds: true) %></td>
-            <td class="small sparc-cell-break">
+            <td class="small sparc-cell-email">
               <% if event.user %>
-                <%= link_to event.user.email, admin_user_path(event.user), class: "text-decoration-none" %>
+                <%= link_to collection_email(event.user.email), admin_user_path(event.user), class: "text-decoration-none" %>
               <% else %>
                 <span class="text-body-secondary">(system)</span>
               <% end %>

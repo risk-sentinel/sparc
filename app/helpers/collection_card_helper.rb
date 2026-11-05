@@ -101,6 +101,15 @@ module CollectionCardHelper
     value.to_s.truncate(length)
   end
 
+  # #1349 — an email in a list cell: it may break after the "@" (and at a
+  # hyphen), never mid-word (CSS, .sparc-cell-email).
+  def collection_email(email)
+    local, at, domain = email.to_s.rpartition("@")
+    return email.to_s if at.empty?
+
+    safe_join([ local, at, tag.wbr, domain ])
+  end
+
   # 1.18.0-rf #1299 — how a view mode is drawn: :cards, :rows or :table.
   #
   # `list` draws rows; `table` draws the screen's table.

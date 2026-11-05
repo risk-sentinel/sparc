@@ -13,14 +13,14 @@
           <th>Status</th>
           <th>Roles</th>
           <th>Sign&#8209;ins</th>
-          <th>Last active</th>
+          <th>Last&nbsp;active</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <% @users.each do |user| %>
           <tr>
-            <td class="sparc-cell-break"><%= user.email %></td>
+            <td class="sparc-cell-email"><%= collection_email(user.email) %></td>
             <td><%= user.display_label %></td>
             <td>
               <% case user.status %>
