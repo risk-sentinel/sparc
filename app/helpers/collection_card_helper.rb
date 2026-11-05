@@ -107,11 +107,13 @@ module CollectionCardHelper
   # 1.18.0-rf — a list table's date and time. One line ("2026-08-19 12:13"), as
   # on main; the time sits small under the date
   # (CSS, .sparc-stamp), so wide tables fit beside the left column.
-  def collection_timestamp(time)
+  # `seconds: true` keeps the seconds (the audit log, #1349).
+  def collection_timestamp(time, seconds: false)
     return "\u2014" if time.blank?
 
+    clock = time.strftime(seconds ? "%H:%M:%S" : "%H:%M")
     tag.span(class: "sparc-stamp") do
-      safe_join([ tag.span(time.strftime("%Y-%m-%d")), tag.span(time.strftime("%H:%M"), class: "sparc-stamp__second") ], " ")
+      safe_join([ tag.span(time.strftime("%Y-%m-%d")), tag.span(clock, class: "sparc-stamp__second") ], " ")
     end
   end
 

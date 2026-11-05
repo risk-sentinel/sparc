@@ -7,12 +7,17 @@
 
 <div class="sparc-settings-overview" data-testid="admin-settings">
   <% admin_settings_sections.each do |section| %>
-    <section aria-labelledby="settings-<%= section.title.parameterize %>">
-      <h2 class="sparc-rail-title" id="settings-<%= section.title.parameterize %>"><%= section.title %></h2>
+    <%# #1349 — the home page's group colours: a bar beside the heading and an
+        accented card per screen, one colour per section. %>
+    <section class="<%= accent_class(section.color) %>" aria-labelledby="settings-<%= section.title.parameterize %>"
+             data-testid="admin-settings-section">
+      <h2 class="sparc-rail-title" id="settings-<%= section.title.parameterize %>">
+        <span class="sparc-group-bar" aria-hidden="true"></span> <%= section.title %>
+      </h2>
       <ul class="sparc-settings-overview__list">
         <% section.items.each do |item| %>
           <li>
-            <%= link_to item.path, class: "sparc-settings-overview__item", data: { testid: "admin-settings-item", item: item.key } do %>
+            <%= link_to item.path, class: "sparc-settings-overview__item sparc-section-card--accented", data: { testid: "admin-settings-item", item: item.key } do %>
               <span class="sparc-settings-overview__icon"><%= icon(item.icon) %></span>
               <span>
                 <span class="sparc-settings-overview__label"><%= item.label %></span>
