@@ -19,10 +19,14 @@
       <tbody>
         <% @organizations.each do |org| %>
           <tr>
-            <td class="fw-semibold"><%= org.name %></td>
-            <td class="small text-body-secondary">
+            <td class="fw-semibold sparc-cell-break"><%= org.name %></td>
+            <%# #1349 — the person over the email, and the email breaks after its "@"
+                (or anywhere, when one part alone is too long), so a long contact
+                cannot push the table past the settings menu. %>
+            <td class="small text-body-secondary sparc-cell-email">
               <% if org.contact_person.present? || org.contact_email.present? %>
-                <%= org.contact_person %><%= " — #{org.contact_email}" if org.contact_email.present? %>
+                <% if org.contact_person.present? %><div><%= org.contact_person %></div><% end %>
+                <% if org.contact_email.present? %><div class="sparc-cell-break"><%= collection_email(org.contact_email) %></div><% end %>
               <% else %>
                 —
               <% end %>
