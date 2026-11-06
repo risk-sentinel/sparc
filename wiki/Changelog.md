@@ -24,8 +24,32 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 - **One button system:** the Settings detail pages use the shared page header, the remaining Bootstrap buttons use SPARC's button roles, and a test keeps it that way ([#1346](https://github.com/risk-sentinel/sparc/issues/1346)).
 - **Settings fit and colour:** every Settings list fits beside the settings menu at 1024px, and the Settings overview's sections carry the home page's group colours ([#1349](https://github.com/risk-sentinel/sparc/issues/1349)).
 - **Login consent banner** behaviour covered by its own browser test ([#1341](https://github.com/risk-sentinel/sparc/issues/1341)).
+- **Includes v1.17.8** and every release before it: the November dependency updates and Rails 8.1.4.1.
 
 ---
+
+## v1.17.8 -- Dependency Updates (2026-11-04)
+
+A maintenance release: the November dependency updates, together.
+
+- **Gems, patch:** csv, resolv, zlib, uri, net-imap, faraday, tzinfo-data and bootsnap.
+- **Gems, minor:** the AWS SDK gems (S3, Secrets Manager, RDS), oauth2 2.1.0 and selenium-webdriver.
+- **activerecord-import 3.0.1** (was 2.3.0) and **roo 4.0.0** (was 3.0.0): major versions whose breaking changes drop old Ruby and Rails versions SPARC no longer uses.
+- **CI:** 13 GitHub Actions, minor and patch.
+
+**Upgrading:** an image swap from v1.17.7. No migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.8).
+
+## v1.17.7 -- Rails 8.1.4.1 Security Release (2026-11-04)
+
+A security patch release.
+
+- **Rails 8.1.4.1** (was 8.1.4, [#1344](https://github.com/risk-sentinel/sparc/issues/1344)), Rails' security release of 2026-11-04, for 21 advisories against Rails 8.1.4: 1 critical (Active Storage), 4 high, and the rest medium and low, across Active Storage, Action Pack, Active Support, Action View and Action Mailbox.
+
+**Upgrading:** an image swap from v1.17.6. No migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.7).
 
 ## v1.17.6 -- Every SSP Item Answerable, One Copy of Each Item, Change an SSP's Baseline (2026-11-03)
 
