@@ -7,6 +7,8 @@ How to move a running SPARC deployment from one release to the next without losi
 
 These instructions assume the **containerized deployment** (`risksentinel/sparc` on Docker Hub), which is how most teams run SPARC. Every command runs against the published image; nothing requires a repository checkout.
 
+Moving the database itself to a new PostgreSQL major version, such as Aurora PostgreSQL 14 to 18? See [Upgrading PostgreSQL](#upgrading-postgresql-to-a-new-major-version).
+
 ---
 
 ## Step 1 — Find the release you are on
@@ -221,6 +223,62 @@ Do not run `db:schema:load` against a populated database — it drops data.
 That distinction is invisible until a migration is archived. When a release consolidates old migrations into a squash, the squash is correct for a **fresh install** — `db:schema:load` creates every column from `schema.rb`, and the stamp records the history. On an **existing** database the same squash records those versions as applied and performs no DDL at all. Any database that had not already run the archived migrations ends up missing their structure, with a version table that looks perfectly current.
 
 This is why the schema check exists, and why it is the step that actually tells you whether an upgrade worked.
+
+---
+
+## Upgrading PostgreSQL to a new major version
+
+How to move SPARC's database to a new PostgreSQL major version, for example **Aurora PostgreSQL 14 to 18.3** ahead of version 14's end of support. SPARC itself needs no change for this: the same image runs on both.
+
+### What was tested
+
+On 2026-11-06, with SPARC **v1.17.8**:
+
+- A SPARC database created by v1.16.3 on **PostgreSQL 14**, then migrated to v1.17.8. SPARC connected as a **non-superuser** account with an **md5** password.
+- Upgraded to **PostgreSQL 18** with `pg_upgrade`, the PostgreSQL tool behind in-place major-version upgrades.
+- **No data changed:** every table in all four SPARC databases had the same rows and the same contents before and after the upgrade (120 tables).
+- v1.17.8's API and browser test suites pass on the upgraded database, connected over TLS with `SPARC_DB_SSLMODE=verify-full`. With a CA bundle that could not verify the server, SPARC refused to connect.
+
+**Not tested:** Aurora's own upgrade tooling and storage. Rehearse on a copy first (below).
+
+### Before the upgrade
+
+1. **Be on SPARC v1.17.8 or later**, the release tested above. Follow the rest of this page first if you are not.
+2. **Rehearse on a copy.** Restore a snapshot to a new cluster, upgrade that, and point a test SPARC at it.
+3. **Back up**, as in [Step 3](#step-3--back-up-the-database). On Aurora, take a cluster snapshot.
+4. **Stop SPARC** (scale the web service and any workers to zero), so nothing writes during the upgrade.
+
+SPARC uses four databases on the same server: the main one and its `_cache`, `_queue` and `_cable` companions. A server upgrade moves all four together.
+
+### After the upgrade, before starting SPARC
+
+1. **Refresh the query statistics.** An upgrade does not carry all of them over, and until they are rebuilt SPARC's lists and searches can be slow. With PostgreSQL 18's `vacuumdb` (`--missing-stats-only` is new in 18):
+
+   ```bash
+   vacuumdb --all --analyze-in-stages --missing-stats-only
+   vacuumdb --all --analyze-only
+   ```
+
+2. **Check SPARC's extensions, as the master (administrative) user.** In the main database:
+
+   ```sql
+   SELECT name, installed_version, default_version
+     FROM pg_available_extensions WHERE name IN ('pg_trgm', 'plpgsql');
+   ```
+
+   If `pg_trgm`'s `installed_version` is older than its `default_version`, run `ALTER EXTENSION pg_trgm UPDATE;`. Run it as the master user: the upgrade can make the administrative user the extension's owner, and SPARC's own account is then refused (`must be owner of extension pg_trgm`). SPARC never changes the extension itself, so this does not affect the application. In the test, `pg_trgm` was version 1.6 on both 14 and 18, and no update was needed.
+
+3. **Consider resetting SPARC's database password.** PostgreSQL 18 deprecates md5 passwords. An md5 password set on 14 still works on 18; SPARC connected with one in the test. Setting it again on 18, where `scram-sha-256` is the default, stores it the newer way. Update `SPARC_DB_PASSWORD` (or the secret it comes from) to match.
+
+### Start SPARC and check
+
+1. **Keep `SPARC_DB_SSLMODE=verify-full`.** On AWS the image already trusts the RDS CA bundle (see `docs/DATABASE_TLS.md`). At startup the log should report:
+
+   ```
+   [SPARC] Database TLS: 4/4 connections encrypted and server-authenticated (sslmode=verify-full, TLSv1.3).
+   ```
+
+2. **Verify the schema**, as in [Step 5](#step-5--verify-you-arrived), and check that `/up/ready` returns `200`.
 
 ---
 
