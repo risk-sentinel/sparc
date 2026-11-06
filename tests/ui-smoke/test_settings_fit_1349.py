@@ -13,6 +13,8 @@ app/views/admin/settings/index.html.erb and each admin index view.
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 from helpers import assert_no_csp_violations, record_csp
@@ -131,3 +133,29 @@ def test_a_list_table_keeps_room_at_its_edges(authed_page, path):
     if edges is None:
         pytest.skip(f"{path}: no rows on this deployment")
     assert min(edges) >= 16, f"{path}: an edge cell has {min(edges)}px of padding, under 16px"
+
+
+def test_an_organization_with_a_long_contact_fits_at_1024(authed_page):
+    """A contact of a person and a long email used to hold the column wide: the
+    table ran 14px past its box on a fresh install, where the API suite's
+    contacts land on the first page. The person now sits over the email, which
+    breaks after its "@". The email has no other place a line may break (a dot
+    or a hyphen before a digit never breaks), and searching for the one
+    organization keeps the check independent of which rows reach page one."""
+    from _api_setup import post_json
+
+    suffix = uuid.uuid4().hex[:8]
+    post_json("/api/v1/organizations", {"organization": {
+        "name": f"phase2-ui-fit1349-org-{suffix}",
+        "contact_person": "Contract Suite Contact Person",
+        "contact_email": f"fit1349.contact.person.{suffix}@example.gov",
+    }})
+    page = authed_page
+    page.set_viewport_size({"width": 1024, "height": 900})
+    _open(page, f"/admin/organizations?q={suffix}")
+    assert page.locator(".sparc-list-card tbody tr").count() == 1
+    over = page.evaluate(TABLE_OVER_JS)
+    assert over is not None and over <= 0, (
+        f"the organizations table scrolls sideways by {over}px at 1024px"
+    )
+    assert_no_csp_violations(page, during="organizations with a long contact at 1024px")

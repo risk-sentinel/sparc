@@ -136,6 +136,20 @@ RSpec.describe "Admin settings (#1303)", type: :request do
         expect([ tab_count("active"), tab_count("inactive") ]).to eq([ 1, 1 ])
       end
 
+      # #1349 — the contact's person sits over the email, which breaks after
+      # its "@", so a long contact cannot push the table past the menu.
+      it "stacks an organization's contact person over an email that breaks after its @" do
+        create(:organization, name: "Contact Fit Org", contact_person: "Pat Contact",
+                              contact_email: "pat.contact-1349@example.gov")
+        get admin_organizations_path(q: "Contact Fit")
+
+        cell = page.at_css(".sparc-list-card tbody td.sparc-cell-email")
+        expect(cell.css("> div").map { _1.text.strip }).to eq([ "Pat Contact", "pat.contact-1349@example.gov" ])
+        expect(cell.inner_html).to include("@<wbr>")
+        expect(cell.at_css("> div.sparc-cell-break").text.strip).to eq("pat.contact-1349@example.gov")
+        expect(page.at_css(".sparc-list-card tbody td.sparc-cell-break").text.strip).to eq("Contact Fit Org")
+      end
+
       it "paginates service accounts" do
         create_list(:user, 26, :service_account)
         get admin_service_accounts_path
