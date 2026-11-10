@@ -286,7 +286,7 @@ Shows the baseline profile with:
   service `PUT /api/v1/profile_documents/:id/parameters` uses.
 - Priority heatmap grouped by NIST family
 - On an editable baseline (#1270): each control's priority as a selector that
-  saves in place ("Priority not set" in amber), a checkbox per control and a
+  saves in place (optional, #1357: no priority shows "—"), a checkbox per control and a
   **Select all** per family, and a bulk bar that sets priority or links/unlinks
   a back-matter resource on the selected controls. Same change as
   `PUT /api/v1/profile_documents/:id/controls/bulk`. The **Not set** tile

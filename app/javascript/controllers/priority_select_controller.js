@@ -44,7 +44,6 @@ export default class PrioritySelectController extends Controller {
   }
 
   applyToCard(priority) {
-    this.selectTarget.classList.toggle("sparc-priority-select--unset", priority === "")
     const card = this.element.closest(".control-card")
     if (!card) return
 
