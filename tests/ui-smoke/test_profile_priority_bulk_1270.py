@@ -95,7 +95,9 @@ class TestInlinePriority:
 
         select = page.locator("select[aria-label='Priority for AC-1']")
         assert select.input_value() == "", "AC-1 should start with no priority"
-        assert "sparc-priority-select--unset" in (select.get_attribute("class") or "")
+        # #1357 — no priority is a plain dash, not a warning.
+        assert "sparc-priority-select--unset" not in (select.get_attribute("class") or "")
+        assert select.locator("option:checked").text_content() == "\u2014"
 
         url_before = page.url
         with page.expect_response(lambda r: "/profile_controls/bulk" in r.url) as saved:

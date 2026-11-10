@@ -385,15 +385,8 @@ class ProfileDocumentsController < ApplicationController
     readiness = service.publication_readiness
 
     unless resolved_profile?
-      # Add prioritization check for user-created profiles
-      unprioritized = @profile_document.profile_controls.where(priority: [ nil, "" ]).count
-      prioritized = unprioritized == 0
-      readiness[:checks][:controls_prioritized] = prioritized
-
-      unless prioritized
-        readiness[:ready] = false
-        readiness[:errors] << "#{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3)"
-      end
+      # #1357 — a control's priority is optional: priority codes are not part
+      # of NIST SP 800-53 Rev 5 or 800-53B, so publishing never waits on one.
 
       # Add parameter completeness check
       uncustomized = count_uncustomized_parameters(@profile_document)
@@ -415,7 +408,8 @@ class ProfileDocumentsController < ApplicationController
       redirect_path: profile_document_path(@profile_document), label: "Profile" }
   end
 
-  # Profile-specific pre-publish logic: validate catalog link, prioritization, and generate resolved catalog.
+  # Profile-specific pre-publish logic: validate the catalog link and generate the resolved catalog.
+  # A control's priority is optional (#1357).
   # Resolved profiles already have resolved_catalog_json populated from import — skip regeneration.
   def before_publish_lifecycle(doc)
     is_resolved = doc.import_metadata&.dig("format") == "oscal_resolved_profile"
@@ -423,11 +417,6 @@ class ProfileDocumentsController < ApplicationController
     unless is_resolved
       unless doc.control_catalog
         return { error: "Cannot publish: no source catalog linked to this profile." }
-      end
-
-      unprioritized = doc.profile_controls.where(priority: [ nil, "" ]).count
-      if unprioritized > 0
-        return { error: "Cannot publish: #{unprioritized} control#{'s' if unprioritized != 1} missing prioritization (P1/P2/P3). Assign priorities before publishing." }
       end
 
       service = OscalResolvedProfileCatalogService.new(doc)

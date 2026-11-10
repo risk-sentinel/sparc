@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.9 -- Control Priority Is Optional (2026-11-10)
+
+Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so a baseline no longer needs them ([#1357](https://github.com/risk-sentinel/sparc/issues/1357)).
+
+- **Publishing a baseline no longer requires a priority** on every control. The Publish dialog no longer asks for one.
+- **No more invented priorities.** A new baseline built from a catalog carries a control's priority only when the catalog does. SPARC used to derive P1/P2/P3 from how many baselines include a control.
+- **Existing baselines:** after the upgrade, SPARC clears the priorities it derived, on drafts and published baselines. It keeps every priority a person set, a catalog carried or an imported file brought. Each baseline it changes gets an audit event listing the controls and their old values. A published baseline's stored resolved catalog keeps its priorities until it is next published.
+- **Priority stays available:** set, clear or bulk-edit it as before. A control without one shows a plain dash.
+
+**Upgrading:** an image swap from v1.17.8. One data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.9).
+
 ## v1.17.8 -- Dependency Updates (2026-11-04)
 
 A maintenance release: the November dependency updates, together.

@@ -1464,8 +1464,8 @@ a.link-purple { color: var(--sparc-purple); }
   display: none;
 }
 
-/* #1270 — a control's priority, set in place. "Not set" in amber, because a
-   control without a priority is the one the user has to come back to. */
+/* #1270 — a control's priority, set in place. #1357: a priority is optional,
+   so a control without one looks like any other, not like a warning. */
 .sparc-priority-select {
   width: auto;
   padding: 0.05rem 0.4rem;
@@ -1475,11 +1475,6 @@ a.link-purple { color: var(--sparc-purple); }
   color: var(--bs-body-color);
   font-size: 0.72rem;
   font-weight: 600;
-}
-
-.sparc-priority-select--unset {
-  border-color: var(--sparc-warning);
-  color: var(--sparc-warning-fg);
 }
 
 /* A control's parameters (#1270). A parameter's label comes from the catalog
