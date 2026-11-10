@@ -111,6 +111,17 @@ help guides have no navigation entry in that posture.
 
 ---
 
+### Hotfix: `v1.17.9` — a baseline control's priority is optional
+
+Plan approved by the owner on 2026-11-10; one branch (`bug/1357_profile_priority_optional`) from
+`main`, one PR; then carried onto `release-1.18.0-rf`.
+
+| Issue | What | Decisions (owner, 2026-11-10) |
+|---|---|---|
+| **#1357** | Priority codes are not part of NIST SP 800-53 Rev 5 or 800-53B. Publishing a baseline no longer requires a priority (publish step, readiness check and Publish dialog); `ProfilePriorityAssignmentService` copies the catalog control's own P1–P3 or assigns none, instead of deriving one from baseline breadth; an unset priority shows "—", not an amber warning. The deferred data migration `ClearInventedProfilePriorities` clears the derived values on existing baselines and keeps any a person set (bulk/inline edit, or any edit-form save), a catalog carried or an imported file brought; one audit event per baseline lists what it cleared. Carries the two sqlite-libs register entries (CVE-2026-119379, CVE-2026-119374) `main` needs for its security gate. | Apply to existing baselines, published included (stored resolved catalog untouched until the next publish); an edit-form save counts as a choice; P0 and the parameter check out of scope |
+
+---
+
 ### Hotfix: `v1.17.6` — every SSP item answerable, one copy of each item, changing an SSP's baseline
 
 Plan approved by the owner on 2026-11-03; one branch (`hotfix/v1176_ssp_items_baseline`) from

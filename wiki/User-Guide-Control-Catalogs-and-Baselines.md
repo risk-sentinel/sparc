@@ -257,7 +257,7 @@ recorded against it are kept.
 
 ## Working with baselines (profiles)
 
-A baseline selects and prioritizes controls from a catalog.
+A baseline selects controls from a catalog and tailors them.
 
 ### How to create a baseline from a catalog
 
@@ -316,8 +316,9 @@ the baseline is already linked to confirms it.
 
 ### How to publish a baseline
 
-A baseline publishes once its catalog is confirmed and every control has a
-priority. When document approval is required (`SPARC_REQUIRE_DOCUMENT_APPROVAL`,
+A baseline publishes once its catalog is confirmed. A control's priority is
+optional and never blocks publishing (see
+[How to set control priorities](#how-to-set-control-priorities)). When document approval is required (`SPARC_REQUIRE_DOCUMENT_APPROVAL`,
 on by default), the review row under its title takes it there:
 **Submit for review**, then an approver's **Approve** (an instance
 administrator may approve their own), then **Publish**. With approval not
@@ -345,12 +346,18 @@ API equivalent: `PATCH /api/v1/profile_documents/:id` with
 
 ### How to set control priorities
 
+A priority is **optional**. Priority codes come from NIST SP 800-53 Rev 4;
+Rev 5 and SP 800-53B do not assign them, so SPARC neither requires one nor
+makes one up. A baseline built from a catalog carries a control's priority only
+when the catalog control has one. Use priorities if your organization orders
+its work by them.
+
 On a baseline you can edit (not published, and you hold `profiles.write`),
 each control shows its priority as a selector beside its ID. Choose **P1**,
 **P2** or **P3** and it saves straight away; "Saved" appears next to it. A
-control without a priority shows **Priority not set** in amber.
+control without a priority shows a dash (**—**).
 
-To find the controls that still need one, click the **Not set** tile above the
+To list the controls without a priority, click the **Not set** tile above the
 controls. The list narrows to them.
 
 To set many at once:

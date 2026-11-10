@@ -185,5 +185,24 @@ RSpec.describe "ProfileDocuments", type: :request do
       }.to change(ProfileDocument, :count).by(1)
       expect(response).to have_http_status(:redirect)
     end
+
+    # #1357 — a control's priority comes from the catalog or not at all; SPARC
+    # no longer derives P1/P2/P3 from how many baselines include it.
+    it "gives a control the catalog's priority, and none where the catalog has none" do
+      catalog = create(:control_catalog)
+      family = create(:control_family, control_catalog: catalog)
+      everywhere = create(:catalog_control, control_family: family, control_id: "ac-1", priority: nil,
+                                            baseline_impact: "LOW, MODERATE, HIGH")
+      prioritised = create(:catalog_control, control_family: family, control_id: "ac-2", priority: "P3",
+                                             baseline_impact: "LOW, MODERATE, HIGH")
+
+      post create_from_catalog_profile_documents_path, params: {
+        catalog_id: catalog.slug, control_ids: [ everywhere.control_id, prioritised.control_id ],
+        profile_name: "Priority Optional"
+      }
+
+      profile = ProfileDocument.find_by!(name: "Priority Optional")
+      expect(profile.profile_controls.to_h { [ _1.control_id, _1.priority ] }).to eq("ac-1" => nil, "ac-2" => "P3")
+    end
   end
 end

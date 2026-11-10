@@ -395,7 +395,8 @@
                   <% if can_tailor %>
                     <%# An imported value outside P1–P3 stays selectable, so the
                         selector never shows a priority the control does not have. %>
-                    <% choices = [ [ "Priority not set", "" ] ] + ProfileControl::PRIORITIES.map { [ _1, _1 ] } %>
+                    <%# #1357 — a priority is optional, so "none" reads as a plain dash, not a warning. %>
+                    <% choices = [ [ "\u2014", "" ] ] + ProfileControl::PRIORITIES.map { [ _1, _1 ] } %>
                     <% choices << [ control.priority, control.priority ] if control.priority.present? && ProfileControl::PRIORITIES.exclude?(control.priority) %>
                     <span class="d-inline-flex align-items-center gap-1"
                           data-controller="priority-select"
@@ -404,7 +405,7 @@
                           data-priority-select-accents-value="<%= priority_accents.to_json %>">
                       <%= select_tag "priority", options_for_select(choices, control.priority.to_s),
                             id: "priority-#{control.id}",
-                            class: "sparc-priority-select#{' sparc-priority-select--unset' if control.priority.blank?}",
+                            class: "sparc-priority-select",
                             aria: { label: "Priority for #{control.display_id}" },
                             data: { priority_select_target: "select", action: "change->priority-select#save" } %>
                       <output class="sparc-fs-072" data-priority-select-target="status"></output>
