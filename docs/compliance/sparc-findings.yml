@@ -341,6 +341,320 @@ findings:
         no interactive shell users (ECS Fargate, no exec)
     kev_checked: '2026-11-06'
     kev_listed: false
+- cve_id: CVE-2026-112315
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the RPCSEC_GSS authentication routines (lib/rpc/authgss_prot.c, libgssrpc) do not free partially decoded buffers on failure, so crafted RPCSEC_GSS messages leak memory in kadmind (CVSS 3.1 5.3,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112316
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: xdr_krb5_tl_data() (lib/kadm5/kadm_rpc_xdr.c) does not free partially decoded data on failure, so crafted authenticated RPC requests leak memory in kadmind (CVSS 3.1 6.5,
+    AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112317
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos KDC or kadmind: krb5_ktkdb_get_entry() (lib/kdb/keytab.c, libkdb5) does not free decrypted key material when a post-decryption check fails, so repeated key decryption failures leak memory in the KDC or kadmind (CVSS 3.1 5.3,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running KDC or kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos KDC or kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libkdb5, the KDC database library it is in, is loaded by nothing in the image - of 351 ELF files, none links it (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112318
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the kadmind policy RPC stubs (kadmin/server/server_stubs.c) do not reject a NULL policy name, so an authenticated policy request with an empty name crashes kadmind (NULL pointer dereference) (CVSS 3.1 6.5,
+    AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: the vulnerable code is in the kadmind program, which is not in the image (krb5-server is not installed); the libraries kadmind uses, libgssrpc and libkdb5, are loaded by nothing in the image (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112319
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the GSS-RPC layer (libgssrpc) does not limit the size of XDR-decoded data, so crafted authenticated RPC requests exhaust memory or CPU in kadmind (CVSS 3.1 6.5,
+    AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112320
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the GSS-RPC transport (libgssrpc) does not release the previous authentication context when a client switches from a GSS to a non-GSS flavor on one TCP connection, so repeated contexts exhaust memory in kadmind (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112321
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the AUTH_GSSAPI handler (lib/rpc/svc_auth_gssapi.c, libgssrpc) does not free decoded arguments on some error paths, so crafted AUTH_GSSAPI_INIT requests exhaust memory in kadmind (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112322
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: clean_client() (lib/rpc/svc_auth_gssapi.c, libgssrpc) rescans its client list from the head after each removal, so accumulating many AUTH_GSSAPI clients drives kadmind''s CPU cost quadratic (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-112323
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos kadmind: the AUTH_GSSAPI handler (lib/rpc/svc_auth_gssapi.c, libgssrpc) keeps state for each failed AUTH_GSSAPI_INIT request for 15 minutes, so repeated failures exhaust memory in kadmind (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Reaching this finding needs a running kadmind, and the image runs no Kerberos server. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a Kerberos kadmind that accepts requests from the network. The image
+      runs no Kerberos server, and the code is in a library nothing in the image loads (measured 2026-11-10,
+      below). No fix exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: libgssrpc, the GSS-RPC server library it is in, is loaded by nothing in the image - of 351 ELF files, only libkdb5 links it, and nothing links libkdb5 (ldd over all 351 ELF executables and shared libraries in sparc:v1.17.9 ab8062010e35, measured 2026-11-10)
+    - description: no Kerberos server is installed - kadmind, krb5kdc, kadmin.local, kdb5_util, kprop and kpropd
+        are absent from the image (measured 2026-11-10); SPARC uses krb5 only as a client, through libpq
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos or
+        GSS-RPC port is exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
+- cve_id: CVE-2026-119079
+  package: krb5-libs
+  installed_version: 1.21.3-10.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE UBI 10 BASE IMAGE: krb5-libs 1.21.3-10.el10_2 [rpm]. A denial of service in the Kerberos KDC: decode_sequence_of() (lib/krb5/asn.1/asn1_encode.c, libkrb5) grows its decoded array one entry at a time, so an unauthenticated AS-REQ or TGS-REQ with a very large SEQUENCE OF consumes the KDC''s CPU (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, and the el10 repository offers no newer krb5-libs (checked 2026-11-10), so there is no package to take. NOT
+    INTRODUCED BY A CODE CHANGE: the v1.17.8 release image (df41343ea694) carries the same package and grype
+    reports the same finding on the same database (v6.1.10 built 2026-11-10); the advisory reached the
+    database after the v1.17.8 audit. The package cannot be removed: Red Hat''s libpq, which the pg gem must link (#1204), needs libgssapi_krb5 and libkrb5 from it. Unlike the other krb5 entries, this decoder IS loaded: libkrb5 is in every Rails process through libpq. It decodes Kerberos messages, and SPARC exchanges none: the image defines no realm and holds no ticket cache, and SPARC''s database sign-in is a password over TLS. Deferred as a POA&M with a risk_adjustment deviation until Red
+    Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-10'
+  next_review_date: '2026-12-10'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a KDC that accepts unauthenticated requests from the network. The image
+      runs no KDC, and the decoder in libkrb5 that SPARC loads is only reached by Kerberos traffic, which SPARC
+      neither sends nor accepts (measured 2026-11-10, below). No fix exists to apply, so the residual is what is
+      being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: no KDC is installed - krb5kdc and kadmind are absent from the image (measured 2026-11-10);
+        SPARC uses krb5 only as a client library, through libpq
+    - description: SPARC exchanges no Kerberos messages - /etc/krb5.conf in the image defines no realm
+        ([realms] and [domain_realm] empty, dns_lookup_realm false), no KRB5* variable is set and no ticket
+        cache exists, so libpq has no Kerberos credential to use and contacts no KDC; the database sign-in is a
+        password over TLS (measured on sparc:v1.17.9 ab8062010e35, 2026-11-10)
+    - description: the container listens only on SPARC's HTTP port (ECS Fargate, no exec); no Kerberos port is
+        exposed
+    kev_checked: '2026-11-10'
+    kev_listed: false
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
