@@ -48,12 +48,22 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       expect(flash[:error]).to include("no source catalog")
     end
 
-    it "rejects publishing when controls lack prioritization" do
+    # #1357 — priority codes are not part of NIST SP 800-53 Rev 5, so a
+    # control's priority is optional and never blocks publishing.
+    it "publishes a profile whose controls have no priority, and exports a priority only where one is set" do
+      family = create(:control_family, control_catalog: catalog, code: "AC")
+      %w[ac-1 ac-2 ac-3].each { create(:catalog_control, control_family: family, control_id: _1, priority: nil) }
       profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: nil)
+      profile.profile_controls.create!(control_id: "ac-2", title: "AC-2", priority: "")
+      profile.profile_controls.create!(control_id: "ac-3", title: "AC-3", priority: "P2")
       patch publish_profile_document_path(profile)
       profile.reload
-      expect(profile.lifecycle_status).not_to eq("published")
-      expect(flash[:error]).to include("missing prioritization")
+      expect(profile.lifecycle_status).to eq("published")
+      expect(flash[:error]).to be_nil
+      exported = ResolvedCatalog.wrap(profile.resolved_catalog_json).each_control.to_h do |control, _group|
+        [ control["id"], Array(control["props"]).find { _1["name"] == "priority" }&.dig("value") ]
+      end
+      expect(exported).to eq("ac-1" => nil, "ac-2" => nil, "ac-3" => "P2")
     end
 
     it "publishes when all controls have priorities" do
@@ -86,23 +96,22 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       expect(profile.metadata_extra["roles"].first["id"]).to eq("prepared-by")
     end
 
-    it "returns publish_check JSON readiness data with prioritization check" do
+    it "returns publish_check JSON readiness data" do
       profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: "P1")
       get publish_check_profile_document_path(profile)
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json).to include("ready", "checks")
-      expect(json["checks"]["controls_prioritized"]).to be true
       expect(json["ready"]).to be true
     end
 
-    it "returns ready: false when controls lack prioritization" do
+    it "is ready when its controls have no priority" do
       profile.profile_controls.create!(control_id: "ac-1", title: "AC-1", priority: nil)
       get publish_check_profile_document_path(profile)
       json = JSON.parse(response.body)
-      expect(json["ready"]).to be false
-      expect(json["checks"]["controls_prioritized"]).to be false
-      expect(json["errors"]).to include(match(/missing prioritization/))
+      expect(json["ready"]).to be true
+      expect(json["checks"]).not_to have_key("controls_prioritized")
+      expect(json["errors"]).to be_empty
     end
 
     it "blocks publishing an already-published profile" do
@@ -188,13 +197,15 @@ RSpec.describe "Unified publication lifecycle", type: :request do
     end
   end
 
-  # ── Auto-Priority Assignment (#175) ──────────────────────────────────
+  # ── Priority on create_from_catalog (#175, #1357) ─────────────────────
+  # #1357 — the catalog's own priority is copied; none is derived where the
+  # catalog has none (priority codes are not part of NIST SP 800-53 Rev 5).
 
-  describe "Auto-priority assignment on create_from_catalog" do
+  describe "Priority on create_from_catalog" do
     let(:catalog) { create(:control_catalog) }
     let(:family) { create(:control_family, control_catalog: catalog) }
 
-    it "assigns P1 to controls with explicit P1 priority" do
+    it "copies the catalog control's own priority" do
       cc = create(:catalog_control, control_family: family, control_id: "ac-1",
                   priority: "P1", baseline_impact: "LOW")
       post create_from_catalog_profile_documents_path, params: {
@@ -208,7 +219,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       expect(ctrl.priority).to eq("P1")
     end
 
-    it "assigns priority based on baseline breadth when no explicit priority" do
+    it "assigns no priority when the catalog control has none, however many baselines include it" do
       cc = create(:catalog_control, control_family: family, control_id: "ac-2",
                   priority: nil, baseline_impact: "LOW, MODERATE, HIGH")
       post create_from_catalog_profile_documents_path, params: {
@@ -219,7 +230,7 @@ RSpec.describe "Unified publication lifecycle", type: :request do
       }
       profile = ProfileDocument.order(created_at: :desc).first
       ctrl = profile.profile_controls.find_by(control_id: "ac-2")
-      expect(ctrl.priority).to eq("P1")
+      expect(ctrl.priority).to be_nil
     end
   end
 
