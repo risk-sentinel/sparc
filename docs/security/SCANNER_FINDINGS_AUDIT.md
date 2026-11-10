@@ -1,8 +1,49 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-05 (v1.17.8 — the November dependency updates; no CVE change)
+**Last reviewed:** 2026-11-10 (v1.17.9 — control priority is optional; new base-image advisories, no code change to the image's packages)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.9 rescan (2026-11-10).** Real rescan of the built `sparc:v1.17.9`
+> image (arm64, `ab8062010e35`, the release code for #1357), not an SBOM, with
+> grype 0.114.0 (DB v6.1.10 built 2026-11-10 06:21 UTC) and Trivy 0.74.0 (DB
+> built 2026-11-10 06:59 UTC, downloaded fresh). The v1.17.8 release image
+> (`df41343ea694`) was rescanned with the same grype database for the
+> comparison.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB built 2026-11-10) | **0** | **14** | 70 | 40 |
+> | Trivy 0.74.0 (image, DB built 2026-11-10) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (124 grype matches, 100 ids).
+>
+> - **Compared id by id:** v1.17.9 and v1.17.8 differ by no CVE id; both
+>   report the same 124 matches today. Every change from the v1.17.8 block
+>   (2 → 14 Highs, 50 → 70 Mediums, 34 → 40 Lows) is advisories that reached
+>   the database after 2026-11-05, against base-image packages this release
+>   does not change.
+> - **The 14 Highs**, all in the UBI 10 base and all not-fixed by Red Hat:
+>   - 4 in `sqlite-libs`: the two approved deviations, and CVE-2026-119379 and
+>     CVE-2026-119374 (`deviation-requested`, the same entries as on
+>     `release-1.18.0-rf`). Nothing in the image loads libsqlite3.
+>   - 10 in `krb5-libs` 1.21.3-10.el10_2 (CVE-2026-112315 to -112323 and
+>     CVE-2026-119079), new, `deviation-requested`. The el10 repository offers
+>     no newer krb5-libs. The package stays: Red Hat's libpq, which the pg gem
+>     must link (#1204), needs it. All ten are denial-of-service flaws in
+>     Kerberos SERVERS (kadmind, the KDC). No Kerberos server is in the image,
+>     and nine are in libgssrpc or libkdb5, which nothing in the image loads
+>     (ldd over all 351 ELF files). CVE-2026-119079's decoder is in libkrb5,
+>     which libpq loads, but it only decodes Kerberos messages, and SPARC
+>     exchanges none: no realm, no ticket cache, a password database sign-in.
+>     None is on the CISA KEV list (catalog 2026.11.10).
+> - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
+> - **Gems:** unchanged from v1.17.8. bundle-audit reports no
+>   vulnerabilities; brakeman reports no warnings.
+> - **Register:** 21 entries, none `RELEASE-BLOCKING`; 12 await
+>   `/approve-deviation` (the two sqlite entries also carried on
+>   `release-1.18.0-rf`, and the ten krb5 entries). The earliest review dates,
+>   2026-11-15 and 2026-11-16, fall within the next 6 days.
 
 > **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
 > image (arm64, `df41343ea694`, the release code with the November dependency
