@@ -24,9 +24,22 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 - **One button system:** the Settings detail pages use the shared page header, the remaining Bootstrap buttons use SPARC's button roles, and a test keeps it that way ([#1346](https://github.com/risk-sentinel/sparc/issues/1346)).
 - **Settings fit and colour:** every Settings list fits beside the settings menu at 1024px, and the Settings overview's sections carry the home page's group colours ([#1349](https://github.com/risk-sentinel/sparc/issues/1349)).
 - **Login consent banner** behaviour covered by its own browser test ([#1341](https://github.com/risk-sentinel/sparc/issues/1341)).
-- **Includes v1.17.8** and every release before it: the November dependency updates and Rails 8.1.4.1.
+- **Includes v1.17.9** and every release before it: control priority is optional, the UBI 10.3 base, the November dependency updates and Rails 8.1.4.1.
 
 ---
+
+## v1.17.9 -- Control Priority Is Optional (2026-11-10)
+
+Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so a baseline no longer needs them ([#1357](https://github.com/risk-sentinel/sparc/issues/1357)).
+
+- **Publishing a baseline no longer requires a priority** on every control. The Publish dialog no longer asks for one.
+- **No more invented priorities.** A new baseline built from a catalog carries a control's priority only when the catalog does. SPARC used to derive P1/P2/P3 from how many baselines include a control.
+- **Existing baselines:** after the upgrade, SPARC clears the priorities it derived, on drafts and published baselines. It keeps every priority a person set, a catalog carried or an imported file brought. Each baseline it changes gets an audit event listing the controls and their old values. A published baseline's stored resolved catalog keeps its priorities until it is next published.
+- **Priority stays available:** set, clear or bulk-edit it as before. A control without one shows a plain dash.
+
+**Upgrading:** an image swap from v1.17.8. One data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.9).
 
 ## v1.17.8 -- Dependency Updates (2026-11-04)
 
