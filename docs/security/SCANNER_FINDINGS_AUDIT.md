@@ -1,8 +1,44 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-05 (v1.17.8 — the November dependency updates; no CVE change)
+**Last reviewed:** 2026-11-13 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go and msgpack fixes taken)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.9 rescan (2026-11-13).** Real rescan of the built `sparc:v1.17.9`
+> image (arm64, `21272bd0e11f`, the release code for #1357 with the base
+> package fixes below), not an SBOM, with grype 0.114.0 (DB v6.1.10 built
+> 2026-11-13 06:20 UTC) and Trivy 0.74.0 (DB built 2026-11-13 19:05 UTC,
+> downloaded fresh). The unfixed v1.17.9 build of 2026-11-10 (`ab8062010e35`)
+> was rescanned with the same grype database for the comparison.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (image, DB built 2026-11-13) | **0** | **4** | 62 | 38 |
+> | Trivy 0.74.0 (image, DB built 2026-11-13) | 0 | 0 | 0 | 1 |
+>
+> Distinct CVEs (104 grype matches, 77 ids).
+>
+> - **Compared id by id with the unfixed build:** 33 ids cleared, none added.
+>   - `krb5-libs` 1.21.3-10.el10_2 → 1.21.3-11.el10_3.2 clears 19, including
+>     the 14 Highs that reached the database on 2026-11-10 and 2026-11-13. The
+>     runtime stage upgrades this one base package from the repo ahead of a
+>     digest bump; the 2026-11-12 base still carries -11.el10. A build floor
+>     fails on an older build.
+>   - `openssl-libs`: 12, from the repo's current build, which the runtime
+>     stage already installs.
+>   - Go 1.26.10 → 1.26.11 for `hdf` clears GO-2026-6859 (stdlib).
+>   - `msgpack` 1.8.5 → 1.8.7 clears GHSA-73v3-wf97-vpgj (High, JRuby decoder
+>     only; SPARC runs CRuby).
+> - **The 4 Highs**, all `sqlite-libs` 3.46.1-6.el10_2, not-fixed by Red Hat:
+>   the two approved deviations, and CVE-2026-119379 and CVE-2026-119374
+>   (`deviation-requested`, the same entries as on `release-1.18.0-rf`).
+>   Nothing in the image loads libsqlite3.
+> - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
+> - **Gems:** bundle-audit reports no vulnerabilities; brakeman reports no
+>   warnings.
+> - **Register:** 11 entries, none `RELEASE-BLOCKING`; 2 await
+>   `/approve-deviation`. The earliest review dates, 2026-11-15 and
+>   2026-11-16, fall within the next 3 days.
 
 > **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
 > image (arm64, `df41343ea694`, the release code with the November dependency

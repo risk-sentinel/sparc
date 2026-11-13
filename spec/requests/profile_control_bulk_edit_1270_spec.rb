@@ -61,8 +61,9 @@ RSpec.describe "Profile control priority and bulk edit (#1270)", type: :request 
 
       selector = doc.at_css("select#priority-#{ac1.id}")
       expect(selector["aria-label"]).to eq("Priority for AC-1")
-      expect(selector["class"]).to include("sparc-priority-select--unset")
-      expect(selector.css("option").map(&:text)).to eq([ "Priority not set", "P1", "P2", "P3" ])
+      # #1357 — a priority is optional: no priority reads as a plain dash, not a warning.
+      expect(selector["class"].split).to eq([ "sparc-priority-select" ])
+      expect(selector.css("option").map(&:text)).to eq([ "\u2014", "P1", "P2", "P3" ])
       expect(doc.at_css("select#priority-#{ac2.id} option[selected]")["value"]).to eq("P3")
       expect(doc.css("input[type=checkbox][form='profile-bulk-form']").map { _1["value"] }).to contain_exactly("ac-1", "ac-2")
       expect(doc.at_css("input[data-group='AC'][data-action*='toggleGroup']")).to be_present

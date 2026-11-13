@@ -36,9 +36,20 @@ RSpec.describe ProfileControlSelectionService do
     expect(result.removed).to eq(0)
   end
 
-  it "assigns a priority to added controls" do
+  # #1357 — a priority is optional: an added control takes the catalog's own
+  # P1-P3 and is otherwise left unset, never derived.
+  it "copies the catalog's own priority to an added control" do
+    cc1.update!(priority: "P2")
     described_class.new(profile).update([ "ac-1" ])
-    expect(profile.profile_controls.first.priority).to be_present
+    expect(profile.profile_controls.find_by(control_id: "ac-1").priority).to eq("P2")
+  end
+
+  it "leaves an added control's priority unset when the catalog has none" do
+    cc1.update!(priority: nil, baseline_impact: "L M H")
+    cc2.update!(priority: "P0")
+    described_class.new(profile).update([ "ac-1", "ac-2" ])
+    expect(profile.profile_controls.order(:control_id).pluck(:control_id, :priority))
+      .to eq([ [ "ac-1", nil ], [ "ac-2", nil ] ])
   end
 
   # #1241 — a catalog's assigned value is the catalog's. Copied into the
