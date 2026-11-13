@@ -195,6 +195,15 @@ releases stale. None of these block CI, so nothing catches them but this.
 - [ ] Full suite, ui-smoke and the API contract suite green against the **prod
       image**, on **both architectures**.
 - [ ] Tag and publish — **owner action**, after the release PR merges.
+- [ ] **Docker `latest` and GitHub's "Latest" badge belong to ONE major line
+      (#1359).** The repository variable `SPARC_LATEST_MAJOR` names it (`1`
+      while v1 is the supported line on `main`). `build-sign-publish.yml` moves
+      `latest` only for the highest full release of that line, and its
+      "Decide whether this tag moves latest" step says why it did or did not;
+      every release also gets `vX`, `vX.Y` and `vX.Y.Z` tags. GitHub's badge is
+      not automatic: publish a release from any other line with
+      `gh release create ... --latest=false`, or it takes the badge. When v1
+      support ends, set the variable to `2`; no code change.
 
 ---
 

@@ -54,6 +54,12 @@ authentication mode coverage matrix.
 
 ---
 
+### CI: Docker `latest` belongs to one major line (#1359)
+
+Owner-decided 2026-11-13: the `1.18.0-rf` work ships as **v2.0.0** from its own branch, with no rc tags, while `main` keeps shipping 1.x until v1 support ends. Without a guard, every full release would move `latest` to whichever line tagged last. `build-sign-publish.yml` now moves `latest` only for the highest full release of the line named by the repository variable `SPARC_LATEST_MAJOR` (`1`), fails safe when that cannot be decided, and adds a floating `vX` tag per line. GitHub's "Latest" badge is kept off the other line by hand (`--latest=false`, in `release_checklist.md`). Owner-approved workflow change.
+
+---
+
 ### Milestone: `1.18.0-rf` — navigation refactor (#1286)
 
 A repository-style shell with boundary context, on the existing SPARC colour
