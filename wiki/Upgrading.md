@@ -7,6 +7,8 @@ How to move a running SPARC deployment from one release to the next without losi
 
 These instructions assume the **containerized deployment** (`risksentinel/sparc` on Docker Hub), which is how most teams run SPARC. Every command runs against the published image; nothing requires a repository checkout.
 
+**Which image tag to run.** Every release is published as its full version (`v1.17.9`) and its minor line (`v1.17`), and, from the first release after #1359, its major line (`v1`). Pin a full version (`v1.17.9`, ideally with its digest) in production. `v1` follows the newest 1.x release. `latest` follows the newest release of the supported major line only: a release from any other major line never moves it, so `latest` never jumps you to a new major version.
+
 Moving the database itself to a new PostgreSQL major version, such as Aurora PostgreSQL 14 to 18? See [Upgrading PostgreSQL](#upgrading-postgresql-to-a-new-major-version).
 
 ---

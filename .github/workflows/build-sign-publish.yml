@@ -88,6 +88,7 @@ jobs:
       build_date: ${{ steps.meta.outputs.build_date }}
       git_sha: ${{ steps.meta.outputs.git_sha }}
       is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+      is_latest: ${{ steps.latest.outputs.is_latest }}
       dry_run: ${{ steps.meta.outputs.dry_run }}
     steps:
       - name: Compute build metadata
@@ -119,6 +120,43 @@ jobs:
           fi
           echo "✓ Version validated: ${VERSION}"
 
+
+      # #1359 — Docker Hub `latest` belongs to ONE major line, named by the
+      # repository variable SPARC_LATEST_MAJOR (1 while v1 is the supported
+      # line on main; change it to 2 when v1 support ends). A full release of
+      # any other line, or an older tag of this line, never moves it, so a
+      # customer pulling `latest` cannot be moved between majors or backward.
+      # Anything unreadable fails safe: `latest` stays where it is.
+      - name: Decide whether this tag moves latest
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.version }}
+          LATEST_MAJOR: ${{ vars.SPARC_LATEST_MAJOR }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          decide() {
+            echo "is_latest=$1" >> "$GITHUB_OUTPUT"
+            echo "Moves latest: $1 ($2)"
+            echo "| Moves latest | $1 ($2) |" >> "$GITHUB_STEP_SUMMARY"
+          }
+          if [[ "$TAG" == *-* ]]; then decide false "prerelease"; exit 0; fi
+          if [[ ! "$LATEST_MAJOR" =~ ^[0-9]+$ ]]; then
+            echo "::warning::SPARC_LATEST_MAJOR is not set to a major version, so latest will not move"
+            decide false "SPARC_LATEST_MAJOR unset"; exit 0
+          fi
+          major="${TAG#v}"; major="${major%%.*}"
+          if [[ "$major" != "$LATEST_MAJOR" ]]; then
+            decide false "v${major} line; latest belongs to v${LATEST_MAJOR}"; exit 0
+          fi
+          if ! tags=$(gh api --paginate "repos/${REPO}/git/matching-refs/tags/v${major}." --jq '.[].ref | ltrimstr("refs/tags/")'); then
+            echo "::warning::could not list the v${major}.x tags, so latest will not move"
+            decide false "tag list unreadable"; exit 0
+          fi
+          highest=$(printf '%s\n' "$tags" "$TAG" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          if [[ "$highest" != "$TAG" ]]; then decide false "${highest} is newer"; exit 0; fi
+          decide true "highest v${major}.x release"
       - name: Build summary
         run: |
           echo "## Build Configuration" >> "$GITHUB_STEP_SUMMARY"
@@ -585,7 +623,8 @@ jobs:
           tags: |
             type=semver,pattern=v{{version}},value=${{ needs.prepare.outputs.version }}
             type=semver,pattern=v{{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
-            type=raw,value=latest,enable=${{ needs.prepare.outputs.is_prerelease != 'true' }}
+            type=semver,pattern=v{{major}},value=${{ needs.prepare.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.is_latest == 'true' }}
           labels: |
             org.opencontainers.image.title=SPARC
             org.opencontainers.image.description=Systematic Policy and Regulatory Compliance
