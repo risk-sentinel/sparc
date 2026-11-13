@@ -78,7 +78,8 @@ env:
   # toolchain stays ours to choose rather than upstream's to change.
   # 1.26.9 (v1.17.1): go1.26.6 carries 3 CRITICAL / 21 HIGH stdlib advisories.
   # 1.26.10 (v1.17.2): go1.26.9 carries CVE-2026-111943 (HIGH, stdlib).
-  HDF_GO_VERSION: '1.26.10'
+  # 1.26.11 (v1.17.9): go1.26.10 carries GO-2026-6859 (stdlib net/http).
+  HDF_GO_VERSION: '1.26.11'
   # #873 — Syft produces the container SBOM the Grype gate consumes. Pinned:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
   # purl qualifiers, so the version is not something to float.
