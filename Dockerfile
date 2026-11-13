@@ -77,13 +77,15 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:ab67cd02caf870
 # the same way this stage does, so no surface that gates or ships a
 # release depends on the published binary any more.
 #
-# Pin the patch (golang:1.26.10), not the minor (golang:1.26) — a floating minor
+# Pin the patch (golang:1.26.11), not the minor (golang:1.26) — a floating minor
 # does not deterministically clear a stdlib CVE, which is the entire point.
 # 1.26.6 -> 1.26.9 (2026-10-16, v1.17.1): go1.26.6 carries 3 CRITICAL and 21
 # HIGH stdlib advisories by grype (e.g. CVE-2026-78663, GO-2026-6604,
 # GO-2026-6612), fixed in go1.26.9.
 # 1.26.9 -> 1.26.10 (2026-10-21, v1.17.2): CVE-2026-111943 (HIGH, stdlib).
-FROM --platform=$BUILDPLATFORM golang:1.26.10-bookworm AS hdf-builder
+# 1.26.10 -> 1.26.11 (2026-11-13, v1.17.9): GO-2026-6859 (stdlib net/http,
+# MaxBytesReader header race), fixed in go1.26.11.
+FROM --platform=$BUILDPLATFORM golang:1.26.11-bookworm AS hdf-builder
 ARG HDF_LIBS_VERSION
 ARG TARGETOS
 ARG TARGETARCH
@@ -136,7 +138,7 @@ RUN ACTUAL="$(go version -m /out/hdf | awk '$2 == "golang.org/x/text" { print $3
 # A real version comparison, not a pattern match: `sort -V -C` succeeds only
 # when the floor sorts at or before what the binary reports, so a newer Go
 # (1.27.0, 1.30.x) passes while anything below the fix line fails.
-ARG GO_FIX_LINE=1.26.10
+ARG GO_FIX_LINE=1.26.11
 RUN actual="$(go version -m /out/hdf | head -1 | awk '{ print $2 }' | sed 's/^go//')" \
     && printf '%s\n%s\n' "${GO_FIX_LINE}" "${actual}" | sort -V -C \
       || { echo "FAIL: /out/hdf built with go${actual}, older than the GO-2026-5026 fix line go${GO_FIX_LINE}" >&2; \
@@ -247,6 +249,14 @@ FROM ${UBI_IMAGE} AS runtime
 # A blanket `microdnf update` would instead float every BASE package and defeat
 # the digest pin; base packages move only with a deliberate digest bump.
 COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
+# krb5-libs is the one BASE package taken from the repo ahead of a digest bump
+# (#1357, v1.17.9, owner-approved): 1.21.3-11.el10_3.2 fixes 14 HIGH advisories
+# (CVE-2026-112315..112323, -119079, -107364, -118380, -71199, -71200) that the
+# pinned base's 1.21.3-10.el10_2, and even the 2026-11-12 base's -11.el10, carry.
+# libpq links it, so it cannot be stripped. The floor fails the build if the
+# repo ever resolves an older build; retire it with the next digest bump that
+# carries the fix.
+ARG KRB5_LIBS_FLOOR=1.21.3-11.el10_3.2
 # Runtime shared libs the compiled Ruby + pg link against, plus the client tools
 # the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
 # `update --assumeno` changes nothing: it prints the BASE packages that have a
@@ -254,9 +264,13 @@ COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
 RUN rm /tmp/sparc-version-key.rb \
     && microdnf install -y --nodocs --setopt=install_weak_deps=0 \
       openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
+    && microdnf update -y --nodocs --setopt=install_weak_deps=0 krb5-libs \
     && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
-    && rpm -q openssl-libs libpq postgresql libevent
+    && rpm -q openssl-libs libpq postgresql libevent krb5-libs \
+    && krb5="$(rpm -q --qf '%{VERSION}-%{RELEASE}' krb5-libs)" \
+    && printf '%s\n%s\n' "${KRB5_LIBS_FLOOR}" "${krb5}" | sort -V -C \
+      || { echo "FAIL: krb5-libs ${krb5:-<none>} is older than the fix floor ${KRB5_LIBS_FLOOR}" >&2; exit 1; }
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
