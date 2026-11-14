@@ -184,7 +184,7 @@ group :development do
 end
 
 group :development, :test do
-  gem "rspec-rails", "~> 8.0.4"
+  gem "rspec-rails", "~> 8.0.5"
   gem "factory_bot_rails"
   gem "faker"
   gem "bundler-audit", require: false
