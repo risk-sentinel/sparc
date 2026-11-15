@@ -341,6 +341,45 @@ findings:
         no interactive shell users (ECS Fargate, no exec)
     kev_checked: '2026-11-06'
     kev_listed: false
+- cve_id: CVE-2026-116328
+  package: libpq, postgresql, postgresql-private-libs
+  installed_version: libpq 16.14-1.el10_2; postgresql and postgresql-private-libs 16.15-2.el10_3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE RUNTIME STAGE''S PostgreSQL CLIENT PACKAGES: libpq 16.14-1.el10_2, postgresql
+    and postgresql-private-libs 16.15-2.el10_3 [rpm], one advisory reported once per package. Integer
+    wraparound in the PostgreSQL SERVER''s generation memory contexts lets an authenticated database user
+    run code as the operating system user that runs the database server (CVSS 3.1 8.8,
+    AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H; fixed upstream in PostgreSQL 16.16, 17.12 and 18.7). Red Hat el10
+    data: libpq and postgresql16 Affected, no package to take; the UBI 10 appstream repo still serves
+    16.14 / 16.15 for x86_64 and aarch64 (checked 2026-11-15). NOT INTRODUCED BY A CODE CHANGE: the
+    v1.17.9 build of 2026-11-13 (21272bd0e11f) carries the same three packages and grype did not report the
+    advisory on its database built 2026-11-13; it reached the database built 2026-11-15. Deferred as a
+    POA&M with a risk_adjustment deviation until Red Hat ships a fix, which the next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-15'
+  next_review_date: '2026-12-15'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a PostgreSQL server that an authenticated database user can drive.
+      The image runs no PostgreSQL server; it carries the client library and client tools only (measured
+      2026-11-15, below). No fix exists to apply, so the residual is what is being accepted until Red Hat
+      ships one.
+    mitigating_factors:
+    - description: the image holds no PostgreSQL server - postgres, postmaster, pg_ctl and initdb are absent;
+        only the clients psql and pg_dump are on the path (sparc:v1.17.9 205343f989c3, measured 2026-11-15).
+        libpq and the client packages are reported because they build from the same source as the server
+    - description: the flaw runs in the database server, which a deployment provides outside this image
+        (customers run SPARC on Aurora PostgreSQL); patching that server to PostgreSQL 16.16, 17.12 or 18.7
+        or later is the deployment's own remediation and is outside this register
+    - description: exploitation needs an authenticated database user able to run queries allocating over
+        1 GB on the server (CVSS 3.1 PR:L)
+    kev_checked: '2026-11-15'
+    kev_listed: false
 - cve_id: rb/csrf-protection-disabled
   package: sparc (application code — CodeQL rb/csrf-protection-disabled)
   installed_version: n/a
