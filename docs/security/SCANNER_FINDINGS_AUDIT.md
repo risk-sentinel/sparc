@@ -1,6 +1,6 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-13 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go and msgpack fixes taken)
+**Last reviewed:** 2026-11-13 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go, msgpack and puma fixes taken)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
@@ -29,6 +29,11 @@ or whenever a new suppression is added.
 >   - Go 1.26.10 → 1.26.11 for `hdf` clears GO-2026-6859 (stdlib).
 >   - `msgpack` 1.8.5 → 1.8.7 clears GHSA-73v3-wf97-vpgj (High, JRuby decoder
 >     only; SPARC runs CRuby).
+>   - `puma` 8.0.2 → 8.0.3 (added 2026-11-15) clears seven advisories that
+>     bundle-audit's database gained on 2026-11-13: slow or stalled clients
+>     holding threads or connections open, an accept loop that does not pause
+>     when out of file descriptors, `ssl_cipher_filter` decoding, and `pumactl`
+>     TLS verification. No image finding cited them.
 > - **The 4 Highs**, all `sqlite-libs` 3.46.1-6.el10_2, not-fixed by Red Hat:
 >   the two approved deviations, and CVE-2026-119379 and CVE-2026-119374
 >   (`deviation-requested`, the same entries as on `release-1.18.0-rf`).
