@@ -1,29 +1,32 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-13 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go, msgpack and puma fixes taken)
+**Last reviewed:** 2026-11-15 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go, msgpack and puma fixes taken)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
 
-> **v1.17.9 rescan (2026-11-13).** Real rescan of the built `sparc:v1.17.9`
-> image (arm64, `21272bd0e11f`, the release code for #1357 with the base
-> package fixes below), not an SBOM, with grype 0.114.0 (DB v6.1.10 built
-> 2026-11-13 06:20 UTC) and Trivy 0.74.0 (DB built 2026-11-13 19:05 UTC,
-> downloaded fresh). The unfixed v1.17.9 build of 2026-11-10 (`ab8062010e35`)
-> was rescanned with the same grype database for the comparison.
+> **v1.17.9 rescan (2026-11-15).** Real rescan of the built `sparc:v1.17.9`
+> image (arm64, `205343f989c3`, the release code for #1357 with the fixes
+> below), not an SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-15 06:19
+> UTC) and Trivy 0.74.0 (database downloaded fresh 2026-11-15). The unfixed
+> v1.17.9 build of 2026-11-10 (`ab8062010e35`) was compared on the 2026-11-13
+> database, and the 2026-11-13 build (`21272bd0e11f`) on today's.
 >
 > | Scanner | Critical | High | Medium | Low |
 > |---|---|---|---|---|
-> | Grype 0.114.0 (image, DB built 2026-11-13) | **0** | **4** | 62 | 38 |
-> | Trivy 0.74.0 (image, DB built 2026-11-13) | 0 | 0 | 0 | 1 |
+> | Grype 0.114.0 (image, DB built 2026-11-15) | **0** | **7** | 59 | 38 |
+> | Trivy 0.74.0 (image, DB 2026-11-15) | 0 | 0 | 0 | 1 |
 >
 > Distinct CVEs (104 grype matches, 77 ids).
 >
-> - **Compared id by id with the unfixed build:** 33 ids cleared, none added.
+> - **Compared id by id with the unfixed build (2026-11-13 database):** 33 ids
+>   cleared, none added.
 >   - `krb5-libs` 1.21.3-10.el10_2 → 1.21.3-11.el10_3.2 clears 19, including
 >     the 14 Highs that reached the database on 2026-11-10 and 2026-11-13. The
 >     runtime stage upgrades this one base package from the repo ahead of a
 >     digest bump; the 2026-11-12 base still carries -11.el10. A build floor
->     fails on an older build.
+>     fails on an older build. On 2026-11-15 Red Hat's UBI x86_64 repo still
+>     served only -11.el10 (RHSA-2026:99624 lists x86_64), so an amd64 build
+>     fails the floor until that repo syncs.
 >   - `openssl-libs`: 12, from the repo's current build, which the runtime
 >     stage already installs.
 >   - Go 1.26.10 → 1.26.11 for `hdf` clears GO-2026-6859 (stdlib).
@@ -34,16 +37,22 @@ or whenever a new suppression is added.
 >     holding threads or connections open, an accept loop that does not pause
 >     when out of file descriptors, `ssl_cipher_filter` decoding, and `pumactl`
 >     TLS verification. No image finding cited them.
-> - **The 4 Highs**, all `sqlite-libs` 3.46.1-6.el10_2, not-fixed by Red Hat:
->   the two approved deviations, and CVE-2026-119379 and CVE-2026-119374
->   (`deviation-requested`, the same entries as on `release-1.18.0-rf`).
->   Nothing in the image loads libsqlite3.
+> - **Since the 2026-11-13 build, on today's database:** both images report the
+>   same 77 ids. Against the 2026-11-13 scan, the database added
+>   CVE-2026-116328 (High, reported on `libpq`, `postgresql` and
+>   `postgresql-private-libs`) and dropped CVE-2026-122054 (Medium, `glibc`,
+>   three packages).
+> - **The 7 Highs**, all not-fixed by Red Hat:
+>   - `sqlite-libs` 3.46.1-6.el10_2: the four approved deviations. Nothing in
+>     the image loads libsqlite3.
+>   - CVE-2026-116328, a flaw in the PostgreSQL server: `deviation-requested`.
+>     The image holds no server (`postgres`, `pg_ctl` and `initdb` are absent),
+>     only the client library and `psql`/`pg_dump`.
 > - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
 > - **Gems:** bundle-audit reports no vulnerabilities; brakeman reports no
 >   warnings.
-> - **Register:** 11 entries, none `RELEASE-BLOCKING`; 2 await
->   `/approve-deviation`. The earliest review dates, 2026-11-15 and
->   2026-11-16, fall within the next 3 days.
+> - **Register:** 12 entries, none `RELEASE-BLOCKING`; 1 awaits
+>   `/approve-deviation`.
 
 > **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
 > image (arm64, `df41343ea694`, the release code with the November dependency
