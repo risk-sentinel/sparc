@@ -83,6 +83,13 @@ env:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
   # purl qualifiers, so the version is not something to float.
   SYFT_VERSION: v1.50.0
+  # SAF CLI (#1362): 1.8.0 carries security fixes and exists only as release
+  # packages and this image; npm's newest is 1.7.0. Pinned by DIGEST (the
+  # multi-arch index for the 1.8.0 tag); script/ci/install_saf_image.sh reads
+  # the version back out of the image and fails on any other. normalize_hdf and
+  # security_gate both use it, so it lives here, once.
+  SAF_IMAGE: mitre/saf@sha256:32bf20bb674286d2b420be8c6f5acf60e5ecf572d6e9052d4e70c39f6ee3c49d
+  SAF_VERSION: '1.8.0'
 
 # Permissions are declared per-job (least privilege) rather than workflow-wide,
 # so a job never silently inherits more than it needs (githubactions:S8233/S8264).
@@ -852,8 +859,8 @@ jobs:
           # was piped straight into a shell with the job's permissions. One of these
           # jobs is the release-gating scan.
           #
-          # Same shape as the hdf-cli install in sonarqube-hdf.yml: pinned release
-          # asset, published checksums, verify BEFORE anything executes.
+          # Same shape as script/dev/install-hdf.sh: pinned release asset,
+          # published checksums, verify BEFORE anything executes.
           # --proto '=https' so a redirect cannot downgrade the transport (S6506).
           ver="${GRYPE_VERSION#v}"
           base="https://github.com/anchore/grype/releases/download/${GRYPE_VERSION}"
@@ -1103,7 +1110,7 @@ jobs:
             bin/hdf_ensure_canary.rb
             Dockerfile
             script/ci/hdf_pins.sh
-            script/ci/npm_install_soaked.sh
+            script/ci/install_saf_image.sh
             script/dev/install-hdf.sh
           sparse-checkout-cone-mode: false
 
@@ -1153,32 +1160,13 @@ jobs:
       # ── Parallel SARIF/SBOM/ASFF → HDF conversions ──
       # All conversions run in parallel via background processes for ~3x speedup
       #
-      # #463 — @mitre/saf transitively depends on @mitre/heimdall-lite which
-      # requires Node >=22. The default ubuntu-latest runner Node (v20.x)
-      # produces an EBADENGINE *warning* (not error), so npm install completes
-      # but cyclonedx_sbom2hdf + anchoregrype2hdf silently fail at runtime
-      # with MODULE_NOT_FOUND. Pin Node 22 + a known-good @mitre/saf version.
-      - name: Set up Node 22 (required by @mitre/saf transitive deps)
+      # SAF CLI from its pinned image (#1362), not npm: 1.8.0 was never
+      # published to npm. The image brings its own Node 24, so this job no
+      # longer sets one up, and npm lifecycle scripts never run on the runner
+      # at all. Each saf call runs with no network.
+      - name: Install SAF CLI (pinned image)
         if: always()
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
-        with:
-          node-version: '22'
-
-      - name: Install SAF CLI
-        if: always()
-        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
-        # any of the ~545 transitive packages would otherwise execute arbitrary
-        # code on a runner holding this workflow's token. saf needs none of
-        # them — verified by installing with the flag and then actually running
-        # `validate threshold` and `convert sarif2hdf` against real inputs, not
-        # merely checking `saf --version`.
-        # Dependencies from versions at least 7 days old, every registry
-        # signature verified (script/ci/npm_install_soaked.sh). Signature
-        # checks do not support global installs, so saf installs under
-        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
-        run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
-          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
+        run: script/ci/install_saf_image.sh "$SAF_IMAGE" "$SAF_VERSION"
 
       - name: Verify SAF CLI converters are available
         if: always()
@@ -1448,9 +1436,8 @@ jobs:
           # no threshold and nothing ever assessed it. GHSA-mvxr-6m87-mv2q
           # (`mail` 2.9.0) rode 85 green runs into main through this hole.
           #
-          # @mitre/saf 1.6.0 (the pin above, and the latest release) has no
-          # bundler-audit converter among its 37 — verified against the pinned
-          # CLI. Hence the in-repo translator, precedent
+          # @mitre/saf has no bundler-audit converter: checked against 1.6.0
+          # and again against 1.8.0, the pinned image (#1362). Hence the in-repo translator, precedent
           # bin/sparc_findings_to_hdf_amendments.rb. Retire it if an upstream
           # bundleraudit2hdf lands.
           if [ -f scan-results/bundler-audit-results.json ]; then
@@ -1543,7 +1530,7 @@ jobs:
           for hdf_file in hdf-results/*.hdf.json; do
             [ -f "$hdf_file" ] || continue
             echo "  Supplementing $(basename $hdf_file)..."
-            # #463 — reuse the globally-installed pinned SAF CLI; previously
+            # #463 — reuse the pinned SAF CLI from the install step; previously
             # this used `npx --yes @mitre/saf` which would re-resolve `latest`
             # and could pull a different version than the install step above.
             saf supplement passthrough write \
@@ -1785,8 +1772,8 @@ jobs:
             # missing from this list fails at RUNTIME, not at checkout.
             bin/codeql_pin_check.rb
             bin/hdf_amend_chain_gate.rb
-            # Installs saf for the threshold step (soaked, signatures checked).
-            script/ci/npm_install_soaked.sh
+            # Installs saf for the threshold step (pinned image, #1362).
+            script/ci/install_saf_image.sh
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1960,8 +1947,8 @@ jobs:
       #     command_string: 'validate threshold -F amended -T docs/compliance/threshold.yml'
       #
       # `saf validate threshold` HAS NO `-F` FLAG. Its flags are -i (required),
-      # -I and -T, in 1.4.21, in the 1.6.0 the action vendors, and in 1.6.0 the
-      # latest published release — so there was never a version where this
+      # -I and -T, in 1.4.21, in the 1.6.0 the action vendors, and in 1.6.0,
+      # the latest release at the time — so there was never a version where this
       # worked. oclif rejected the parse, saf_action surfaced it as a *Warning*
       # and exited 0, and the very next step wrote "Security gate passed".
       #
@@ -1981,25 +1968,8 @@ jobs:
       #
       # Every file is evaluated before the job fails, so one breach does not
       # hide the rest.
-      - name: Install SAF CLI (pinned — same version normalize_hdf uses)
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
-        with:
-          node-version: '22'
-
-      - name: Install SAF CLI
-        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
-        # any of the ~545 transitive packages would otherwise execute arbitrary
-        # code on a runner holding this workflow's token. saf needs none of
-        # them — verified by installing with the flag and then actually running
-        # `validate threshold` and `convert sarif2hdf` against real inputs, not
-        # merely checking `saf --version`.
-        # Dependencies from versions at least 7 days old, every registry
-        # signature verified (script/ci/npm_install_soaked.sh). Signature
-        # checks do not support global installs, so saf installs under
-        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
-        run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
-          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install SAF CLI (pinned image — the same one normalize_hdf uses)
+        run: script/ci/install_saf_image.sh "$SAF_IMAGE" "$SAF_VERSION"
 
       - name: Validate each amended HDF against its scanner threshold
         run: |
@@ -2369,7 +2339,7 @@ jobs:
           # org variable held that value and becomes a SILENT WRONG-BOUNDARY WRITE the
           # moment it is unset — evidence that exists, validates, and is filed where
           # nobody is reading for it. Same reasoning as the SONAR_TOKEN guard in
-          # sonarqube-hdf.yml: refuse to emit rather than emit something misleading.
+          # ci.yml's sonar_fetch: refuse to emit rather than emit something misleading.
           BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
         run: |
           DATE=$(date -u +%Y-%m-%d)

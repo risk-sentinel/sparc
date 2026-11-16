@@ -17,8 +17,8 @@
 #
 # Why in-repo rather than upstream
 # --------------------------------
-# `@mitre/saf` 1.6.0 — the version this repository pins, and the latest
-# published release — has 37 converters. None of them reads bundler-audit;
+# `@mitre/saf` has no converter that reads bundler-audit: checked against
+# 1.6.0 (37 converters) and again against 1.8.0, the version CI now pins (#1362);
 # the nearest neighbours are `dependency_track2hdf`, `snyk2hdf` and `zap2hdf`.
 # Measured against the pinned CLI, not assumed. Writing `bundleraudit2hdf`
 # upstream in mitre/hdf-converters is the better long-term home and would

@@ -14,9 +14,6 @@
 # registry signature. It does not support global installs, so tools install
 # under <dir> and the caller puts <dir>/node_modules/.bin on PATH.
 #
-# The SonarQube bridge (sonarqube-hdf.yml) runs these same two commands inline:
-# its job has no checkout to run this script from.
-#
 #   NIST SR-3, SR-11, SI-7
 set -euo pipefail
 

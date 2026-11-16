@@ -87,8 +87,8 @@ jobs:
           # was piped straight into a shell with the job's permissions. One of these
           # jobs is the release-gating scan.
           #
-          # Same shape as the hdf-cli install in sonarqube-hdf.yml: pinned release
-          # asset, published checksums, verify BEFORE anything executes.
+          # Same shape as script/dev/install-hdf.sh: pinned release asset,
+          # published checksums, verify BEFORE anything executes.
           # --proto '=https' so a redirect cannot downgrade the transport (S6506).
           ver="${GRYPE_VERSION#v}"
           base="https://github.com/anchore/grype/releases/download/${GRYPE_VERSION}"
