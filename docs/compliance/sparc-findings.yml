@@ -305,7 +305,11 @@ findings:
   next_review_date: '2026-12-16'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1366"
+    approved_at: "2026-11-16"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that reads an FTS5 index an attacker can corrupt. No process in
       the image loads libsqlite3 and SPARC stores nothing in SQLite (measured 2026-11-16, below). No fix exists
@@ -344,7 +348,11 @@ findings:
   next_review_date: '2026-12-16'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1366"
+    approved_at: "2026-11-16"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that applies session-extension changesets an attacker can
       supply. No process in the image loads libsqlite3 and SPARC stores nothing in SQLite (measured 2026-11-16,
