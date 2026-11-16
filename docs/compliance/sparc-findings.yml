@@ -135,7 +135,7 @@ findings:
       severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
       Red Hat ships a fix, which the next image build then takes. Owner decision 2026-10-20 (#1231):
       the 60-day MEDIUM window from discovery ended 2026-10-19, so continued deferral is a deviation.'
-    kev_checked: '2026-11-16'
+    kev_checked: '2026-10-20'
     kev_listed: false
   superseded_debian_finding: libsystemd0 252.39-1~deb12u1 (removed with the Debian base image)
 - cve_id: CVE-2026-22185
@@ -173,7 +173,7 @@ findings:
       severity unchanged). The finding stays open in the POA&M and is re-reviewed each window until
       Red Hat ships a fix, which the next image build then takes. Owner decision 2026-10-20 (#1231):
       the 60-day MEDIUM window from discovery ended 2026-10-19, so continued deferral is a deviation.'
-    kev_checked: '2026-11-16'
+    kev_checked: '2026-10-20'
     kev_listed: false
   superseded_debian_finding: libldap-2.5-0 2.5.13+dfsg-5 (removed with the Debian base image)
 - cve_id: CVE-2025-70873
@@ -368,5 +368,5 @@ findings:
     mitigating_factors:
     - description: "the flaw is in OpenSSL's QUIC stack; Ruby's OpenSSL extension exposes no QUIC API (no QUIC constants in OpenSSL::SSL, no stream methods on SSLSocket), and no gem in the bundle implements QUIC"
     - description: "SPARC serves HTTP/1.1 through Puma behind the deployment's TLS terminator; the image runs no QUIC or HTTP/3 endpoint and makes no QUIC connections"
-    kev_checked: '2026-11-16'
+    kev_checked: '2026-10-30'
     kev_listed: false
