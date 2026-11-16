@@ -1,0 +1,15 @@
+# Sonar threshold (#1362): no new Sonar issues reach the target branch.
+#
+# Read by scripts/ci/sonar_new_issues.rb in ci.yml's sonar_threshold job. It
+# compares the pull request's own Sonar analysis with the target branch's full
+# issue list, and counts open PR issues that match no target-branch issue.
+#
+# A new issue clears by being fixed, or by being resolved in SonarCloud as
+# False positive or Accepted, with a comment saying why. Only Sonar project
+# admins can resolve an issue.
+#
+# mode: report  writes the summary and passes (rollout week, from 2026-11-15)
+# mode: enforce fails the job when new_issues exceeds max
+mode: report
+new_issues:
+  max: 0

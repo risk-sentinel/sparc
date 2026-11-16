@@ -60,6 +60,37 @@ Owner-decided 2026-11-13: the `1.18.0-rf` work ships as **v2.0.0** from its own 
 
 ---
 
+### CI: hdf-cli 3.7.2, SAF CLI 1.8.0, Sonar threshold (#1362) — in review
+
+Owner decisions 2026-11-15, CI only (no image change), merging after v1.17.9:
+
+- **Sonar evidence moves into `ci.yml`.** `sonarqube-hdf.yml` and
+  `sonarqube-hdf-emit.yml` are retired. `sonar_scan` waits for SonarCloud to
+  process its own analysis. `sonar_fetch` then fetches it with hdf 3.7.2,
+  built from source at the Dockerfile's pin, validates it, and on `main` emits
+  it to S3. The retired emit started while `test` was still running, so it
+  usually read the previous commit's analysis.
+- **No SAF fallback for Sonar:** saf 1.6.0's `sonarqube2hdf` output failed
+  `hdf validate`.
+- **New threshold job `sonar_threshold`:** no new Sonar issues reach the target
+  branch. It compares the PR's analysis with the target branch's full issue
+  list, and fails closed. It is advisory and in report mode for its first week
+  (`docs/compliance/sonar-threshold.yml`), then enforced.
+- **SAF CLI 1.6.0 → 1.8.0, from the pinned image** `mitre/saf@sha256:32bf20bb…`
+  (`script/ci/install_saf_image.sh`). 1.8.0 carries security fixes and was never
+  published to npm, whose newest is 1.7.0. Measured against the 11-05 main scan
+  artifacts: identical findings, statuses, impacts and threshold results to
+  1.6.0. Each call runs with no network.
+- `ci.yml` gains a weekly schedule (the #1027 evidence floor), and
+  `required-passed.yml`'s waiter goes 90 → 120 minutes for the longer chain.
+- **Follow-ups:**
+  - #1264 restructures the pipeline into stages (preflight → build → test →
+    upload → threshold → release).
+  - `release-1.18.0-rf` has never been analysed by Sonar, so a PR into it
+    cannot be thresholded until that branch is analysed.
+
+---
+
 ### Milestone: `1.18.0-rf` — navigation refactor (#1286)
 
 A repository-style shell with boundary context, on the existing SPARC colour

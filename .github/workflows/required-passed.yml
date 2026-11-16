@@ -68,7 +68,13 @@ jobs:
             // 58.7-minute run on PR #1262 (8,406 examples) failed this gate.
             // 90 stays above `test`'s 75 with margin for the waiter's own
             // start-up. Change the two together.
-            const TIMEOUT_MIN = 90;
+            //
+            // 90 -> 120 (#1362): the waiter waits on the whole CHAIN after
+            // `test`, not on `test` alone. ci.yml now runs test (75) ->
+            // sonar_scan (20) -> sonar_fetch (10) -> sonar_threshold (5) = 110
+            // at their timeouts, and 90 already equalled test + sonar_scan's
+            // old 15. Keep this above the sum of that chain.
+            const TIMEOUT_MIN = 120;
             const MAX_ITER = Math.ceil((TIMEOUT_MIN * 60) / POLL_INTERVAL_S);
 
             const OK_CONCLUSIONS = new Set(['success', 'skipped', 'neutral']);

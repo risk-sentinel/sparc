@@ -10,6 +10,14 @@ on:
   # Every job treats a dispatch like a push: each condition tests only for
   # `pull_request`.
   workflow_dispatch:
+  # Weekly floor for the Sonar evidence (#1027, moved here from the retired
+  # sonarqube-hdf-emit.yml in #1362). The downstream freshness check wants
+  # evidence from the last 7 days, and main can go a week without a merge. A
+  # scheduled run is a FULL run on main, like a push: the evidence then comes
+  # from a fresh analysis, not the previous analysis re-published under a new
+  # date, which would make stale evidence look current.
+  schedule:
+    - cron: '30 12 * * 1'   # Mondays 12:30 UTC
 
 # Least-privilege default (#545). Jobs that need more (e.g., pull-requests:
 # read for paths-filter) declare their own permissions block to override.
@@ -435,7 +443,11 @@ jobs:
   sonar_scan:
     name: SonarCloud Code Analysis
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 15 -> 20 (#1362): the job now waits for SonarCloud to finish processing
+    # the analysis it uploaded, so sonar_fetch reads THIS commit's results.
+    # required-passed.yml's TIMEOUT_MIN covers test + this + sonar_fetch +
+    # sonar_threshold; change them together.
+    timeout-minutes: 20
     needs: [ test ]
     # Analyse BOTH: the PR branch (so the gate has something to judge) and
     # main after merge (so the branch rating and the new-code baseline stay
@@ -575,3 +587,277 @@ jobs:
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=spec/**,tests/**,lib/federation/python/tests/**,lib/oscal_xsd_schemas/**,samples/**,db/migrate_archive/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.ico,**/*.svg,**/*.mp4,**/*.xlsx,**/*.rdb,**/*.pdf,**/*.woff,**/*.woff2
             -Dsonar.coverage.exclusions=db/**,config/**,app/javascript/**
+
+      # #1362 — the scanner only UPLOADS; SonarCloud processes the report
+      # afterwards. Fetching before that finishes reads the PREVIOUS analysis,
+      # which is what the retired sonarqube-hdf-emit.yml did on almost every
+      # push (it started while `test` was still running). Wait on this
+      # analysis's own compute-engine task, by the id the scanner wrote.
+      - name: Wait for SonarCloud to process this analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          report=.scannerwork/report-task.txt
+          test -s "$report" || { echo "::error::$report missing — the scanner did not upload an analysis"; exit 1; }
+          task_url="$(sed -n 's/^ceTaskUrl=//p' "$report")"
+          test -n "$task_url" || { echo "::error::no ceTaskUrl in $report"; exit 1; }
+          for _ in $(seq 1 60); do
+            status="$(curl -sSf --proto '=https' --tlsv1.2 -H "Authorization: Bearer ${SONAR_TOKEN}" "$task_url" | jq -r '.task.status')"
+            case "$status" in
+              SUCCESS) echo "SonarCloud processed the analysis."; exit 0 ;;
+              FAILED|CANCELED) echo "::error::SonarCloud analysis task ended $status"; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "::error::SonarCloud did not finish processing within 5 minutes (last status: ${status:-unknown})"
+          exit 1
+
+  # ── Sonar evidence: fetch (upload stage, #1362, #1264) ─────────
+  #
+  # Replaces sonarqube-hdf.yml + sonarqube-hdf-emit.yml. Runs right after the
+  # analysis it reads, in the workflow that made it, so there is no second job
+  # racing the scan and no separate workflow to keep in sync.
+  #
+  # Fetches the RAW Sonar issue list and converts it with `hdf convert`, so one
+  # API sweep yields both the evidence (HDF) and the per-issue keys and hashes
+  # the threshold needs (hdf's HDF keeps those for the first issue per rule only).
+  #
+  #   every run:   the target branch, ALL issues in every status: main on a push,
+  #                a schedule or a dispatch; the PR's base branch on a PR
+  #   on a PR:     also the pull request's own analysis
+  #
+  # No SAF fallback (owner, 2026-11-15): saf 1.6.0's sonarqube2hdf output
+  # omits `baselines` and fails `hdf validate`, so it never produced valid
+  # evidence. The project key and organization stay WRITTEN OUT: a constructed
+  # key that misses returns a clean-looking empty document (sparc-iac#686).
+  #
+  # NIST SP 800-53 Rev 5: RA-5 (SAST findings join the evidence stream), SA-11
+  # (static-analysis results retained as OHDF per build), CA-7 (continuous
+  # monitoring rollup, weekly floor via the schedule above).
+  sonar_fetch:
+    name: sonar_fetch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ sonar_scan ]
+    if: always() && needs.sonar_scan.result == 'success'
+    permissions:
+      contents: read
+      id-token: write          # AWS OIDC for the S3 emit on main
+    env:
+      SONAR_URL: https://sonarcloud.io
+      SONAR_PROJECT_KEY: risk-sentinel_sparc
+      SONAR_ORGANIZATION: risk-sentinel
+      BUCKET: sparc-prod-security-artifacts
+      IS_PR: ${{ github.event_name == 'pull_request' }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+    steps:
+      - name: Checkout (hdf pin script + Dockerfile only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            Dockerfile
+            script/ci/hdf_pins.sh
+          sparse-checkout-cone-mode: false
+
+      # Same build as the `test` job: from source, Go pinned to the fix line,
+      # pins read from the Dockerfile. #1264 folds the copies into one step.
+      - name: Resolve hdf-cli pins from the Dockerfile
+        id: hdf_pins
+        run: script/ci/hdf_pins.sh --github-output
+
+      - name: Set up Go (pinned to the hdf-cli fix line)
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
+
+      - name: Build hdf (mitre/hdf-libs CLI) from source
+        env:
+          HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
+          XTEXT_VERSION: ${{ steps.hdf_pins.outputs.xtext_version }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
+            https://github.com/mitre/hdf-libs.git /tmp/hdf-src
+          cd /tmp/hdf-src/hdf-cli
+          PKG="github.com/mitre/hdf-libs/hdf-cli/v3/cmd/hdf/cmd"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
+            -o /usr/local/bin/hdf ./cmd/hdf
+          ACTUAL="$(go version -m /usr/local/bin/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')"
+          if [ -z "${ACTUAL}" ] || \
+             [ "$(printf '%s\n%s\n' "${XTEXT_VERSION}" "${ACTUAL}" | sort -V | head -1)" != "${XTEXT_VERSION}" ]; then
+            echo "::error::hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor"
+            exit 1
+          fi
+          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+            || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
+          hdf version
+
+      # The analysis being fetched must be THIS run's: the PR's head commit,
+      # or the commit this run built. Anything else is someone else's results.
+      - name: Confirm SonarCloud holds this commit's analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          # A missing token is a HARD error (#1027): an unauthenticated fetch
+          # converts into a valid, schema-clean, zero-issue report.
+          test -n "${SONAR_TOKEN:-}" || { echo "::error::SONAR_TOKEN is empty — refusing to fetch"; exit 1; }
+          auth=(-H "Authorization: Bearer ${SONAR_TOKEN}")
+          api="${SONAR_URL}/api"
+          base="$(curl -sSf --proto '=https' --tlsv1.2 "${auth[@]}" "${api}/project_branches/list?project=${SONAR_PROJECT_KEY}" \
+            | jq -r --arg b "$BASE_BRANCH" '.branches[] | select(.name == $b) | "\(.analysisDate // "")|\(.commit.sha // "")"')"
+          if [ -z "$base" ] || [ -z "${base%%|*}" ]; then
+            echo "::error::SonarCloud has no analysis of branch '${BASE_BRANCH}'. Only branches ci.yml analyses on push (main) can be the base."
+            exit 1
+          fi
+          echo "Base '${BASE_BRANCH}' analysed ${base%%|*} at ${base##*|}"
+          if [ "$IS_PR" = "true" ]; then
+            got="$(curl -sSf --proto '=https' --tlsv1.2 "${auth[@]}" "${api}/project_pull_requests/list?project=${SONAR_PROJECT_KEY}" \
+              | jq -r --arg k "$PR_NUMBER" '.pullRequests[] | select(.key == $k) | .commit.sha // ""')"
+            [ "$got" = "$PR_HEAD_SHA" ] || { echo "::error::SonarCloud's analysis of PR #${PR_NUMBER} is for '${got:-none}', not the head ${PR_HEAD_SHA}"; exit 1; }
+          else
+            [ "${base##*|}" = "$GITHUB_SHA" ] || { echo "::error::SonarCloud's '${BASE_BRANCH}' analysis is for ${base##*|}, not ${GITHUB_SHA}"; exit 1; }
+          fi
+
+      - name: Fetch and convert SonarQube results
+        env:
+          SONARQUBE_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p sonar
+          common=(--url "$SONAR_URL" --project-key "$SONAR_PROJECT_KEY" --organization "$SONAR_ORGANIZATION" --format raw)
+          hdf fetch sonarqube sonar/base.raw.json "${common[@]}" --branch "$BASE_BRANCH"
+          if [ "$IS_PR" = "true" ]; then
+            hdf fetch sonarqube sonar/pr.raw.json "${common[@]}" --pull-request "$PR_NUMBER"
+          fi
+          # hdf's raw file keeps only Sonar's legacy `status`, which cannot tell
+          # a False positive from an Accepted issue. The issueStatuses facet can:
+          # it is what the threshold summary reports as the resolution trend.
+          curl -sSf --proto '=https' --tlsv1.2 -H "Authorization: Bearer ${SONARQUBE_TOKEN}" \
+            "${SONAR_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&organization=${SONAR_ORGANIZATION}&branch=${BASE_BRANCH}&facets=issueStatuses&ps=1" \
+            | jq '{facets: .facets}' > sonar/base.status-counts.json
+          # hdf 3.7.2 writes `"issues": null` for a project or PR with zero
+          # issues, and its converter then rejects the file — so every clean PR
+          # would fail. Fixed upstream after 3.7.2 (mitre/hdf-libs#484, commit
+          # 227fce7b: the fetcher sends []). Apply the same fix here ONLY when
+          # hdf's own count is 0, so any other malformed document still fails.
+          # REMOVE when HDF_LIBS_VERSION moves past 3.7.2.
+          for raw in sonar/*.raw.json; do
+            jq 'if .issues == null and (.total // 0) == 0 then .issues = [] else . end' "$raw" > "$raw.tmp"
+            mv "$raw.tmp" "$raw"
+          done
+          # --from is explicit: hdf's auto-detect cannot recognise a document
+          # with no issues ("confidence too low"), measured on 3.7.2.
+          for raw in sonar/*.raw.json; do
+            hdf convert "$raw" --from sonarqube -o "${raw%.raw.json}.hdf.json"
+          done
+          # The file name the evidence store has always received.
+          cp sonar/base.hdf.json sonar/sparc-sonarqube-hdf.json
+
+      - name: Validate OHDF output
+        run: |
+          set -euo pipefail
+          for f in sonar/*.hdf.json sonar/sparc-sonarqube-hdf.json; do
+            test -s "$f"
+            hdf validate "$f" -q
+            echo "$f: schema-valid, $(jq '[.baselines[].requirements[].results[]?] | length' "$f") results"
+          done
+
+      - name: Upload Sonar evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sonarqube-hdf-sparc
+          path: sonar/
+          if-no-files-found: error
+
+      # ── S3 emit: main only (push, schedule, dispatch on main) ──
+      # Same prefix, role and refusals as the retired sonarqube-hdf.yml
+      # (#741 layout, #1153 no default boundary, #1157 --sse aws:kms).
+      - name: Configure AWS credentials (OIDC)
+        id: aws
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        continue-on-error: true     # missing/unassumable role → skip emit, don't fail the run
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.SPARC_SONAR_EMIT_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Emit OHDF to security-artifacts bucket
+        if: steps.aws.outcome == 'success'
+        env:
+          BOUNDARY: ${{ vars.EVIDENCE_BOUNDARY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BOUNDARY:-}" ]; then
+            echo "::error::EVIDENCE_BOUNDARY is unset — refusing to emit evidence to a default prefix (sparc-iac#715)"
+            exit 1
+          fi
+          DATE="$(date -u +%Y-%m-%d)"
+          for when in "${DATE}" latest; do
+            aws s3 cp sonar/sparc-sonarqube-hdf.json "s3://${BUCKET}/${BOUNDARY}/${when}/sparc/sonarqube/" \
+              --sse aws:kms --no-progress
+          done
+          echo "Emitted to s3://${BUCKET}/${BOUNDARY}/{${DATE},latest}/sparc/sonarqube/"
+
+      - name: Note when S3 emit skipped
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.aws.outcome != 'success'
+        run: echo "::notice::OHDF fetched and validated; S3 emit skipped (aws=${{ steps.aws.outcome }}). The emit role is provisioned in sparc-iac#537."
+
+  # ── Sonar threshold (threshold stage, #1362, #1264) ────────────
+  #
+  # No new Sonar issues reach the target branch. Compares the PR's analysis
+  # with the target branch's full issue list (docs/compliance/sonar-threshold.yml).
+  # Resolved issues (False positive, Accepted) never count; their totals are
+  # reported so the trend stays visible.
+  #
+  # FAILS CLOSED: it runs whenever a same-repo PR runs, and fails if the fetch
+  # did not succeed. A skipped threshold must never read as a pass.
+  #
+  # ADVISORY during the report-mode week (.github/required-checks.json); then
+  # mode: enforce and a rules[] entry.
+  sonar_threshold:
+    name: sonar_threshold
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [ sonar_fetch ]
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Require the fetch
+        if: needs.sonar_fetch.result != 'success'
+        run: |
+          echo "::error::sonar_fetch did not succeed (${{ needs.sonar_fetch.result }}) — there is nothing to judge, and no result is not a pass"
+          exit 1
+
+      - name: Checkout (threshold script + file only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            scripts/ci/sonar_new_issues.rb
+            docs/compliance/sonar-threshold.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Ruby (stdlib only — no bundle)
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        with:
+          ruby-version: '3.4'
+
+      - name: Download Sonar evidence
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sonarqube-hdf-sparc
+          path: sonar/
+
+      - name: No new Sonar issues on this branch
+        run: |
+          ruby scripts/ci/sonar_new_issues.rb \
+            --base sonar/base.raw.json --head sonar/pr.raw.json \
+            --base-counts sonar/base.status-counts.json \
+            --threshold docs/compliance/sonar-threshold.yml \
+            --summary "$GITHUB_STEP_SUMMARY"

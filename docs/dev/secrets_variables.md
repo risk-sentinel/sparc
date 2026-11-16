@@ -16,8 +16,8 @@ workflows, where each one is consumed, and a recommended target scope
 >
 > | Name | Type | Files | Refs | Scope |
 > |---|---|---|---|---|
-> | `EVIDENCE_BOUNDARY` | variable | `security.yml` (×2), `sbom-and-sca.yml`, `sonarqube-hdf.yml` | 4 | **org**, visibility all |
-> | `SONARQUBE_HDF_USE_SAF` | variable | `sonarqube-hdf-emit.yml` | 1 | org |
+> | `EVIDENCE_BOUNDARY` | variable | `security.yml` (×2), `sbom-and-sca.yml`, `ci.yml` (sonar_fetch) | 4 | **org**, visibility all |
+> | `SONARQUBE_HDF_USE_SAF` | variable | not read by sparc since #1362 (the SAF fallback was retired with `sonarqube-hdf-emit.yml`); other org repos may still read it | 0 | org |
 >
 > `EVIDENCE_BOUNDARY` selects the S3 evidence prefix
 > (`<boundary>/<date|latest>/<repo>/<source>/`, #741 / sparc-iac#537) and pivots from
