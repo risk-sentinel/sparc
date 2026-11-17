@@ -388,6 +388,14 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
 Plan approved by the owner on 2026-11-10; one branch (`bug/1357_profile_priority_optional`) from
 `main`, one PR; then carried onto `release-1.18.0-rf`.
 
+Consolidated 2026-11-17 (owner): the five open PRs into `main` became one, on
+`bug/1357_v1179_consolidated`. It carries #1358 (this fix, Go 1.26.11, puma), #1366 (the 2026-11-16
+findings review), #1363 (msgpack), #1364 (November patch gems) and #1365 (November Actions updates).
+It also moves the base to UBI 10.3. Red Hat's krb5 fix is served for aarch64 but not yet for x86_64,
+so the build takes the newest krb5-libs each architecture's repo serves, with no version floor
+(owner, option B). The amd64 residual is 14 krb5 HIGHs with requested deviations, reviewed weekly.
+#1353 stays on `release-1.18.0-rf` and takes the same register text after this merges.
+
 | Issue | What | Decisions (owner, 2026-11-10) |
 |---|---|---|
 | **#1357** | Priority codes are not part of NIST SP 800-53 Rev 5 or 800-53B. Publishing a baseline no longer requires a priority (publish step, readiness check and Publish dialog); `ProfilePriorityAssignmentService` copies the catalog control's own P1–P3 or assigns none, instead of deriving one from baseline breadth; an unset priority shows "—", not an amber warning. The deferred data migration `ClearInventedProfilePriorities` clears the derived values on existing baselines and keeps any a person set (bulk/inline edit, or any edit-form save), a catalog carried or an imported file brought; one audit event per baseline lists what it cleared. Takes the krb5-libs, Go 1.26.11, msgpack 1.8.7 and puma 8.0.3 fixes, and the 2026-11-09 GitHub Actions pin updates (#1356). Carries the two sqlite-libs register entries (CVE-2026-119379, CVE-2026-119374) `main` needs for its security gate. | Apply to existing baselines, published included (stored resolved catalog untouched until the next publish); an edit-form save counts as a choice; P0 and the parameter check out of scope |
