@@ -2752,3 +2752,31 @@ findings:
     kev_listed: false
   verified_absent_on: '2026-10-25'
   verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-10-25T06:27Z (image scan of sparc:v1.17.2 50811e324b4a, UBI 10 minimal @sha256:ab67cd02, RHEL 10.2); package version read from the image rpm database'
+- cve_id: CVE-2026-88647
+  package: gnutls
+  installed_version: 3.8.10-5.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'NO LONGER REPORTED (2026-11-16): a grype 0.114.0 scan of the published IMAGE risksentinel/sparc:v1.17.8, amd64 (sha256:2a7cadd6) and arm64 (sha256:5c26674d), not an SBOM (#862; vulnerability DB v6.1.10 built 2026-11-15T06:19:39Z), cross-checked against the grype-container scan in main''s security run 43797398548 the same day no longer reports this CVE, on either architecture, against gnutls 3.8.10-5.el10_2, the same package build that is still in the image. Nothing was patched: Red Hat moved RHEL 10 from not-fixed to "Under investigation", and grype no longer matches it. It was not renamed: the two gnutls CVEs grype still reports, CVE-2026-88648 (subordinate-CA cross-domain bypass) and CVE-2026-67693 (contradictory Key Usage / Extended Key Usage), are separate flaws, both Medium and not-fixed, inside the gate. If a later scan reports it again, it returns to the active register. The mitigating factors below were measured on the image and still hold. Not in CISA KEV (catalog 2026.11.13). Prior text follows. GnuTLS: a crafted certificate can bypass the Common Name fallback in hostname verification (CVSS 3.1 AV:N/AC:H/PR:N/UI:N/C:H/I:H/A:N). PRESENT IN THE UBI 10 IMAGE (RHEL 10.2) as gnutls 3.8.10-5.el10_2, the version the v1.17.1 base bump (digest 552f8cc1) ships; Red Hat lists it not-fixed on el10. First reported by the rescan of the v1.17.1 image on 2026-10-16 (grype 0.114.0, DB v6.1.10 built 2026-10-16); Trivy does not report it. Not dispositioned as absent, because the package is not absent: gnutls is a base-image package whose consumers the runtime strip removed. Scanned the IMAGE, not an SBOM (#862). Proposed 2026-10-16 and approved for the register by the owner in conversation; the risk adjustment below awaits the owner''s /approve-deviation.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-10-16'
+  next_review_date: '2026-11-15'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1219"
+    approved_at: "2026-10-16"
+    approval_mechanism: approve-deviation-comment
+    adjusted_severity: LOW
+    adjustment_rationale: 'HIGH grades the flaw where GnuTLS verifies a peer certificate. The mitigating factors below are properties of THIS image, measured rather than argued. No upstream fix exists, so the residual is what is being accepted until Red Hat ships one.'
+    mitigating_factors:
+    - description: "no installed package requires gnutls: rpm --whatrequires for gnutls and libgnutls.so.30 against the shipped rpm database returns nothing (the runtime strip removed its consumers)"
+    - description: "no executable or shared library in the image links libgnutls: ldd over every executable and .so on the image filesystem finds none"
+    - description: "every TLS connection the app makes goes through OpenSSL: Ruby's openssl extension, Net::HTTP and pg/libpq map /usr/lib64/libssl.so.3.5.8 (Red Hat's), and nothing in app/, lib/, config/, bin/ or Gemfile.lock references GnuTLS"
+    kev_checked: '2026-10-16'
+    kev_listed: false
+  verified_absent_on: '2026-11-16'
+  verified_by: 'grype 0.114.0, DB v6.1.10 built 2026-11-15T06:19:39Z (image scan of risksentinel/sparc:v1.17.8, amd64 sha256:2a7cadd6 and arm64 sha256:5c26674d, UBI 10 minimal @sha256:ab67cd02, RHEL 10.2); also absent from the grype-container scan of main''s security run 43797398548; gnutls 3.8.10-5.el10_2 still present in both'
