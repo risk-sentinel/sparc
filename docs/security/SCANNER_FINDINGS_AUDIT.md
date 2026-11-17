@@ -1,58 +1,58 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-15 (v1.17.9 — control priority is optional; krb5-libs, openssl-libs, Go, msgpack and puma fixes taken)
+**Last reviewed:** 2026-11-17 (v1.17.9 — control priority is optional; UBI 10.3 base, krb5-libs on arm64, Go, msgpack, puma and the November gem updates)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
-or whenever a new suppression is added.
-
-> **v1.17.9 rescan (2026-11-15).** Real rescan of the built `sparc:v1.17.9`
-> image (arm64, `205343f989c3`, the release code for #1357 with the fixes
-> below), not an SBOM, with grype 0.114.0 (DB v6.1.10 built 2026-11-15 06:19
-> UTC) and Trivy 0.74.0 (database downloaded fresh 2026-11-15). The unfixed
-> v1.17.9 build of 2026-11-10 (`ab8062010e35`) was compared on the 2026-11-13
-> database, and the 2026-11-13 build (`21272bd0e11f`) on today's.
+or whenever a new> **v1.17.9 rescan (2026-11-17).** Real rescan of the built `sparc:v1.17.9`
+> image (arm64, `5e53edc6035a`, the consolidated release branch on the UBI 10.3
+> base `ubi10/ubi-minimal@sha256:fb2f7f85`), not an SBOM, with grype 0.114.0
+> (DB v6.1.10 built 2026-11-17 06:20 UTC) and Trivy 0.74.0 (DB updated
+> 2026-11-17). amd64 was not built locally; its image scan is the release PR's
+> grype-container job.
 >
 > | Scanner | Critical | High | Medium | Low |
 > |---|---|---|---|---|
-> | Grype 0.114.0 (image, DB built 2026-11-15) | **0** | **7** | 59 | 38 |
-> | Trivy 0.74.0 (image, DB 2026-11-15) | 0 | 0 | 0 | 1 |
+> | Grype 0.114.0 (arm64 image, DB built 2026-11-17) | **0** | **7** | 45 | 36 |
+> | Trivy 0.74.0 (arm64 image, DB 2026-11-17) | 0 | 0 | 0 | 1 |
 >
-> Distinct CVEs (104 grype matches, 77 ids).
+> 88 grype matches, 70 distinct ids. One is fixable: the Ruby-shipped on-disk
+> `json` 2.9.1 (GHSA-x2f5-4prf-w687, Low), which Bundler shadows.
 >
-> - **Compared id by id with the unfixed build (2026-11-13 database):** 33 ids
->   cleared, none added.
->   - `krb5-libs` 1.21.3-10.el10_2 → 1.21.3-11.el10_3.2 clears 19, including
->     the 14 Highs that reached the database on 2026-11-10 and 2026-11-13. The
->     runtime stage upgrades this one base package from the repo ahead of a
->     digest bump; the 2026-11-12 base still carries -11.el10. A build floor
->     fails on an older build. On 2026-11-15 Red Hat's UBI x86_64 repo still
->     served only -11.el10 (RHSA-2026:99624 lists x86_64), so an amd64 build
->     fails the floor until that repo syncs.
->   - `openssl-libs`: 12, from the repo's current build, which the runtime
->     stage already installs.
->   - Go 1.26.10 → 1.26.11 for `hdf` clears GO-2026-6859 (stdlib).
->   - `msgpack` 1.8.5 → 1.8.7 clears GHSA-73v3-wf97-vpgj (High, JRuby decoder
->     only; SPARC runs CRuby).
->   - `puma` 8.0.2 → 8.0.3 (added 2026-11-15) clears seven advisories that
->     bundle-audit's database gained on 2026-11-13: slow or stalled clients
->     holding threads or connections open, an accept loop that does not pause
->     when out of file descriptors, `ssl_cipher_filter` decoding, and `pumactl`
->     TLS verification. No image finding cited them.
-> - **Since the 2026-11-13 build, on today's database:** both images report the
->   same 77 ids. Against the 2026-11-13 scan, the database added
->   CVE-2026-116328 (High, reported on `libpq`, `postgresql` and
->   `postgresql-private-libs`) and dropped CVE-2026-122054 (Medium, `glibc`,
->   three packages).
-> - **The 7 Highs**, all not-fixed by Red Hat:
->   - `sqlite-libs` 3.46.1-6.el10_2: the four approved deviations. Nothing in
->     the image loads libsqlite3.
->   - CVE-2026-116328, a flaw in the PostgreSQL server: `deviation-requested`.
->     The image holds no server (`postgres`, `pg_ctl` and `initdb` are absent),
->     only the client library and `psql`/`pg_dump`.
+> - **Base: UBI 10.2 → 10.3** (published 2026-11-12, the newest `ubi-minimal`
+>   on both architectures on 2026-11-17). `openssl-libs` 1:3.5.9-1.el10_3 is
+>   Red Hat's fix for CVE-2026-75804 (RHSA-2026:98588), now retired.
+>   `systemd-libs` (257-33.el10) and `openldap` (2.6.13-1.el10) move to newer
+>   builds that grype still reports.
+> - **krb5-libs differs by architecture.** Red Hat fixed the 14 krb5 Highs in
+>   1.21.3-11.el10_3.2 (RHSA-2026:99624, 2026-11-12). The 10.3 base carries
+>   1.21.3-11.el10 on both architectures. The runtime stage takes the newest
+>   build each architecture's repo serves, with no version floor. The aarch64
+>   repo serves the fix (since 2026-11-13), so arm64 ships it, and its scan
+>   reports no krb5 High (one not-fixed Medium, CVE-2026-11850, remains).
+>   The x86_64 repo still served 1.21.3-11.el10 on 2026-11-17 (revision
+>   2026-11-12 13:20 UTC), so amd64 carries the 14 Highs. They are
+>   registered with requested deviations and a 2026-11-24 review. The image
+>   runs no KDC or kadmind, and has no Kerberos realm or credentials, so libpq
+>   never starts a GSSAPI exchange. The next amd64 build after Red Hat syncs
+>   the x86_64 repo takes the fix with no change.
+> - **Go 1.26.10 → 1.26.11** for `hdf` clears GO-2026-6859 (stdlib).
+> - **Gems:** `msgpack` 1.8.5 → 1.8.7 (GHSA-73v3-wf97-vpgj), `puma` 8.0.2 →
+>   8.0.3 (seven advisories bundle-audit gained on 2026-11-13), and the November
+>   patch-level updates (cbor, cose, et-orbi, fugit, io-console, irb, minitest,
+>   pagy, prettyprint, rack-test, rbs, rdoc, solid_queue, webauthn).
+>   bundle-audit (advisory-db `6c4efcd`): `main`'s lockfile reports 8
+>   advisories (msgpack and 7 puma); this branch's reports none.
+> - **The 7 arm64 Highs**, all not-fixed by Red Hat:
+>   - `sqlite-libs` 3.46.1-6.el10_2: four, CVE-2026-119373 and -119586
+>     (approved), -119374 and -119379 (requested). Nothing in the image loads
+>     libsqlite3.
+>   - CVE-2026-116328 in the PostgreSQL server, reported on `libpq`,
+>     `postgresql` and `postgresql-private-libs`: requested. The image holds no
+>     server.
 > - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
-> - **Gems:** bundle-audit reports no vulnerabilities; brakeman reports no
->   warnings.
-> - **Register:** 12 entries, none `RELEASE-BLOCKING`; 1 awaits
->   `/approve-deviation`.
+> - **Register:** 24 active entries. 17 deviations await `/approve-deviation`
+>   on the release PR: 14 krb5, 2 sqlite and 1 libpq.
+
+ `/approve-deviation`.
 
 > **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
 > image (arm64, `df41343ea694`, the release code with the November dependency

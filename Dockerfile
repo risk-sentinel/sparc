@@ -46,7 +46,13 @@ ARG HDF_LIBS_VERSION=3.7.2
 # emSign ECC Root CA - G3, so the build-time blocklist that stood in for it is
 # retired. The same digest moves glibc -142 -> -145; the RPM signing keys are
 # unchanged.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:ab67cd02caf8706e34a695a1432ebe965934f6128ec352a6c3f4048b43a4fb5e
+#
+# Bumped 2026-11-17 (v1.17.9): RHEL 10.2 -> 10.3 (published 2026-11-12, the
+# newest ubi-minimal on both architectures as of 2026-11-17). openssl-libs
+# 1:3.5.8-2.el10_2 -> 1:3.5.9-1.el10_3 is Red Hat's fix for CVE-2026-75804
+# (RHSA-2026:98588). krb5-libs moves only to 1.21.3-11.el10, which still carries
+# the 14 krb5 HIGHs; the krb5 step below takes the fix where the repo has it.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:fb2f7f857cc60d88e3fad19da505083a682ca4569d7b55a61f64aaa43641f741
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -252,11 +258,14 @@ COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
 # krb5-libs is the one BASE package taken from the repo ahead of a digest bump
 # (#1357, v1.17.9, owner-approved): 1.21.3-11.el10_3.2 fixes 14 HIGH advisories
 # (CVE-2026-112315..112323, -119079, -107364, -118380, -71199, -71200) that the
-# pinned base's 1.21.3-10.el10_2, and even the 2026-11-12 base's -11.el10, carry.
-# libpq links it, so it cannot be stripped. The floor fails the build if the
-# repo ever resolves an older build; retire it with the next digest bump that
-# carries the fix.
-ARG KRB5_LIBS_FLOOR=1.21.3-11.el10_3.2
+# base's 1.21.3-11.el10 carries. libpq links it (and pg_ext.so and pg_isready
+# link libpq), so it cannot be stripped. Each architecture takes the newest
+# build its own repo serves: on 2026-11-17 aarch64 serves the fix and x86_64
+# still serves -11.el10, so there is no version floor - a floor fails every
+# amd64 build until Red Hat publishes. The amd64 residual is a deviation in
+# docs/compliance/sparc-findings.yml; the next build after x86_64 publishes
+# takes the fix with no change here. Retire this step with the first digest
+# bump whose base carries the fix.
 # Runtime shared libs the compiled Ruby + pg link against, plus the client tools
 # the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
 # `update --assumeno` changes nothing: it prints the BASE packages that have a
@@ -267,10 +276,7 @@ RUN rm /tmp/sparc-version-key.rb \
     && microdnf update -y --nodocs --setopt=install_weak_deps=0 krb5-libs \
     && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
-    && rpm -q openssl-libs libpq postgresql libevent krb5-libs \
-    && krb5="$(rpm -q --qf '%{VERSION}-%{RELEASE}' krb5-libs)" \
-    && printf '%s\n%s\n' "${KRB5_LIBS_FLOOR}" "${krb5}" | sort -V -C \
-      || { echo "FAIL: krb5-libs ${krb5:-<none>} is older than the fix floor ${KRB5_LIBS_FLOOR}" >&2; exit 1; }
+    && rpm -q openssl-libs libpq postgresql libevent krb5-libs
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
