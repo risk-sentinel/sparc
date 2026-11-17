@@ -175,7 +175,7 @@ jobs:
             # job has no checkout. Dependencies from versions at least 7 days
             # old, every registry signature verified.
             npm install --no-save --ignore-scripts --no-fund --no-audit \
-              --before="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" @mitre/saf@1.6.0
+              --before="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" @mitre/saf@1.7.0
             npm audit signatures
             ./node_modules/.bin/saf convert sonarqube2hdf \
               -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
