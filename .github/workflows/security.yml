@@ -1178,7 +1178,7 @@ jobs:
         # checks do not support global installs, so saf installs under
         # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
         run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
+          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.7.0
           echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Verify SAF CLI converters are available
@@ -1449,9 +1449,9 @@ jobs:
           # no threshold and nothing ever assessed it. GHSA-mvxr-6m87-mv2q
           # (`mail` 2.9.0) rode 85 green runs into main through this hole.
           #
-          # @mitre/saf 1.6.0 (the pin above, and the latest release) has no
-          # bundler-audit converter among its 37 — verified against the pinned
-          # CLI. Hence the in-repo translator, precedent
+          # @mitre/saf 1.7.0 (the pin above) has no bundler-audit converter
+          # among its 41, and 1.6.0 had none among its 37 — verified against the
+          # published packages. Hence the in-repo translator, precedent
           # bin/sparc_findings_to_hdf_amendments.rb. Retire it if an upstream
           # bundleraudit2hdf lands.
           if [ -f scan-results/bundler-audit-results.json ]; then
@@ -1999,7 +1999,7 @@ jobs:
         # checks do not support global installs, so saf installs under
         # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
         run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.6.0
+          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.7.0
           echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Validate each amended HDF against its scanner threshold
