@@ -16,9 +16,7 @@ RSpec.describe "NIST Rev 5 HIGH, tailored profile import" do
   let(:set_parameters) { tailored.dig("profile", "modify", "set-parameters").to_h { |p| [ p["param-id"], p["values"].join(", ") ] } }
 
   before do
-    %w[NIST_SP-800-53_rev5_catalog.json NIST_SP-800-53_rev4_catalog.json].each do |name|
-      CatalogImportService.call(File.open(fixtures.join("catalogs", name)), name)
-    end
+    %w[NIST_SP-800-53_rev5_catalog.json NIST_SP-800-53_rev4_catalog.json].each { |name| imported_catalog(name) }
   end
 
   it "uses a fixture the OSCAL 1.2.3 profile schema accepts" do

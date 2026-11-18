@@ -30,7 +30,7 @@ RSpec.describe "NIST Rev 5 MODERATE, end to end", type: :request do
   let!(:rev4) { import_catalog("NIST_SP-800-53_rev4_catalog.json") }
 
   def import_catalog(name)
-    CatalogImportService.call(File.open(fixtures.join("catalogs", name)), name)[:catalog].tap do |catalog|
+    imported_catalog(name).tap do |catalog|
       catalog.update_columns(lifecycle_status: "published")
     end
   end
