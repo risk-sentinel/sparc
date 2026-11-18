@@ -12,8 +12,7 @@ RSpec.describe "SSP items, each answered in full (#1312)", type: :request do
   let(:fixtures) { Rails.root.join("spec/fixtures/files") }
 
   let!(:nist) do
-    CatalogImportService.call(File.open(fixtures.join("catalogs/NIST_SP-800-53_rev5_catalog.json")),
-                              "NIST_SP-800-53_rev5_catalog.json")[:catalog].tap do |catalog|
+    imported_catalog("NIST_SP-800-53_rev5_catalog.json").tap do |catalog|
       catalog.update_columns(lifecycle_status: "published")
     end
   end

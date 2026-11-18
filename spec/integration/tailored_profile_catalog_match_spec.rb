@@ -21,8 +21,7 @@ RSpec.describe "Tailored Rev 5 profile and its catalog", type: :request do
   let(:profile_path) { fixtures.join("profiles/NIST_SP-800-53_rev5_MODERATE-tailored_profile.json") }
   let(:overlay) { create(:control_catalog, name: "Agency overlay for NIST SP 800-53 Rev 5") }
   let(:nist) do
-    CatalogImportService.call(File.open(fixtures.join("catalogs/NIST_SP-800-53_rev5_catalog.json")),
-                              "NIST_SP-800-53_rev5_catalog.json")[:catalog].tap do |catalog|
+    imported_catalog("NIST_SP-800-53_rev5_catalog.json").tap do |catalog|
       catalog.update_columns(lifecycle_status: "published")
     end
   end
