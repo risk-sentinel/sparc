@@ -454,6 +454,12 @@ enhancements are nested inside their parent control (`ac-2` contains `ac-2.1`,
 `ac-2.2`, …) rather than listed beside it, and each control carries its links
 back to the reference material in the document's back-matter.
 
+On a draft linked to a catalog, **JSON (Resolved)** is built when you download
+it, so it states the parameter values saved on the draft. On a published
+baseline it is the file stored when the baseline was published. Publishing
+resolves every baseline again, including one imported from a resolved-profile
+file, so a baseline needs a linked source catalog to be published.
+
 ---
 
 ## Working with control mappings
