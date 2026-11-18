@@ -46,7 +46,11 @@ if [ -z "${DB_HOST}" ]; then
 fi
 
 echo "Waiting for PostgreSQL at ${DB_HOST:-db}:${DB_PORT:-5432}..."
-until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -t 1 >/dev/null 2>&1; do
+# #1368 — libpq's PQping through the pg gem, the check pg_isready made: is the
+# server accepting connections (no authentication attempted). The image no
+# longer ships the postgresql client tools.
+until bundle exec ruby -e 'require "pg"; exit(PG::Connection.ping(host: ARGV[0], port: ARGV[1], connect_timeout: 1) == PG::PQPING_OK ? 0 : 1)' \
+        "${DB_HOST:-db}" "${DB_PORT:-5432}" >/dev/null 2>&1; do
     echo "Postgres is not ready yet - sleeping..."
     sleep 2
 done
