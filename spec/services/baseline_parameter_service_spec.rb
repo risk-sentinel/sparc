@@ -132,6 +132,24 @@ RSpec.describe BaselineParameterService do
   end
 
   describe "#update_parameters" do
+    it "writes nothing when an entry raises part-way through" do
+      create(:profile_control, profile_document: profile, control_id: "ac-1")
+      calls = 0
+      allow(service).to receive(:upsert_parameter_field).and_wrap_original do |original, *args|
+        calls += 1
+        raise "the database went away" if calls == 2
+
+        original.call(*args)
+      end
+
+      expect do
+        service.update_parameters(parameters: [ { param_id: "ac-1_prm_1", value: "ISSO" },
+                                                { param_id: "ac-1_prm_2", value: "annually" } ])
+      end.to raise_error("the database went away")
+
+      expect(ProfileControlField.where("field_name LIKE 'parameter:%'")).to be_empty
+    end
+
     it "creates parameter fields for valid params" do
       # Need a profile_control for ac-1
       create(:profile_control, profile_document: profile, control_id: "ac-1")
