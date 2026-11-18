@@ -110,3 +110,9 @@
 # exclusion would break those data migrations. Tracked separately.
 /docs/
 /tests/
+
+# Local, gitignored working files: never in a build context. A local build
+# copied scratchpad/ (an env file) into the image; CI builds from a checkout,
+# where neither exists (#1368).
+/scratchpad/
+saf-cli.log
