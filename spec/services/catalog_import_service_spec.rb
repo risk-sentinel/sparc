@@ -187,7 +187,7 @@ RSpec.describe CatalogImportService do
 
     context "re-import with existing catalog" do
       it "updates existing catalog without duplicating" do
-        first_result = described_class.call(File.open(rev5_xml_path), "NIST_SP-800-53_rev5_catalog.xml")
+        first_result = imported_catalog_result("NIST_SP-800-53_rev5_catalog.xml")
         catalog = first_result[:catalog]
 
         second_result = described_class.call(
@@ -399,12 +399,12 @@ RSpec.describe CatalogImportService do
 
   describe "import_format metadata" do
     it "stores oscal_json for JSON imports" do
-      result = described_class.call(File.open(rev5_json_path), "catalog.json")
+      result = imported_catalog_result("NIST_SP-800-53_rev5_catalog.json")
       expect(result[:catalog].metadata_extra["import_format"]).to eq("oscal_json")
     end
 
     it "stores oscal_xml for XML imports" do
-      result = described_class.call(File.open(rev5_xml_path), "catalog.xml")
+      result = imported_catalog_result("NIST_SP-800-53_rev5_catalog.xml")
       expect(result[:catalog].metadata_extra["import_format"]).to eq("oscal_xml")
     end
 
@@ -504,10 +504,7 @@ RSpec.describe CatalogImportService do
 
   describe "cross-format canonical ID consistency" do
     it "produces matching control IDs from JSON and YAML" do
-      json_result = described_class.call(
-        File.open(rev5_json_path),
-        "catalog.json"
-      )
+      json_result = imported_catalog_result("NIST_SP-800-53_rev5_catalog.json")
       json_ids = json_result[:catalog].catalog_controls.pluck(:control_id).sort
 
       yaml_path = Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev5_catalog.yaml")

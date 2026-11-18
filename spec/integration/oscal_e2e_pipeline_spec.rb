@@ -32,16 +32,22 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
       File.open(CATALOG_FIXTURE), File.basename(CATALOG_FIXTURE)
     )
     @catalog = @catalog[:catalog] if @catalog.is_a?(Hash)
+    @exports = {}
   end
 
   after(:context) do
     # before(:context) writes outside the per-example transaction, so it would
     # otherwise leak into every later spec file in the run.
     ProfileDocument.where(control_catalog_id: @catalog&.id).destroy_all
-    @catalog&.destroy
+    @catalog&.destroy! # a refused destroy must fail here, not leave the catalog for every later spec
   end
 
   let(:catalog) { @catalog }
+
+  # The catalog as exported, made once for the file: nothing below changes the
+  # catalog, and seven examples each exported all of it again to read the same
+  # document. Frozen, so an example that tried to edit it in place would fail.
+  let(:catalog_export) { @exports[:catalog] ||= OscalCatalogExportService.new(catalog).export.freeze }
 
   # ── Stage 1 — the vanilla catalog is the ground truth ────────────────────
   describe "Stage 1 — vanilla NIST SP 800-53 rev5 catalog" do
@@ -61,13 +67,13 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "round-trips to schema-valid OSCAL in JSON and YAML" do
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
 
       expect_valid_json_and_yaml(json, model_type: :catalog, label: "Stage 1 catalog")
     end
 
     it "produces well-formed XML carrying the catalog payload" do
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
       xml = OscalExportFormatService.to_xml(json, :catalog)
 
       # Well-formedness and payload survival are a separate question from XSD
@@ -79,12 +85,12 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "round-trips to XSD-valid OSCAL XML" do
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
       expect_valid_xml(json, model_type: :catalog, label: "Stage 1 catalog")
     end
 
     it "carries the controls through the export, not just the metadata" do
-      data = JSON.parse(OscalCatalogExportService.new(catalog).export)
+      data = JSON.parse(catalog_export)
       groups = data.dig("catalog", "groups") || []
 
       expect(groups.size).to eq(20)
@@ -94,7 +100,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "REJECTS a catalog whose required metadata is missing" do
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
 
       expect_rejected_by_schema(json, model_type: :catalog, label: "Stage 1 catalog") do |data|
         data["catalog"].delete("metadata")
@@ -102,7 +108,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     end
 
     it "REJECTS a catalog carrying a non-UUID document id" do
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
 
       expect_rejected_by_schema(json, model_type: :catalog, label: "Stage 1 catalog") do |data|
         data["catalog"]["uuid"] = "not-a-uuid"
@@ -112,7 +118,7 @@ RSpec.describe "OSCAL end-to-end pipeline (#817)", :oscal_pipeline do
     it "REJECTS a document validated as the WRONG model type" do
       # A catalog is not a profile. If the validator accepted this, every
       # positive assertion in this file would be worthless.
-      json = OscalCatalogExportService.new(catalog).export
+      json = catalog_export
       result = OscalSchemaValidationService.validate_json(:profile, json)
 
       expect(result.valid?).to be(false),
