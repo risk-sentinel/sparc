@@ -262,15 +262,20 @@ class ProfileDocumentsController < ApplicationController
     redirect_to profile_document_path(copy)
   end
 
+  # #1371 — a draft's resolved catalog is BUILT from its current values. The
+  # stored `resolved_catalog_json` is written at publish and at import, and
+  # "Create Editable Copy" duplicates it, so serving it for a draft returned the
+  # published baseline's parameter values after every save. A published
+  # baseline serves the file stored at its publish.
   def download_resolved_catalog
-    if @profile_document.resolved_catalog_json.blank?
+    json_data, source = resolved_catalog_for_download(@profile_document)
+    if json_data.nil?
       flash[:error] = "No resolved catalog available. Publish the profile first."
       redirect_to(profile_document_path(@profile_document)) && return
     end
 
-    json_data = JSON.pretty_generate(@profile_document.resolved_catalog_json)
     audit_log("profile_document_exported", subject: @profile_document,
-              metadata: { name: @profile_document.name, format: "resolved_catalog" })
+              metadata: { name: @profile_document.name, format: "resolved_catalog", source: source })
     send_data json_data,
               filename:    "#{@profile_document.name}_resolved_catalog_#{Date.today}.json",
               type:        JSON_CONTENT_TYPE,
@@ -413,22 +418,36 @@ class ProfileDocumentsController < ApplicationController
 
   # Profile-specific pre-publish logic: validate the catalog link and generate the resolved catalog.
   # A control's priority is optional (#1357).
-  # Resolved profiles already have resolved_catalog_json populated from import — skip regeneration.
+  #
+  # #1371 — every baseline is resolved at publish, an imported resolved profile
+  # included. Its imported file used to be kept as is, so a parameter saved on
+  # it, or on an editable copy of it, never reached the resolved catalog.
   def before_publish_lifecycle(doc)
-    is_resolved = doc.import_metadata&.dig("format") == "oscal_resolved_profile"
-
-    unless is_resolved
-      unless doc.control_catalog
-        return { error: "Cannot publish: no source catalog linked to this profile." }
-      end
-
-      service = OscalResolvedProfileCatalogService.new(doc)
-      resolved_json = service.export
-      doc.update!(resolved_catalog_json: JSON.parse(resolved_json))
+    unless doc.control_catalog
+      return { error: "Cannot publish: no source catalog linked to this profile." }
     end
 
+    doc.update!(resolved_catalog_json: JSON.parse(OscalResolvedProfileCatalogService.new(doc).export))
     nil
   end
+
+  # #1371 — [json, source] for the Resolved Catalog download, or nil when there
+  # is nothing to serve. A draft linked to a catalog is resolved now; anything
+  # else serves the stored file (a published baseline's, or an import that
+  # matched no catalog).
+  def resolved_catalog_for_download(doc)
+    if doc.draft? && doc.control_catalog.present?
+      [ OscalResolvedProfileCatalogService.new(doc).export, "built" ]
+    elsif doc.resolved_catalog_json.present?
+      [ JSON.pretty_generate(doc.resolved_catalog_json), "stored" ]
+    end
+  end
+
+  # #1371 — whether the Export menu offers "JSON (Resolved)".
+  def resolved_catalog_available?(doc)
+    (doc.draft? && doc.control_catalog.present?) || doc.resolved_catalog_json.present?
+  end
+  helper_method :resolved_catalog_available?
 
   # Check if the current profile is a resolved profile (externally sourced).
   def resolved_profile?

@@ -40,7 +40,7 @@
     the name; the copies and the control actions beside it. The review panel
     stays under the name. %>
 <%# The Resolved Catalog download, for the export menu under either header. %>
-<% resolved_group = if @profile_document.resolved_catalog_json.present?
+<% resolved_group = if resolved_catalog_available?(@profile_document)
                      { heading: "Resolved Catalog",
                        links: [ [ "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document) ] ] }
                    end %>
