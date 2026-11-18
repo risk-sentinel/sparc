@@ -26,37 +26,61 @@
 require "json"
 require "optparse"
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: hdf_mark_grype_ignored.rb --input FILE [--output FILE]"
-  opts.on("--input FILE", "HDF v2 JSON from saf convert anchoregrype2hdf (modified in place)") { |v| options[:input] = v }
-  opts.on("--output FILE", "Write here instead of in place") { |v| options[:output] = v }
-  opts.on("-h", "--help") { puts opts; exit 0 }
-end.parse!
+# The logic lives in a module so the spec runs it in-process; the guard at the
+# bottom is the command line.
+module HdfMarkGrypeIgnored
+  PREFIX = "Grype-Ignored-Match/"
+  REASON = "Suppressed by a grype ignore rule; see the rule in this result's message."
 
-abort "hdf_mark_grype_ignored: --input is required" unless options[:input]
+  # Marks every result of every ignored-match control; returns how many changed.
+  def self.mark!(doc)
+    marked = 0
+    Array(doc["profiles"]).each do |profile|
+      Array(profile["controls"]).each do |control|
+        next unless control["id"].to_s.start_with?(PREFIX)
 
-PREFIX = "Grype-Ignored-Match/"
-REASON = "Suppressed by a grype ignore rule; see the rule in this result's message."
+        Array(control["results"]).each do |result|
+          next if result["status"] == "skipped" && result["skip_message"] == REASON
 
-raw = File.read(options[:input])
-doc = JSON.parse(raw)
-marked = 0
-
-Array(doc["profiles"]).each do |profile|
-  Array(profile["controls"]).each do |control|
-    next unless control["id"].to_s.start_with?(PREFIX)
-
-    Array(control["results"]).each do |result|
-      next if result["status"] == "skipped" && result["skip_message"] == REASON
-
-      result["status"] = "skipped"
-      result["skip_message"] = REASON
-      marked += 1
+          result["status"] = "skipped"
+          result["skip_message"] = REASON
+          marked += 1
+        end
+      end
     end
+    marked
+  end
+
+  # Reads `input`, writes the marked document to `output` (default: in place),
+  # leaving an unchanged in-place file byte-identical. Returns the count.
+  def self.run(input:, output: nil)
+    raw = File.read(input)
+    doc = JSON.parse(raw)
+    marked = mark!(doc)
+    output ||= input
+    File.write(output, marked.zero? && output == input ? raw : JSON.pretty_generate(doc))
+    marked
+  end
+
+  # The command line; returns the exit status.
+  def self.main(argv, out: $stdout, err: $stderr)
+    options = {}
+    OptionParser.new do |opts|
+      opts.banner = "Usage: hdf_mark_grype_ignored.rb --input FILE [--output FILE]"
+      opts.on("--input FILE", "HDF v2 JSON from saf convert anchoregrype2hdf (modified in place)") { |v| options[:input] = v }
+      opts.on("--output FILE", "Write here instead of in place") { |v| options[:output] = v }
+    end.parse!(argv.dup)
+
+    unless options[:input]
+      err.puts "hdf_mark_grype_ignored: --input is required"
+      return 2
+    end
+
+    marked = run(input: options[:input], output: options[:output])
+    out.puts "hdf_mark_grype_ignored: #{File.basename(options[:input])}: " \
+             "#{marked} ignored-match result(s) marked not applicable"
+    0
   end
 end
 
-output = options[:output] || options[:input]
-File.write(output, marked.zero? && output == options[:input] ? raw : JSON.pretty_generate(doc))
-puts "hdf_mark_grype_ignored: #{File.basename(options[:input])}: #{marked} ignored-match result(s) marked not applicable"
+exit(HdfMarkGrypeIgnored.main(ARGV)) if __FILE__ == $PROGRAM_NAME
