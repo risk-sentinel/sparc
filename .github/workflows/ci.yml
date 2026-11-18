@@ -290,11 +290,33 @@ jobs:
         run: script/ci/hdf_pins.sh --github-output
 
       - name: Set up Go (pinned to the hdf-cli fix line)
+        id: setup_go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
 
+      # The binary this job built before, for exactly these inputs. The key
+      # names the Go release setup-go RESOLVED, not the line asked for, so a new
+      # patch release of Go (the reason hdf is built from source) builds afresh.
+      - name: Restore the hdf built earlier from the same pins
+        id: hdf_cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          path: ~/hdf-cache
+          key: hdf-${{ runner.os }}-${{ runner.arch }}-${{ steps.hdf_pins.outputs.hdf_libs_version }}-go${{ steps.setup_go.outputs.go-version }}-xtext${{ steps.hdf_pins.outputs.xtext_version }}
+
+      - name: Install the restored hdf
+        if: steps.hdf_cache.outputs.cache-hit == 'true'
+        env:
+          HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
+        run: |
+          set -euo pipefail
+          install -m 0755 ~/hdf-cache/hdf /usr/local/bin/hdf
+          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+            || { echo "::error::the restored hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
+
       - name: Build hdf (mitre/hdf-libs CLI) from source
+        if: steps.hdf_cache.outputs.cache-hit != 'true'
         env:
           HDF_LIBS_VERSION: ${{ steps.hdf_pins.outputs.hdf_libs_version }}
           XTEXT_VERSION: ${{ steps.hdf_pins.outputs.xtext_version }}
@@ -319,10 +341,25 @@ jobs:
           fi
           hdf version | grep -q "${HDF_LIBS_VERSION}" \
             || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
+          mkdir -p ~/hdf-cache && cp /usr/local/bin/hdf ~/hdf-cache/hdf
+
+      # The catalog rows an earlier run of this shard imported
+      # (spec/support/imported_catalogs.rb), so the shard does not import them
+      # again. The key covers everything an import reads: the fixtures, the
+      # models and services, lib, config, the schema and the gems. A change to
+      # any of them misses, the importer runs for real, and the result is saved
+      # under the new key. There are no restore-keys on purpose: rows from a
+      # different version of the importer must never be handed to a test.
+      - name: Restore imported catalogs from the same code and fixtures
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          path: tmp/imported_catalogs
+          key: imported-catalogs-v1-shard${{ matrix.shard }}of${{ env.SPEC_SHARDS }}-${{ hashFiles('spec/fixtures/files/catalogs/**', 'app/models/**', 'app/services/**', 'app/lib/**', 'lib/**', 'config/**', 'db/schema.rb', 'Gemfile.lock', 'spec/support/imported_catalogs.rb', 'spec/factories/**', 'script/ci/spec_shard.rb', 'script/ci/spec_timings.json') }}
 
       - name: Run tests
         env:
           RAILS_ENV: test
+          IMPORTED_CATALOGS_CACHE: tmp/imported_catalogs
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
           COVERAGE: "1"
           SPEC_SHARD: ${{ matrix.shard }}
