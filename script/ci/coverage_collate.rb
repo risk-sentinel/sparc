@@ -10,8 +10,20 @@
 require "simplecov"
 require "simplecov_json_formatter"
 
+require "json"
+
 resultsets = ARGV
 abort "no coverage resultsets given" if resultsets.empty?
+
+# Every shard names its result "rspec-shard-<index>-of-<total>". A shard that
+# passed but uploaded nothing would otherwise just lower the total, and the
+# failure would read as "coverage fell" rather than "a shard is missing".
+names = resultsets.flat_map { |path| JSON.parse(File.read(path)).keys }
+shards = names.filter_map { |name| name[/\Arspec-shard-(\d+)-of-(\d+)\z/] && [ Integer(Regexp.last_match(1)), Integer(Regexp.last_match(2)) ] }
+totals = shards.map(&:last).uniq
+abort "coverage results are not shard results: #{names.inspect}" unless shards.size == names.size && totals.size == 1
+missing = (0...totals.first).to_a - shards.map(&:first)
+abort "coverage is missing shard(s) #{missing.join(', ')} of #{totals.first}" if missing.any?
 
 SimpleCov.collate resultsets, "rails" do
   formatter SimpleCov::Formatter::MultiFormatter.new([
