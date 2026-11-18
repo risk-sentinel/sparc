@@ -14,13 +14,18 @@ Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so
 - **Priority stays available:** set, clear or bulk-edit it as before. A control without one shows a plain dash.
 - **Export > JSON (Resolved) shows the values saved on a draft** ([#1371](https://github.com/risk-sentinel/sparc/issues/1371)). On a draft, including one made with Create Editable Copy, it used to show the values from the last publish or import. A published baseline still exports the file stored when it was published.
 - **Every baseline is resolved again when it is published**, a baseline imported from a resolved-profile file included. Publishing a baseline with no linked source catalog is refused.
+- **hdf-cli 3.8.0** ([#1368](https://github.com/risk-sentinel/sparc/issues/1368)) in the image, the security gate and the HDF and OSCAL translation endpoints:
+  - **A `riskAdjustment` disposition records an adjusted impact** (0.0–1.0), required for that kind, in the triage form and the API. The HDF amendments export sends it as the override's impact, with no status, as hdf 3.8.0 requires. An `operationalRequirement` is exported with neither.
+  - **HDF ingest:** an impact of 0 no longer marks a finding not applicable on its own; the results decide. A control scored 0 whose results are all skipped is still not applicable.
+  - **`hdf-system` documents** now target schema v3.8.0.
+- **SAF CLI 1.8.0** ([#1362](https://github.com/risk-sentinel/sparc/issues/1362)) in the security pipeline, from MITRE's release image pinned by digest.
 - **Security updates:**
   - The image moves to the Red Hat UBI 10.3 base, with Red Hat's `openssl` fix.
   - `krb5-libs` takes Red Hat's fix on arm64. Red Hat hasn't published it for x86_64 yet, and the next amd64 image after it does takes it.
   - Go 1.26.11 for the bundled `hdf` tool.
   - `msgpack` 1.8.7, `puma` 8.0.3 and the November patch-level gem updates.
 
-**Upgrading:** an image swap from v1.17.8. One data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
+**Upgrading:** an image swap from v1.17.8. One schema migration runs at startup (`finding_dispositions.adjusted_impact`), and one data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.9).
 

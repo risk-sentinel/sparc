@@ -116,7 +116,8 @@ DELETE /api/v1/scanner_findings/:uuid/disposition
 | `kind` | one of `falsePositive`, `waiver`, `poam`, `vendorDependency`, `inherited`, `riskAdjustment`, `operationalRequirement` |
 | `reason` | required justification |
 | `linked_subject_type` / `linked_subject_id` | the supporting record (`Evidence`, `Attestation`, `PoamFinding`, `AuthorizationBoundary`, `RiskAssessment`) |
-| `expiration` | required for `waiver` / `operationalRequirement` |
+| `expiration` | review date, required for every kind, at most one year out |
+| `adjusted_impact` | required for `riskAdjustment` and refused for every other kind: the impact (0.0–1.0) the finding carries in this system. Exported as the override's `impact`; a `riskAdjustment` carries no status (hdf-cli 3.8.0) |
 
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
@@ -125,7 +126,10 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
   https://sparc.example.com/api/v1/scanner_findings/$UUID/disposition
 ```
 
-Enforced rules (`422` on violation): the linked type must match the kind; `waiver`
+The response's `data` includes `adjusted_impact` (a number, or `null`).
+
+Enforced rules (`422` on violation): the linked type must match the kind; a
+`riskAdjustment` needs an `adjusted_impact` between 0 and 1; `waiver`
 / `operationalRequirement` need an *Authorizing Official* attestation; CRITICAL
 findings cannot be waived, downgraded, or marked operational (remediate or POA&M).
 

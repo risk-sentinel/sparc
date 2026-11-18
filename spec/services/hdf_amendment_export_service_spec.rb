@@ -222,10 +222,68 @@ RSpec.describe HdfAmendmentExportService do
   # The CLI is the authority on whether systemRef is a field an amendments
   # document may carry. Skipped, visibly, where no hdf binary exists (the CI
   # test runner — #835); the shipped image and a provisioned workstation run it.
+  # #1368 — hdf-cli 3.8.0 gates each override on its type: a riskAdjustment
+  # re-rates impact and may not carry a status, an operationalRequirement
+  # carries neither, and every other kind sets a status. 3.7.2 accepted a
+  # status on all seven.
+  describe "status and impact by kind" do
+    it "sends a riskAdjustment's adjusted impact and no status" do
+      dispositioned("CVE-1", kind: "riskAdjustment", adjusted_impact: 0.3)
+      override = service.export["overrides"].first
+
+      expect(override["impact"]).to eq({ "value" => 0.3 })
+      expect(override).not_to have_key("status")
+    end
+
+    it "sends an operationalRequirement with neither status nor impact" do
+      dispositioned("CVE-1", kind: "operationalRequirement")
+      override = service.export["overrides"].first
+
+      expect(override).not_to have_key("status")
+      expect(override).not_to have_key("impact")
+    end
+
+    it "sends every other kind with its status and no impact" do
+      %w[falsePositive waiver poam vendorDependency inherited].each_with_index do |kind, i|
+        dispositioned("CVE-#{i}", kind: kind)
+      end
+      service.export["overrides"].each do |override|
+        expect(override["status"]).to be_present, override["type"]
+        expect(override).not_to have_key("impact")
+      end
+    end
+
+    it "changes the amendment id when an adjusted impact changes" do
+      disp = dispositioned("CVE-1", kind: "riskAdjustment", adjusted_impact: 0.3)
+      before = service.export["amendmentId"]
+      disp.update!(adjusted_impact: 0.5)
+
+      expect(described_class.new(boundary.reload, runner: runner).export["amendmentId"]).not_to eq(before)
+    end
+  end
+
   describe "with the real hdf binary" do
     before do
       skip "hdf-cli not on PATH (see #835); run in the image or after script/dev/install-hdf.sh" \
         unless HdfSystemExportService.cli_available?
+    end
+
+    # #1368 — measured on hdf-cli 3.8.0: a status on a riskAdjustment or an
+    # operationalRequirement fails `hdf amend verify`, and so does a
+    # riskAdjustment without an impact. One of every kind, verified together.
+    #
+    # Except vendorDependency: it is a POA&M type in HDF, not an override type,
+    # and `hdf amend verify` refuses it on 3.7.2 and 3.8.0 alike (measured
+    # 2026-11-18). That predates #1368 and is left to its own decision.
+    it "passes `hdf amend verify` with one disposition of every exportable kind" do
+      kinds = FindingDisposition::KINDS - %w[vendorDependency]
+      kinds.each_with_index do |kind, i|
+        attrs = kind == "riskAdjustment" ? { adjusted_impact: 0.3 } : {}
+        dispositioned("CVE-K#{i}", kind: kind, **attrs)
+      end
+      doc = described_class.new(boundary, runner: HdfRunner.new).export
+
+      expect(doc["overrides"].map { |o| o["type"] }).to match_array(kinds)
     end
 
     it "passes `hdf amend verify` with systemRef and the uuid label" do

@@ -198,3 +198,47 @@ def test_disposition_form_stimulus_hint(authed_page, base_url):
     assert "PoamFinding" in hint.inner_text(), "Stimulus hint did not update for kind=poam"
 
     assert_no_csp_violations(page, during="HDF triage disposition form")
+
+
+def test_disposition_form_adjusted_impact(authed_page, base_url):
+    """#1368 — the adjusted impact field is offered for riskAdjustment only.
+
+    Shown and required for that kind; hidden and disabled for any other, so it
+    is never submitted with one (the server refuses it there).
+    """
+    page = authed_page
+    record_csp(page)
+
+    if not _open_triage(page, base_url):
+        pytest.skip("no authorization boundary available to triage")
+
+    ingested = False
+    if page.locator("details").count() == 0:
+        with tempfile.NamedTemporaryFile("w", suffix=".hdf.json", delete=False) as f:
+            json.dump(HDF_SAMPLE, f)
+            sample_path = f.name
+        page.locator("input[type='file']").first.set_input_files(sample_path)
+        page.get_by_role("button", name="Upload & Ingest").click()
+        page.wait_for_load_state("networkidle")
+        ingested = True
+
+    details = page.locator("details").first
+    if details.count() == 0:
+        assert not ingested, f"ingested an HDF sample but no finding appeared on {page.url}"
+        pytest.skip("no findings to disposition")
+
+    details.locator("summary").click()
+    kind_select = details.locator("select[data-hdf-triage-target='kind']")
+    impact = details.locator("input[name='adjusted_impact']")
+
+    kind_select.select_option("riskAdjustment")
+    assert impact.is_visible(), "adjusted impact is not shown for riskAdjustment"
+    assert impact.is_enabled(), "adjusted impact is disabled for riskAdjustment"
+    assert impact.evaluate("e => e.required"), "adjusted impact is not required for riskAdjustment"
+
+    kind_select.select_option("poam")
+    assert not impact.is_visible(), "adjusted impact is still shown for poam"
+    assert impact.is_disabled(), "adjusted impact would be submitted with poam"
+
+    assert_no_csp_violations(page, during="HDF triage adjusted impact field")
+

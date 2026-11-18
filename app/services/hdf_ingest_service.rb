@@ -157,12 +157,17 @@ class HdfIngestService
   end
 
   # Aggregate the control's per-result statuses to a single HDF control status.
+  #
+  # #1368 — as of hdf-cli 3.8.0 an impact of 0 no longer means notApplicable:
+  # the results decide. A clean scan's "no findings" record at impact 0 is
+  # `passed`. The one translation 3.8.0 keeps is InSpec's convention, a control
+  # scored 0 whose results are all `skipped`, which is notApplicable.
   def status_for(ctrl)
     statuses = Array(ctrl["results"]).filter_map { |r| r["status"].to_s.presence if r.is_a?(Hash) }
     return "failed" if statuses.include?("failed")
-    return "notApplicable" if ctrl["impact"].to_f.zero?
     return "passed" if statuses.include?("passed")
     return "error" if statuses.include?("error")
+    return "notApplicable" if statuses.any? && statuses.all?("skipped") && ctrl["impact"].to_f.zero?
     return "skipped" if statuses.any?
 
     "notApplicable"

@@ -8,7 +8,7 @@
 ARG RUBY_VERSION=3.4.12
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
-ARG HDF_LIBS_VERSION=3.7.2
+ARG HDF_LIBS_VERSION=3.8.0
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
@@ -119,6 +119,9 @@ WORKDIR /src/hdf-cli
 # to v0.42.0 even though hdf-cli/go.mod alone still says v0.39.0 — so the
 # release already clears the floor, nothing is forced, and the assertion below
 # reads what the emitted binary actually carries.
+#
+# 2026-11-18 (v1.17.9, #1368): hdf-libs v3.8.0 resolves x/text to v0.43.0
+# (measured on the emitted binary); the floor is unchanged.
 ARG XTEXT_VERSION=0.41.0
 
 # hadolint ignore=DL3003
