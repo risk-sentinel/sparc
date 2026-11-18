@@ -12,8 +12,7 @@ RSpec.describe "A profile importing two catalogs (#1234)" do
   let(:profile_path) { samples.join("custom-controls-profile.json") }
 
   let!(:nist) do
-    name = "NIST_SP-800-53_rev5_catalog.json"
-    CatalogImportService.call(File.open(fixtures.join("catalogs", name)), name)[:catalog]
+    imported_catalog("NIST_SP-800-53_rev5_catalog.json")
   end
   let!(:custom) do
     CatalogImportService.call(File.open(samples.join("custom-controls-catalog.json")), "custom-controls-catalog.json")[:catalog]
@@ -158,8 +157,7 @@ RSpec.describe "A two-catalog profile in every format (#1234)" do
   let(:data) { JSON.parse(File.read(samples.join("custom-controls-profile.json"))) }
 
   let!(:nist) do
-    name = "NIST_SP-800-53_rev5_catalog.json"
-    CatalogImportService.call(File.open(fixtures.join("catalogs", name)), name)[:catalog]
+    imported_catalog("NIST_SP-800-53_rev5_catalog.json")
   end
   let!(:custom) do
     CatalogImportService.call(File.open(samples.join("custom-controls-catalog.json")), "custom-controls-catalog.json")[:catalog]
