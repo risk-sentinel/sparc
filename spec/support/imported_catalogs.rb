@@ -26,10 +26,18 @@
 #   - the catalogs already in the database are not the ones present when the
 #     copy was taken (an import may merge into, or read, what is there);
 #   - the rows cannot be put back as they were (their ids are taken).
+# A copy is only kept from an import into a database whose catalogs are all
+# kept copies themselves (or that has none), and never from an import that
+# merged into a catalog already there: such an import mostly UPDATES rows, and
+# only the rows an import adds are kept.
 #
-# Specs of the importer itself should call CatalogImportService directly.
+# Specs of the importer itself tag their group `:imports_this_run`. They may
+# read a copy, but only one made by an import in this same run, never one read
+# from the CI cache: on a cache hit the importer would otherwise not run in the
+# very specs that test it. Examples about importing as such (a re-import, a
+# database that already holds the catalog) call CatalogImportService directly.
 module ImportedCatalogs
-  Snapshot = Struct.new(:catalog_id, :counts, :max_ids, :tables, keyword_init: true)
+  Snapshot = Struct.new(:catalog_id, :counts, :max_ids, :tables, :from_cache, keyword_init: true)
   CACHE_FILE = "imported_catalogs.v1.bin"
 
   FIXTURES = Rails.root.join("spec/fixtures/files/catalogs")
@@ -37,14 +45,18 @@ module ImportedCatalogs
   class << self
     def snapshots = (@snapshots ||= load_cache)
 
-    # Counts for the run summary and for specs of this module.
+    # Counts for the summary line and for specs of this module.
     def stats = (@stats ||= Hash.new(0))
 
-    def fetch(name)
+    # `this_run: true` refuses a copy read from the cache file.
+    def fetch(name, this_run: false)
       connection = ActiveRecord::Base.connection
-      key = [ name, present_catalogs(connection) ]
+      present = present_catalogs(connection)
+      key = [ name, present ]
+      snapshot = snapshots[key]
+      snapshot = nil if this_run && snapshot&.from_cache
 
-      if (snapshot = snapshots[key]) && restore(connection, snapshot)
+      if snapshot && restore(connection, snapshot)
         stats[:restored] += 1
         return snapshot.counts.merge(catalog: ControlCatalog.find(snapshot.catalog_id))
       end
@@ -52,13 +64,22 @@ module ImportedCatalogs
       before = max_ids(connection)
       result = CatalogImportService.call(File.open(FIXTURES.join(name)), name)
       stats[:imported] += 1
-      unless snapshots.key?(key)
+      if snapshot.nil? && keepable?(present, result)
         after = max_ids(connection)
         snapshots[key] = Snapshot.new(catalog_id: result.fetch(:catalog).id, counts: result.except(:catalog),
-                                      max_ids: after, tables: capture(connection, before, after))
+                                      max_ids: after, tables: capture(connection, before, after), from_cache: false)
         @unsaved = true
       end
       result
+    end
+
+    # One line after the run, so a run that quietly fell back to importing
+    # every time (restores failing, or nothing ever reusable) can be seen.
+    def summary
+      return if stats.empty?
+
+      "ImportedCatalogs: #{stats[:imported]} imported, #{stats[:restored]} put back, " \
+        "#{stats[:restore_failed]} could not be put back"
     end
 
     # Writes the kept rows for the next run, when a cache directory is set and
@@ -67,13 +88,20 @@ module ImportedCatalogs
       return unless cache_path && @unsaved
 
       FileUtils.mkdir_p(cache_path.dirname)
-      data = snapshots.transform_values(&:to_h)
+      data = snapshots.transform_values { |snapshot| snapshot.to_h.except(:from_cache) }
       File.binwrite("#{cache_path}.tmp", Zlib::Deflate.deflate(Marshal.dump(data), Zlib::BEST_SPEED))
       File.rename("#{cache_path}.tmp", cache_path)
       @unsaved = false
     end
 
     private
+
+    # See the header: only an import that added a new catalog beside kept ones.
+    def keepable?(present, result)
+      kept_ids = snapshots.each_value.map(&:catalog_id)
+      present.none? { |id, _| id.to_i == result.fetch(:catalog).id } &&
+        present.all? { |id, _| kept_ids.include?(id.to_i) }
+    end
 
     def cache_path
       dir = ENV["IMPORTED_CATALOGS_CACHE"].presence
@@ -88,7 +116,7 @@ module ImportedCatalogs
 
       connection = ActiveRecord::Base.connection
       loaded = Marshal.load(Zlib::Inflate.inflate(File.binread(cache_path))) # rubocop:disable Security/MarshalLoad -- a file this module wrote
-      loaded.transform_values { |attributes| Snapshot.new(**attributes) }.each_value do |snapshot|
+      loaded.transform_values { |attributes| Snapshot.new(**attributes, from_cache: true) }.each_value do |snapshot|
         snapshot.max_ids.each do |table, max|
           sequence = connection.select_value("SELECT pg_get_serial_sequence(#{connection.quote(table)}, 'id')") or next
           connection.execute("SELECT setval('#{sequence}', GREATEST(#{max.to_i}, (SELECT last_value FROM #{sequence})))")
@@ -174,11 +202,14 @@ module ImportedCatalogs
   # The whole hash CatalogImportService.call(file, name) returns: the catalog
   # and the importer's counts (families, controls, created, updated).
   def imported_catalog_result(name)
-    ImportedCatalogs.fetch(name)
+    ImportedCatalogs.fetch(name, this_run: RSpec.current_example&.metadata&.fetch(:imports_this_run, false) || false)
   end
 end
 
 RSpec.configure do |config|
   config.include ImportedCatalogs
-  config.after(:suite) { ImportedCatalogs.save_cache }
+  config.after(:suite) do
+    ImportedCatalogs.save_cache
+    ImportedCatalogs.summary&.then { |line| config.reporter.message(line) }
+  end
 end
