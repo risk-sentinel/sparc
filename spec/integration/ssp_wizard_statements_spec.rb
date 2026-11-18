@@ -14,8 +14,7 @@ RSpec.describe "SSP wizard, from the tailored Rev 5 baseline", type: :request do
   let(:boundary) { create(:authorization_boundary) }
 
   let!(:nist) do
-    CatalogImportService.call(File.open(fixtures.join("catalogs/NIST_SP-800-53_rev5_catalog.json")),
-                              "NIST_SP-800-53_rev5_catalog.json")[:catalog].tap do |catalog|
+    imported_catalog("NIST_SP-800-53_rev5_catalog.json").tap do |catalog|
       catalog.update_columns(lifecycle_status: "published")
     end
   end
