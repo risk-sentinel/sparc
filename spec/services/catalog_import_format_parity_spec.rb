@@ -10,7 +10,7 @@ require "rails_helper"
 # path (XML and YAML are converted to the JSON model first), and these examples
 # hold them to one result: identical parts, `guidance_data` and `params_data`,
 # `values` included.
-RSpec.describe "catalog import: JSON, YAML and XML agree" do
+RSpec.describe "catalog import: JSON, YAML and XML agree", :imports_this_run do
   # Each format is imported inside a savepoint and rolled back, so the three
   # imports cannot see each other's rows: a row one format failed to write can
   # not be supplied by another.
