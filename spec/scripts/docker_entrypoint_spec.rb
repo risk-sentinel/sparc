@@ -7,8 +7,9 @@ require "tmpdir"
 # #1151 — the boot gate: a web container whose schema does not match its image
 # never starts its server.
 #
-# Runs the REAL bin/docker-entrypoint with `pg_isready`, `bundle` and `rails`
-# replaced on PATH by stubs that record their arguments. So what is asserted is
+# Runs the REAL bin/docker-entrypoint with `bundle` and `rails` replaced on
+# PATH by stubs that record their arguments (the readiness check goes through
+# `bundle exec ruby` since #1368). So what is asserted is
 # the script's own control flow — the order of the steps, and that a failed
 # schema gate stops the container before `exec` — without a database or an
 # image. What the rake tasks themselves do is covered by their own specs.
@@ -17,7 +18,6 @@ RSpec.describe "bin/docker-entrypoint" do
     Dir.mktmpdir("entrypoint") do |dir|
       @dir = dir
       @log = File.join(dir, "calls.log")
-      stub("pg_isready", "exit 0")
       # Fails the call whose arguments match $FAIL_ON, records every call.
       stub("bundle", <<~SH)
         echo "bundle $*" >> "#{@log}"
@@ -53,6 +53,34 @@ RSpec.describe "bin/docker-entrypoint" do
     expect([ prepare, gate, server ]).to all(be_an(Integer))
     expect(prepare).to be < gate
     expect(gate).to be < server
+  end
+
+  # #1368 — the image no longer ships pg_isready; readiness is libpq's PQping
+  # through the pg gem, against the configured host and port, before anything
+  # touches the database.
+  it "waits for the database through libpq's ping, before db:prepare" do
+    _output, status, calls = boot("rails", "server")
+
+    expect(status).to be_success
+    ping = calls.index { |c| c.include?("PG::Connection.ping") && c.end_with?(" db 5432") }
+    expect(ping).to be_an(Integer), calls.inspect
+    expect(ping).to be < calls.index("bundle exec rails db:prepare")
+  end
+
+  it "keeps waiting while the ping says the database is not ready" do
+    stub("bundle", <<~SH)
+      echo "bundle $*" >> "#{@log}"
+      if [[ "$*" == *"PG::Connection.ping"* ]]; then
+        n=$(cat "#{@dir}/pings" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "#{@dir}/pings"
+        [ "$n" -ge 2 ] || exit 1
+      fi
+      exit 0
+    SH
+    output, status, = boot("rails", "server")
+
+    expect(status).to be_success
+    expect(output).to include("Postgres is not ready yet")
+    expect(File.read(File.join(@dir, "pings")).to_i).to eq(2)
   end
 
   it "gates the schema BEFORE seeding, which assumes the schema is there" do
