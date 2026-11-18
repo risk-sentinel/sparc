@@ -20,6 +20,7 @@ Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so
   - **`hdf-system` documents** now target schema v3.8.0.
 - **SAF CLI 1.8.0** ([#1362](https://github.com/risk-sentinel/sparc/issues/1362)) in the security pipeline, from MITRE's release image pinned by digest.
 - **Security updates:**
+  - The image no longer ships the PostgreSQL client tools (`psql`, `pg_dump` and the rest); the entrypoint checks database readiness through libpq. On 2026-11-18 those packages carried 37 PostgreSQL advisories with no upstream fix, nearly all for the database server.
   - The image moves to the Red Hat UBI 10.3 base, with Red Hat's `openssl` fix.
   - `krb5-libs` takes Red Hat's fix on arm64. Red Hat hasn't published it for x86_64 yet, and the next amd64 image after it does takes it.
   - Go 1.26.11 for the bundled `hdf` tool.
