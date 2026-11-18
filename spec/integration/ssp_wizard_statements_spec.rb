@@ -74,7 +74,7 @@ RSpec.describe "SSP wizard, from the tailored Rev 5 baseline", type: :request do
     end
     # #1312 — each item that takes a response is answered in the control's Edit
     # form; a lead-in (ac-1a) is a heading there with no inputs.
-    form = page.at_css("form[action='#{ssp_document_path(ssp)}'] [data-testid='part-responses']")
+    form = page.at_css("form[action='#{ssp_document_path(ssp)}']")&.at_css("[data-testid='part-responses']")
     %w[ac-1_smt.b ac-1_smt.c.1].each do |part|
       expect(form.at_css("[data-part-response='#{part}'] textarea")).to be_present, part
     end
