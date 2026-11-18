@@ -182,8 +182,19 @@ jobs:
           DATABASE_URL: postgres://unused@127.0.0.1:1/unused
         run: bin/api_postman_check.rb
 
-  test:
+  # The suite, split over SPEC_SHARDS runners. Each runs its share of the spec
+  # files (script/ci/spec_shard.rb deals them out by measured time) against its
+  # own Postgres, so nothing is shared between shards. The `test` job below
+  # joins them: it is the required check, and it applies the coverage floor.
+  test_shard:
+    name: test (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ 0, 1, 2, 3 ]
+    env:
+      SPEC_SHARDS: 4
     # 30 -> 45 (v1.17.2): the suite outgrew 30 minutes at ~7,800 examples and
     # main timed out on every run from 2026-10-17.
     # 45 -> 60 (v1.17.2): at ~8,200 examples main ran 37-40 minutes and a PR
@@ -314,14 +325,20 @@ jobs:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
           COVERAGE: "1"
+          SPEC_SHARD: ${{ matrix.shard }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare && bundle exec rspec --format documentation
+        run: |
+          set -euo pipefail
+          bin/rails db:test:prepare
+          script/ci/spec_shard.rb "${SPEC_SHARD}" "${SPEC_SHARDS}" > tmp/shard_files.txt
+          xargs bundle exec rspec --format documentation < tmp/shard_files.txt
 
       # The point of installing hdf was that the translation specs stop
       # skipping. A build that succeeds while the specs still skip would look
       # identical to success, so assert it rather than assume it — the whole
       # subject of this milestone.
       - name: Assert the HDF translation specs were not skipped
+        if: matrix.shard == 0
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
@@ -336,22 +353,74 @@ jobs:
             exit 1
           fi
 
-      - name: Upload coverage report
+      # This shard's raw coverage; the `test` job merges the shards into the report.
+      - name: Upload this shard's coverage
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
-          name: coverage-report
-          path: coverage/
+          name: coverage-shard-${{ matrix.shard }}
+          path: coverage/.resultset.json
+          include-hidden-files: true
           if-no-files-found: ignore
-          retention-days: 90
+          retention-days: 1
 
       - name: Keep screenshots from failed system tests
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:
-          name: screenshots
+          name: screenshots-${{ matrix.shard }}
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  # The required check. Passes when every shard passed (or the suite was not
+  # needed for this change) and the merged coverage clears the floor.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [ test_shard ]
+    if: always()
+    steps:
+      - name: Every shard passed
+        env:
+          SHARDS: ${{ needs.test_shard.result }}
+        run: |
+          echo "test shards: ${SHARDS}"
+          case "${SHARDS}" in
+            success) ;;
+            skipped) echo "the suite was not needed for this change" ;;
+            *) echo "::error::a test shard did not pass (${SHARDS})"; exit 1 ;;
+          esac
+
+      - name: Checkout code
+        if: needs.test_shard.result == 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        if: needs.test_shard.result == 'success'
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Download the shards' coverage
+        if: needs.test_shard.result == 'success'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: coverage-shard-*
+          path: coverage-shards
+
+      - name: Merge coverage and apply the floor
+        if: needs.test_shard.result == 'success'
+        run: bundle exec ruby script/ci/coverage_collate.rb coverage-shards/*/.resultset.json
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always() && needs.test_shard.result == 'success'
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 90
 
   # ── SonarCloud analysis, with COVERAGE (#966) ────────────────────────────────
   #

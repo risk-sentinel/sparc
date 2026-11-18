@@ -29,6 +29,10 @@ if ENV["COVERAGE"]
     #   coverage/coverage.json    — JSON report for SCA tools
     coverage_dir "coverage"
 
+    # One CI shard of several (SPEC_SHARD, set by ci.yml): name the result so
+    # the shards' results merge instead of replacing each other.
+    command_name "rspec-shard-#{ENV["SPEC_SHARD"]}" if ENV["SPEC_SHARD"]
+
     # #927 — `add_filter`/`add_group` are deprecated delegating aliases in
     # simplecov 1.1.1 (`skip`/`group`, same arguments, same behaviour). They
     # emitted eight [DEPRECATION] lines at the top of every run.
@@ -58,7 +62,10 @@ if ENV["COVERAGE"]
     # Threshold is enforced only when CI=true (full suite) so developers
     # running individual specs locally don't trip the floor on partial
     # runs. CI runs the full suite; the gate fires there.
-    minimum_coverage 70 if ENV["CI"]
+    #
+    # A shard runs part of the suite, so the floor is applied to the merged
+    # total instead (script/ci/coverage_collate.rb, same number).
+    minimum_coverage 70 if ENV["CI"] && !ENV["SPEC_SHARD"]
   end
 end
 
