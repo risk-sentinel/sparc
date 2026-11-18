@@ -94,13 +94,14 @@ RSpec.describe "SSP items, each answered in full (#1312)", type: :request do
       sar.sar_controls.find_by(control_id: "ac-1").sar_control_objectives
          .find_by(objective_id: "ac-1_obj.a.1.a-2").update!(status: "failed")
 
-      block = edit_form("ac-1").at_css("[data-part-response='ac-1_smt.a.1.a']")
+      form = edit_form("ac-1")
+      block = form.at_css("[data-part-response='ac-1_smt.a.1.a']")
       listed = block.css("[data-objective-id]")
       expect(listed.map { _1["data-objective-id"] }).to eq((1..7).map { "ac-1_obj.a.1.a-#{_1}" })
       expect(block.at_css("[data-objective-id='ac-1_obj.a.1.a-2']").text).to include("Assessor: failed")
       expect(block.css("[data-objective-id] input, [data-objective-id] select")).to be_empty
 
-      lead_in = edit_form("ac-1").at_css("[data-lead-in='ac-1_smt.a']")
+      lead_in = form.at_css("[data-lead-in='ac-1_smt.a']")
       expect(lead_in.css("[data-objective-id]").size).to eq(4)
     end
   end
