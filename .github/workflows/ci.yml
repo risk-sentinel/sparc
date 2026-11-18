@@ -294,6 +294,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
+          cache: false  # no go.mod here: Go only builds hdf, which has its own cache below
 
       # The binary this job built before, for exactly these inputs. The key
       # names the Go release setup-go RESOLVED, not the line asked for, so a new
