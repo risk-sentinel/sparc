@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -738,6 +738,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_120000) do
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.datetime "valid_until"
+    t.decimal "adjusted_impact", precision: 3, scale: 2
     t.index ["approval_status"], name: "index_finding_dispositions_on_approval_status"
     t.index ["approved_by_user_id"], name: "index_finding_dispositions_on_approved_by_user_id"
     t.index ["authorization_boundary_id", "control_id"], name: "index_finding_dispositions_on_boundary_and_control", unique: true

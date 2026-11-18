@@ -48,6 +48,42 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
   describe "POST .../disposition" do
+    # #1368 — a riskAdjustment carries the re-rated impact hdf-cli 3.8.0 requires.
+    describe "adjusted impact" do
+      let(:assessment) { create(:risk_assessment, authorization_boundary: boundary) }
+
+      it "creates a riskAdjustment with its adjusted impact and reads it back" do
+        post path, params: { kind: "riskAdjustment", reason: "compensating control", adjusted_impact: 0.3,
+                             linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(response.parsed_body.dig("data", "adjusted_impact")).to eq(0.3)
+      end
+
+      it "refuses a riskAdjustment without one" do
+        post path, params: { kind: "riskAdjustment", reason: "compensating control",
+                             linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(FindingDisposition.count).to eq(0)
+      end
+
+      it "refuses one on any other kind" do
+        set_disposition
+        expect(response).to have_http_status(:created)
+        post path, params: { kind: "inherited", reason: "x", adjusted_impact: 0.3,
+                             linked_subject_type: "AuthorizationBoundary", linked_subject_id: inherited_from.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
     it "creates a disposition and reads back what was sent" do
       expect { set_disposition }.to change(FindingDisposition, :count).by(1)
 

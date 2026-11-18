@@ -1,7 +1,7 @@
 # HDF System API
 
 Export an authorization boundary as an HDF **`hdf-system`** document (schema
-v3.7.0; SPARC pins hdf-libs 3.7.2, which embeds the same schema). Added in #1179.
+v3.8.0; SPARC pins hdf-libs 3.8.0, which embeds the same schema). Added in #1179.
 
 `hdf-system` is the document every other HDF v3 document points at through
 `systemRef` — results, amendments, evidence packages. It states what the
@@ -159,8 +159,8 @@ Every document is validated before it is returned, and an invalid one is never
 returned:
 
 1. **In process**, against the vendored schema
-   `lib/data/hdf/hdf-system.v3.7.0.schema.json` — byte-for-byte the bundled
-   schema the hdf-libs v3.7.0 CLI embeds (provenance in the sidecar next to it).
+   `lib/data/hdf/hdf-system.v3.8.0.schema.json` — byte-for-byte the bundled
+   schema the hdf-libs v3.8.0 CLI embeds (provenance in the sidecar next to it).
 2. **`hdf validate --type system`**, whenever the `hdf` binary is present (it is
    in the shipped image).
 

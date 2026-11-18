@@ -14,11 +14,13 @@
 # Prerequisites:
 #   - Docker (for container scanning)
 #   - Trivy (auto-installed if missing via direct binary download)
-#   - Node 22+ AND SAF CLI ≥1.6.0 (optional, for HDF conversion):
-#       npm install -g @mitre/saf@1.6.0
-#     Note (#463): @mitre/saf transitively requires Node ≥22. On Node 20.x
-#     install completes with an EBADENGINE warning but cyclonedx_sbom2hdf
-#     and anchoregrype2hdf will silently fail at runtime.
+#   - SAF CLI 1.8.0 (optional, for HDF conversion), as CI runs it: MITRE's
+#     image, pinned by digest (#1368):
+#       script/ci/install_saf_image.sh "$HOME/.local/saf-bin" \
+#         mitre/saf@sha256:32bf20bb674286d2b420be8c6f5acf60e5ecf572d6e9052d4e70c39f6ee3c49d
+#     and put that directory on PATH. Run saf from inside the repo: the
+#     container sees only the working directory. (npm's @mitre/saf@1.8.0
+#     works too, on Node ≥24.22.1.)
 #
 # Output files are written to docs/hdf/ (gitignored).
 # ============================================================================

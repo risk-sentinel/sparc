@@ -2,7 +2,7 @@
 
 require "stringio"
 
-# #1179 — mint an HDF `hdf-system` document (schema v3.7.0) for an
+# #1179 — mint an HDF `hdf-system` document (schema v3.8.0, #1368) for an
 # authorization boundary.
 #
 # hdf-system is the document every other HDF v3 document points at through

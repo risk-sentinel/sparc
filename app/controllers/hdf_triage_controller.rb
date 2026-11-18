@@ -108,7 +108,8 @@ class HdfTriageController < ApplicationController
       # #1034 — the identity separation of duties is enforced on. Without it the
       # guard is inert for anything decided through this screen.
       decided_by_user: current_user,
-      linked_subject: subject, expiration: params[:expiration].presence
+      linked_subject: subject, expiration: params[:expiration].presence,
+      adjusted_impact: params[:adjusted_impact].presence
     )
     redirect_to triage_path, success: "Disposition saved for #{finding.control_id}."
   rescue FindingDispositionService::DispositionError => e

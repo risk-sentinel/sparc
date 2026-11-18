@@ -5,7 +5,7 @@ require "stringio"
 
 # #447 — translation OUT. Database-backed port of
 # bin/sparc_findings_to_hdf_amendments.rb: emit an HDF Amendments document
-# (schema v3.7.0 — HdfRunner::PINNED_VERSION) from the FindingDispositions for a
+# (HdfRunner::PINNED_VERSION, #1368) from the FindingDispositions for a
 # boundary, for the tenant's CI to `hdf amend apply` against their own scan
 # results.
 #
@@ -27,7 +27,7 @@ require "stringio"
 # naturally drops from the amendment, which is exactly what a translation layer
 # should do.
 #
-# Our FindingDisposition.kind values ARE the v3.7.0 override type names, so a kind
+# Our FindingDisposition.kind values ARE the HDF override type names, so a kind
 # maps straight to `override.type`.
 #
 # NIST 800-53: CA-7 (continuous monitoring), SI-2 (flaw remediation),
@@ -154,17 +154,31 @@ class HdfAmendmentExportService
       override = {
         "type"          => d.kind,
         "requirementId" => d.control_id,
-        "status"        => d.hdf_status,
         "reason"        => d.reason,
         "appliedBy"     => identity_for(d.decided_by),
         "appliedAt"     => (d.decided_at || d.created_at).utc.iso8601
       }
+      override.merge!(status_or_impact(d))
       override["expiresAt"] = d.expiration.utc.iso8601 if d.expiration
       override
     end
     # Tamper-evidence. Without it `hdf amend verify` reports "Chain: not
     # established" and an override edited after export goes undetected.
     Hdf::AmendmentChain.chain!(overrides)
+  end
+
+  # #1368 — hdf-cli 3.8.0 gates the override on its type:
+  #   * riskAdjustment re-rates the finding through `impact` and may not carry
+  #     a status;
+  #   * operationalRequirement records accepted risk and carries neither;
+  #   * every other kind sets a status, as before.
+  # 3.7.2 accepted a status on all seven, so this export wrote one on each.
+  def status_or_impact(disposition)
+    case disposition.kind
+    when "riskAdjustment" then { "impact" => { "value" => disposition.adjusted_impact.to_f } }
+    when "operationalRequirement" then {}
+    else { "status" => disposition.hdf_status }
+    end
   end
 
   # Both the vocabulary and the chain live in Hdf::AmendmentChain, shared with
@@ -179,7 +193,11 @@ class HdfAmendmentExportService
   # Same dispositions → same id, so tenants can pin the artefact in a CI cache.
   def deterministic_id(overrides)
     seed = overrides.map do |o|
-      [ o["type"], o["requirementId"], o["status"], o["reason"], o["expiresAt"] ].join("|")
+      fields = [ o["type"], o["requirementId"], o["status"], o["reason"], o["expiresAt"] ]
+      # #1368 — appended only when present, so an export with no
+      # riskAdjustment keeps the id it had before the field existed.
+      fields << o.dig("impact", "value") if o.key?("impact")
+      fields.join("|")
     end.join("\n")
     Digest::UUID.uuid_v5(NAMESPACE_UUID, "#{@boundary.uuid}:#{seed}")
   end

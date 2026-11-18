@@ -396,13 +396,14 @@ so the build takes the newest krb5-libs each architecture's repo serves, with no
 (owner, option B). The amd64 residual is 14 krb5 HIGHs with requested deviations, reviewed weekly.
 #1353 stays on `release-1.18.0-rf` and takes the same register text after this merges.
 
-#1371 joined v1.17.9 before its tag (owner, 2026-11-18), on `bug/1371_resolved_export_live`, and is
+#1371, then hdf-cli 3.8.0 and SAF CLI 1.8.0 (#1368, #1362), joined v1.17.9 before its tag (owner, 2026-11-18), on `bug/1371_resolved_export_live`, and is
 carried onto `release-1.18.0-rf` in #1353.
 
 | Issue | What | Decisions (owner, 2026-11-10) |
 |---|---|---|
 | **#1357** | Priority codes are not part of NIST SP 800-53 Rev 5 or 800-53B. Publishing a baseline no longer requires a priority (publish step, readiness check and Publish dialog); `ProfilePriorityAssignmentService` copies the catalog control's own P1–P3 or assigns none, instead of deriving one from baseline breadth; an unset priority shows "—", not an amber warning. The deferred data migration `ClearInventedProfilePriorities` clears the derived values on existing baselines and keeps any a person set (bulk/inline edit, or any edit-form save), a catalog carried or an imported file brought; one audit event per baseline lists what it cleared. Takes the krb5-libs, Go 1.26.11, msgpack 1.8.7 and puma 8.0.3 fixes, and the 2026-11-09 GitHub Actions pin updates (#1356). Carries the two sqlite-libs register entries (CVE-2026-119379, CVE-2026-119374) `main` needs for its security gate. | Apply to existing baselines, published included (stored resolved catalog untouched until the next publish); an edit-form save counts as a choice; P0 and the parameter check out of scope |
 | **#1371** | Export > JSON (Resolved) served the resolved catalog stored at publish or import, and Create Editable Copy duplicates it, so a parameter saved on a draft never reached it. A draft linked to a catalog is now resolved at download (`OscalResolvedProfileCatalogService`, as at publish); a published baseline serves its stored file. Publish resolves every baseline again, an imported resolved profile included. | Imported resolved profiles are rebuilt at publish too, and need a linked catalog to publish (2026-11-18) |
+| **#1368 / #1362** | hdf-cli 3.7.2 → 3.8.0 and SAF CLI 1.7.0 → 1.8.0 (MITRE's image, pinned by digest). Forced by 3.8.0: `HdfIngestService` no longer reads impact 0 as notApplicable; grype ignore-rule matches are marked skipped so they stay notApplicable (`bin/hdf_mark_grype_ignored.rb`); the hdf-system schema is re-vendored at v3.8.0; a riskAdjustment disposition carries `adjusted_impact` (new column) and exports it as `impact` with no status, and an operationalRequirement exports neither. | SAF from the image, not npm, so the seven-day soak stays (option A); scope is the version moves and what they force; adjusted impact added now (owner, 2026-11-18) |
 
 ---
 

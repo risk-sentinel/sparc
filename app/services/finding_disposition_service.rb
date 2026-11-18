@@ -79,7 +79,8 @@ class FindingDispositionService
     raise DispositionError, "Linked #{type} ##{id} not found"
   end
 
-  def upsert(kind:, reason:, decided_by:, decided_by_user: nil, linked_subject: nil, expiration: nil)
+  def upsert(kind:, reason:, decided_by:, decided_by_user: nil, linked_subject: nil, expiration: nil,
+             adjusted_impact: nil)
     validate_kind!(kind)
     validate_severity!(kind)
     validate_linkage!(kind, linked_subject)
@@ -89,7 +90,8 @@ class FindingDispositionService
     )
     disposition.assign_attributes(
       kind: kind, reason: reason, decided_by: decided_by, decided_by_user: decided_by_user,
-      linked_subject: linked_subject, expiration: expiration, decided_at: Time.current
+      linked_subject: linked_subject, expiration: expiration, decided_at: Time.current,
+      adjusted_impact: adjusted_impact
     )
     # Editing a disposition resets its approval; it must be re-approved.
     # #1034 — the approver identity clears with the rest of it, or an edited
@@ -197,7 +199,11 @@ class FindingDispositionService
       disposition.authorization_boundary_id, disposition.control_id, disposition.kind,
       disposition.reason, disposition.linked_subject_type, disposition.linked_subject_id,
       disposition.expiration&.utc&.iso8601, disposition.decided_by
-    ].join("|")
+    ]
+    # #1368 — bound into the signature only when set, so every disposition
+    # signed before the field existed (none carry one) keeps its signature.
+    payload << disposition.adjusted_impact.to_d.round(2).to_s("F") unless disposition.adjusted_impact.nil?
+    payload = payload.join("|")
     Digest::SHA256.hexdigest(payload)
   end
 end
