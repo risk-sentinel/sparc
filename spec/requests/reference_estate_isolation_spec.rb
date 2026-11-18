@@ -65,35 +65,35 @@ RSpec.describe "Reference estate boundary isolation (#845)", type: :request do
     sar:  ->(side) { side[:sar] }
   }.freeze
 
+  # The estate takes a few seconds to build and every request here only reads
+  # it, so the requests one reader makes about one kind of document share an
+  # example (and so one estate). `aggregate_failures` reports each claim that
+  # fails by its own message instead of stopping at the first.
   describe "the leveraging boundary cannot read the leveraged boundary's documents" do
     DOCUMENT_TYPES.each do |kind, fetch|
-      it "blocks a direct URL to the provider's #{kind.upcase}" do
+      it "blocks the provider's #{kind.upcase} by URL and in the index, and still serves the consumer's own",
+         :aggregate_failures do
         document = fetch.call(provider)
         expect(document).to be_present, "estate did not build a #{kind}"
 
         sign_in_as(consumer_reader)
+
         get send(:"#{kind}_document_path", document)
+        expect(response).to have_http_status(:redirect), "a direct URL to the provider's #{kind} was not blocked"
 
-        expect(response).to have_http_status(:redirect)
-      end
-
-      it "still allows the consumer their own #{kind.upcase}" do
-        sign_in_as(consumer_reader)
         get send(:"#{kind}_document_path", fetch.call(consumer))
+        expect(response).to have_http_status(:ok), "the consumer could not read their own #{kind}"
 
-        expect(response).to have_http_status(:ok)
-      end
-
-      it "omits the provider's #{kind.upcase} from the index" do
-        sign_in_as(consumer_reader)
         get send(:"#{kind}_documents_path")
-
         expect(response.body).to include(html_text(fetch.call(consumer).name))
         expect(response.body).not_to include(html_text(fetch.call(provider).name))
       end
     end
 
-    it "blocks a direct URL to each of the provider's POA&Ms" do
+    # Every POA&M name contains an ampersand, so a raw comparison of the index
+    # would pass vacuously in BOTH directions — the provider check would never
+    # fail and the consumer check always would. See HtmlEscapingHelpers.
+    it "blocks each of the provider's POA&Ms by URL and omits them from the index", :aggregate_failures do
       poams = provider[:poams]
       expect(poams).to be_present
 
@@ -102,15 +102,8 @@ RSpec.describe "Reference estate boundary isolation (#845)", type: :request do
         get poam_document_path(poam)
         expect(response).to have_http_status(:redirect), "#{poam.name} was readable"
       end
-    end
 
-    # Every POA&M name contains an ampersand, so a raw comparison here would
-    # pass vacuously in BOTH directions — the provider check would never fail
-    # and the consumer check always would. See HtmlEscapingHelpers.
-    it "omits the provider's POA&Ms from the index" do
-      sign_in_as(consumer_reader)
       get poam_documents_path
-
       provider[:poams].each { |poam| expect(response.body).not_to include(html_text(poam.name)) }
       consumer[:poams].each { |poam| expect(response.body).to include(html_text(poam.name)) }
     end
@@ -120,38 +113,30 @@ RSpec.describe "Reference estate boundary isolation (#845)", type: :request do
   # controllers above — a scoping fix applied to one has more than once left
   # the other open.
   describe "the API scopes the estate the same way" do
-    it "does not list the provider's SSP for a consumer-scoped reader" do
-      get api_v1_ssp_documents_path, headers: api_headers_for(consumer_reader)
+    it "lists and serves a consumer-scoped reader their own SSP, and neither lists nor serves the provider's",
+       :aggregate_failures do
+      headers = api_headers_for(consumer_reader)
 
+      get api_v1_ssp_documents_path, headers: headers
       names = JSON.parse(response.body).fetch("data", []).map { |d| d["name"] }
       expect(names).to include(consumer[:ssp].name)
       expect(names).not_to include(provider[:ssp].name)
-    end
 
-    it "refuses a direct API fetch of the provider's SSP" do
-      get api_v1_ssp_document_path(provider[:ssp]), headers: api_headers_for(consumer_reader)
-
+      get api_v1_ssp_document_path(provider[:ssp]), headers: headers
       expect(response).to have_http_status(:not_found).or have_http_status(:forbidden)
-    end
 
-    it "serves the consumer their own SSP over the API" do
-      get api_v1_ssp_document_path(consumer[:ssp]), headers: api_headers_for(consumer_reader)
-
+      get api_v1_ssp_document_path(consumer[:ssp]), headers: headers
       expect(response).to have_http_status(:ok)
     end
   end
 
   describe "an outsider to both organizations" do
-    it "sees neither boundary's SSP" do
+    it "sees neither boundary's SSP in the index and cannot open either directly", :aggregate_failures do
       sign_in_as(outsider)
-      get ssp_documents_path
 
+      get ssp_documents_path
       expect(response.body).not_to include(provider[:ssp].name)
       expect(response.body).not_to include(consumer[:ssp].name)
-    end
-
-    it "cannot open either SSP directly" do
-      sign_in_as(outsider)
 
       get ssp_document_path(provider[:ssp])
       expect(response).to have_http_status(:redirect)
