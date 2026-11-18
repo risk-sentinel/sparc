@@ -189,12 +189,17 @@ jobs:
   test_shard:
     name: test (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
+    # The matrix list is the ONLY place the number of shards is written. Which
+    # files a shard runs comes from its position in the matrix and the matrix's
+    # size (strategy.job-index, strategy.job-total), so adding an entry adds a
+    # shard and nothing can ask for a shard that does not exist.
     strategy:
       fail-fast: false
       matrix:
         shard: [ 0, 1, 2, 3 ]
     env:
-      SPEC_SHARDS: 4
+      SPEC_SHARD: ${{ strategy.job-index }}
+      SPEC_SHARDS: ${{ strategy.job-total }}
     # 30 -> 45 (v1.17.2): the suite outgrew 30 minutes at ~7,800 examples and
     # main timed out on every run from 2026-10-17.
     # 45 -> 60 (v1.17.2): at ~8,200 examples main ran 37-40 minutes and a PR
@@ -204,7 +209,10 @@ jobs:
     # rising with each bundle, then 58.7 on PR #1262. Room until the parallel
     # run (#1256) and the test audit (#1264) land. `TIMEOUT_MIN` in
     # required-passed.yml waits on this job and must stay above it.
-    timeout-minutes: 75
+    # 75 -> 45 with the split: a shard runs a quarter of the suite (4 to 7
+    # minutes of tests when measured), and this plus the `test` job below (15)
+    # has to stay under TIMEOUT_MIN.
+    timeout-minutes: 45
     needs: [ changes ]
     if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
 
@@ -355,7 +363,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: tmp/imported_catalogs
-          key: imported-catalogs-v1-shard${{ matrix.shard }}of${{ env.SPEC_SHARDS }}-${{ hashFiles('spec/fixtures/files/catalogs/**', 'app/models/**', 'app/services/**', 'app/lib/**', 'lib/**', 'config/**', 'db/schema.rb', 'Gemfile.lock', 'spec/support/imported_catalogs.rb', 'spec/factories/**', 'script/ci/spec_shard.rb', 'script/ci/spec_timings.json') }}
+          key: imported-catalogs-v1-shard${{ matrix.shard }}of${{ env.SPEC_SHARDS }}-${{ hashFiles('spec/fixtures/files/catalogs/**', 'app/models/**', 'app/services/**', 'app/lib/**', 'lib/**', 'config/**', 'db/schema.rb', 'Gemfile.lock', '.ruby-version', '.github/workflows/ci.yml', 'spec/spec_helper.rb', 'spec/rails_helper.rb', 'spec/support/**', 'spec/factories/**', 'script/ci/spec_shard.rb', 'script/ci/spec_timings.json') }}
 
       - name: Run tests
         env:
@@ -363,20 +371,23 @@ jobs:
           IMPORTED_CATALOGS_CACHE: tmp/imported_catalogs
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
           COVERAGE: "1"
-          SPEC_SHARD: ${{ matrix.shard }}
           # REDIS_URL: redis://localhost:6379/0
         run: |
           set -euo pipefail
           bin/rails db:test:prepare
           script/ci/spec_shard.rb "${SPEC_SHARD}" "${SPEC_SHARDS}" > tmp/shard_files.txt
-          xargs bundle exec rspec --format documentation < tmp/shard_files.txt
+          # Not xargs: handed a list too long for one command it would run rspec
+          # twice, and handed none it would run everything.
+          [ -s tmp/shard_files.txt ] || { echo "::error::shard ${SPEC_SHARD} was given no spec files"; exit 1; }
+          mapfile -t shard_files < tmp/shard_files.txt
+          bundle exec rspec --format documentation "${shard_files[@]}"
 
       # The point of installing hdf was that the translation specs stop
       # skipping. A build that succeeds while the specs still skip would look
       # identical to success, so assert it rather than assume it — the whole
       # subject of this milestone.
       - name: Assert the HDF translation specs were not skipped
-        if: matrix.shard == 0
+        if: strategy.job-index == 0
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
@@ -410,24 +421,26 @@ jobs:
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
 
-  # The required check. Passes when every shard passed (or the suite was not
-  # needed for this change) and the merged coverage clears the floor.
+  # The required check. Passes when every shard passed and the merged coverage
+  # clears the floor.
+  #
+  # It runs under the same condition as the shards, so when the suite is not
+  # needed for a change this job is SKIPPED, as `test` was before the split,
+  # rather than green: required-passed.yml treats "skipped on a check the
+  # change's paths require" as a failure, and a job that always succeeded would
+  # have switched that guard off.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [ test_shard ]
-    if: always()
+    needs: [ changes, test_shard ]
+    if: always() && (needs.changes.outputs.app_code == 'true' || github.event_name != 'pull_request')
     steps:
       - name: Every shard passed
         env:
           SHARDS: ${{ needs.test_shard.result }}
         run: |
           echo "test shards: ${SHARDS}"
-          case "${SHARDS}" in
-            success) ;;
-            skipped) echo "the suite was not needed for this change" ;;
-            *) echo "::error::a test shard did not pass (${SHARDS})"; exit 1 ;;
-          esac
+          [ "${SHARDS}" = "success" ] || { echo "::error::the test shards did not all pass (${SHARDS})"; exit 1; }
 
       - name: Checkout code
         if: needs.test_shard.result == 'success'
