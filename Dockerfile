@@ -261,25 +261,36 @@ COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
 # krb5-libs is the one BASE package taken from the repo ahead of a digest bump
 # (#1357, v1.17.9, owner-approved): 1.21.3-11.el10_3.2 fixes 14 HIGH advisories
 # (CVE-2026-112315..112323, -119079, -107364, -118380, -71199, -71200) that the
-# base's 1.21.3-11.el10 carries. libpq links it (and pg_ext.so and pg_isready
-# link libpq), so it cannot be stripped. Each architecture takes the newest
+# base's 1.21.3-11.el10 carries. libpq links it (and pg_ext.so links libpq),
+# so it cannot be stripped. Each architecture takes the newest
 # build its own repo serves: on 2026-11-17 aarch64 serves the fix and x86_64
 # still serves -11.el10, so there is no version floor - a floor fails every
 # amd64 build until Red Hat publishes. The amd64 residual is a deviation in
 # docs/compliance/sparc-findings.yml; the next build after x86_64 publishes
 # takes the fix with no change here. Retire this step with the first digest
 # bump whose base carries the fix.
-# Runtime shared libs the compiled Ruby + pg link against, plus the client tools
-# the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
+# Runtime shared libs the compiled Ruby + pg link against, plus bash for
+# docker-entrypoint.
+#
+# NOT the `postgresql` client package (#1368, owner 2026-11-18). Of its tools
+# the image used only pg_isready, in the entrypoint's wait loop, which now asks
+# libpq directly (PG::Connection.ping, the same PQping). The package and its
+# postgresql-private-libs carried 74 grype HIGHs on 2026-11-18, 37 advisories
+# with no upstream fix, almost all PostgreSQL SERVER flaws Red Hat attaches to
+# the client package. libpq, which pg links, is its own package and stays.
 # `update --assumeno` changes nothing: it prints the BASE packages that have a
 # newer build in the repo, so a stale digest is visible in every build log.
 RUN rm /tmp/sparc-version-key.rb \
     && microdnf install -y --nodocs --setopt=install_weak_deps=0 \
-      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
+      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash ca-certificates \
     && microdnf update -y --nodocs --setopt=install_weak_deps=0 krb5-libs \
     && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
-    && rpm -q openssl-libs libpq postgresql libevent krb5-libs
+    && rpm -q openssl-libs libpq libevent krb5-libs \
+    && for p in postgresql postgresql-private-libs; do \
+         ! rpm -q "$p" > /dev/null \
+           || { echo "FAIL: $p is back in the image (#1368)" >&2; exit 1; }; \
+       done
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
@@ -361,7 +372,7 @@ COPY --from=builder /rails /rails
 # setup and the runtime strip below into a single layer (sonar docker:S7031).
 # ── Runtime strip: remove what nothing at runtime loads (#1001, #1200; CM-7) ──
 # MEASURED, not assumed, on the finished image (`rpm --whatrequires` + `ldd` over
-# ruby, every gem extension, pg_isready, bash and hdf):
+# ruby, every gem extension, bash and hdf):
 #   * curl + libcurl-minimal — nothing of ours calls or links them. Every
 #     outbound fetch goes through Ruby's Net::HTTP on Ruby's OpenSSL; hdf is a
 #     static Go binary; no gem links libcurl (no curb/typhoeus/ethon/patron).
@@ -415,7 +426,7 @@ RUN ruby /rails/bin/prune-shadowed-gems.rb \
                 /usr/lib64/librpm.so.10 /usr/lib64/librpm_sequoia.so.1; do \
          [ ! -e "$f" ] || { echo "::error::$f survived the strip"; exit 1; }; \
        done \
-    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf /usr/bin/pg_isready \
+    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf \
                            /usr/bin/bash /usr/bin/grep 2>&1; \
                        find /usr/local/bundle /usr/local/lib/ruby -name '*.so' \
                             -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \
