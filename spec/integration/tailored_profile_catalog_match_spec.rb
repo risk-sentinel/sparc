@@ -19,7 +19,8 @@ require "rails_helper"
 RSpec.describe "Tailored Rev 5 profile and its catalog", type: :request do
   let(:fixtures) { Rails.root.join("spec/fixtures/files") }
   let(:profile_path) { fixtures.join("profiles/NIST_SP-800-53_rev5_MODERATE-tailored_profile.json") }
-  let(:overlay) { create(:control_catalog, name: "Agency overlay for NIST SP 800-53 Rev 5") }
+  let(:overlay_id) { nil } # the next id, unless a context needs the overlay to come first
+  let(:overlay) { create(:control_catalog, id: overlay_id, name: "Agency overlay for NIST SP 800-53 Rev 5") }
   let(:nist) do
     imported_catalog("NIST_SP-800-53_rev5_catalog.json").tap do |catalog|
       catalog.update_columns(lifecycle_status: "published")
@@ -72,7 +73,13 @@ RSpec.describe "Tailored Rev 5 profile and its catalog", type: :request do
   end
 
   context "when a loaded catalog matches" do
-    before { overlay && nist }
+    # The overlay has to hold the lower id: that is what made it win. NIST is
+    # loaded first all the same, into a table with no other catalog, so that
+    # `imported_catalog` can put its kept rows back instead of importing again
+    # (about 12 s an example); the overlay then takes the id below it.
+    let(:overlay_id) { nist.id - 1 }
+
+    before { nist && overlay }
 
     it "fits both catalogs by name, so the match has to choose between them" do
       expect(overlay.id).to be < nist.id
