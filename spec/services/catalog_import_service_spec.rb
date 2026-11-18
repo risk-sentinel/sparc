@@ -1,6 +1,11 @@
 require "rails_helper"
 
 RSpec.describe CatalogImportService do
+  # Groups that import a whole NIST catalog and then only read the result ask
+  # for it through `imported_catalog` (spec/support/imported_catalogs.rb): the
+  # importer runs for real once per fixture and its rows are put back for the
+  # next example. Examples about the import itself (re-import, a different
+  # filename, a database that already holds a catalog) call the service.
   let(:rev5_xml_path) { Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev5_catalog.xml") }
   let(:rev5_json_path) { Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev5_catalog.json") }
   let(:rev4_xml_path) { Rails.root.join("spec/fixtures/files/catalogs/NIST_SP-800-53_rev4_catalog.xml") }
@@ -43,12 +48,7 @@ RSpec.describe CatalogImportService do
   describe "statement prose is stored whole" do
     %w[xml json].each do |format|
       context "importing OSCAL #{format.upcase}" do
-        let(:path) { format == "xml" ? rev5_xml_path : rev5_json_path }
-
-        before do
-          file = File.open(path)
-          described_class.call(file, "NIST_SP-800-53_rev5_catalog.#{format}")
-        end
+        before { imported_catalog("NIST_SP-800-53_rev5_catalog.#{format}") }
 
         it "keeps a sub-part title longer than 200 characters intact" do
           long = CatalogControl.where("LENGTH(title) > 200")
@@ -74,10 +74,7 @@ RSpec.describe CatalogImportService do
   end
 
   describe "#import_oscal_xml (Rev 5)" do
-    let(:result) do
-      file = File.open(rev5_xml_path)
-      described_class.call(file, "NIST_SP-800-53_rev5_catalog.xml")
-    end
+    let(:result) { imported_catalog_result("NIST_SP-800-53_rev5_catalog.xml") }
 
     it "creates a catalog with correct metadata" do
       catalog = result[:catalog]
@@ -208,10 +205,7 @@ RSpec.describe CatalogImportService do
   # ── OSCAL XML import (Rev 4) ─────────────────────────────────────────────
 
   describe "#import_oscal_xml (Rev 4)" do
-    let(:result) do
-      file = File.open(rev4_xml_path)
-      described_class.call(file, "NIST_SP-800-53_rev4_catalog.xml")
-    end
+    let(:result) { imported_catalog_result("NIST_SP-800-53_rev4_catalog.xml") }
 
     it "creates a catalog successfully" do
       expect(result[:catalog]).to be_persisted
@@ -229,10 +223,7 @@ RSpec.describe CatalogImportService do
   # ── OSCAL JSON import (regression) ───────────────────────────────────────
 
   describe "#import_oscal_json (regression)" do
-    let(:result) do
-      file = File.open(rev5_json_path)
-      described_class.call(file, "NIST_SP-800-53_rev5_catalog.json")
-    end
+    let(:result) { imported_catalog_result("NIST_SP-800-53_rev5_catalog.json") }
 
     it "still imports correctly" do
       expect(result[:catalog]).to be_persisted
@@ -573,7 +564,7 @@ RSpec.describe CatalogImportService do
     end
 
     describe "importing the real Rev 5 catalog" do
-      before { described_class.call(File.open(rev5_json_path), "NIST_SP-800-53_rev5_catalog.json") }
+      before { imported_catalog("NIST_SP-800-53_rev5_catalog.json") }
 
       it "gives every statement sub-part a key derived from its parent" do
         parent  = CatalogControl.find_by(control_id: "ac-2.7")
