@@ -30,8 +30,9 @@ if ENV["COVERAGE"]
     coverage_dir "coverage"
 
     # One CI shard of several (SPEC_SHARD, set by ci.yml): name the result so
-    # the shards' results merge instead of replacing each other.
-    command_name "rspec-shard-#{ENV["SPEC_SHARD"]}" if ENV["SPEC_SHARD"]
+    # the shards' results merge instead of replacing each other, and so that
+    # script/ci/coverage_collate.rb can tell when one is missing.
+    command_name "rspec-shard-#{ENV["SPEC_SHARD"]}-of-#{ENV["SPEC_SHARDS"]}" if ENV["SPEC_SHARD"]
 
     # #927 — `add_filter`/`add_group` are deprecated delegating aliases in
     # simplecov 1.1.1 (`skip`/`group`, same arguments, same behaviour). They
