@@ -15,6 +15,12 @@
 # They are kept in memory for the life of the process, so a new run (or another
 # CI shard) imports afresh from the fixture as it is on disk.
 #
+# Unless IMPORTED_CATALOGS_CACHE names a directory: then the kept rows are
+# written there when the run ends and read back by the next one, which skips
+# even the first import. Whoever sets it owns the question of when that copy is
+# out of date. CI does (ci.yml), keying its cache on every file an import
+# reads; nothing sets it for a developer's own runs.
+#
 # The importer still runs for real whenever a kept copy could differ from a
 # fresh import:
 #   - the catalogs already in the database are not the ones present when the
@@ -23,12 +29,13 @@
 #
 # Specs of the importer itself should call CatalogImportService directly.
 module ImportedCatalogs
-  Snapshot = Struct.new(:catalog_id, :counts, :tables, keyword_init: true)
+  Snapshot = Struct.new(:catalog_id, :counts, :max_ids, :tables, keyword_init: true)
+  CACHE_FILE = "imported_catalogs.v1.bin"
 
   FIXTURES = Rails.root.join("spec/fixtures/files/catalogs")
 
   class << self
-    def snapshots = (@snapshots ||= {})
+    def snapshots = (@snapshots ||= load_cache)
 
     # Counts for the run summary and for specs of this module.
     def stats = (@stats ||= Hash.new(0))
@@ -45,12 +52,52 @@ module ImportedCatalogs
       before = max_ids(connection)
       result = CatalogImportService.call(File.open(FIXTURES.join(name)), name)
       stats[:imported] += 1
-      snapshots[key] ||= Snapshot.new(catalog_id: result.fetch(:catalog).id, counts: result.except(:catalog),
-                                      tables: capture(connection, before))
+      unless snapshots.key?(key)
+        after = max_ids(connection)
+        snapshots[key] = Snapshot.new(catalog_id: result.fetch(:catalog).id, counts: result.except(:catalog),
+                                      max_ids: after, tables: capture(connection, before, after))
+        @unsaved = true
+      end
       result
     end
 
+    # Writes the kept rows for the next run, when a cache directory is set and
+    # this run kept something the file does not have.
+    def save_cache
+      return unless cache_path && @unsaved
+
+      FileUtils.mkdir_p(cache_path.dirname)
+      data = snapshots.transform_values(&:to_h)
+      File.binwrite("#{cache_path}.tmp", Zlib::Deflate.deflate(Marshal.dump(data), Zlib::BEST_SPEED))
+      File.rename("#{cache_path}.tmp", cache_path)
+      @unsaved = false
+    end
+
     private
+
+    def cache_path
+      dir = ENV["IMPORTED_CATALOGS_CACHE"].presence
+      dir && Pathname(dir).expand_path.join(CACHE_FILE)
+    end
+
+    # The rows an earlier run kept, or nothing. Their ids were handed out by
+    # that run's database, so this one's sequences are moved past them first:
+    # no row made later can then take an id a kept row will need.
+    def load_cache
+      return {} unless cache_path&.file?
+
+      connection = ActiveRecord::Base.connection
+      loaded = Marshal.load(Zlib::Inflate.inflate(File.binread(cache_path))) # rubocop:disable Security/MarshalLoad -- a file this module wrote
+      loaded.transform_values { |attributes| Snapshot.new(**attributes) }.each_value do |snapshot|
+        snapshot.max_ids.each do |table, max|
+          sequence = connection.select_value("SELECT pg_get_serial_sequence(#{connection.quote(table)}, 'id')") or next
+          connection.execute("SELECT setval('#{sequence}', GREATEST(#{max.to_i}, (SELECT last_value FROM #{sequence})))")
+        end
+      end
+    rescue StandardError => e
+      warn "ImportedCatalogs: ignoring #{cache_path} (#{e.class}: #{e.message})"
+      {}
+    end
 
     # What an import could see or merge into: the catalogs already there.
     def present_catalogs(connection)
@@ -68,9 +115,8 @@ module ImportedCatalogs
     end
 
     # Every row written since `before`, per table, as Postgres COPY text.
-    def capture(connection, before)
+    def capture(connection, before, after)
       raw = connection.raw_connection
-      after = max_ids(connection)
       captured = after.select { |table, max| max > before.fetch(table) }.to_h do |table, _|
         rows = []
         sql = "COPY (SELECT * FROM #{connection.quote_table_name(table)} " \
@@ -134,4 +180,5 @@ end
 
 RSpec.configure do |config|
   config.include ImportedCatalogs
+  config.after(:suite) { ImportedCatalogs.save_cache }
 end
