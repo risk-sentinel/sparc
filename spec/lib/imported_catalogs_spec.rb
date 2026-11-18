@@ -5,7 +5,7 @@ require "rails_helper"
 # spec/support/imported_catalogs.rb hands a spec the rows of an earlier import
 # instead of importing again. That is only sound if the rows put back are the
 # rows the importer wrote, so this compares the two, table by table.
-RSpec.describe ImportedCatalogs do
+RSpec.describe ImportedCatalogs, :imports_this_run do
   let(:name) { "NIST_SP-800-53_rev5_catalog.json" }
   let(:connection) { ActiveRecord::Base.connection }
   let(:tables) { connection.tables.select { |t| connection.primary_key(t) == "id" }.sort }

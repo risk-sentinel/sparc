@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe CatalogImportService do
+RSpec.describe CatalogImportService, :imports_this_run do
   # Groups that import a whole NIST catalog and then only read the result ask
   # for it through `imported_catalog` (spec/support/imported_catalogs.rb): the
   # importer runs for real once per fixture and its rows are put back for the
