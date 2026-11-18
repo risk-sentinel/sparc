@@ -40,7 +40,7 @@ class BaselineParameterService
     # reference a parameter the `family:` filter would have excluded, and
     # resolving it to raw markup because of a display filter would be worse than
     # not filtering at all.
-    resolver = OscalParameterResolver.new(extract_raw_parameters, current_values)
+    resolver = OscalParameterResolver.new(raw_parameters, current_values)
 
     parameters = []
     selections = []
@@ -74,8 +74,15 @@ class BaselineParameterService
   def update_parameters(payload)
     result = { parameters_updated: 0, selections_updated: 0, skipped: [], resolved_aliases: [], validation_errors: [] }
 
-    (payload[:parameters] || payload["parameters"] || []).each { |entry| apply_parameter_entry(entry, result) }
-    (payload[:selections] || payload["selections"] || []).each { |entry| apply_selection_entry(entry, result) }
+    # One transaction for the whole payload. An entry that is refused is
+    # reported in `validation_errors` and the rest are still written ("partial");
+    # that is unchanged. What this covers is the unexpected: if an entry RAISES
+    # part-way, the caller gets an error, and without the transaction every
+    # entry before it had already been written with nothing to say so.
+    ProfileControlField.transaction(requires_new: true) do
+      (payload[:parameters] || payload["parameters"] || []).each { |entry| apply_parameter_entry(entry, result) }
+      (payload[:selections] || payload["selections"] || []).each { |entry| apply_selection_entry(entry, result) }
+    end
 
     {
       status: result[:validation_errors].empty? ? "updated" : "partial",
@@ -238,7 +245,7 @@ class BaselineParameterService
   # Memoised per service instance: the catalog does not change mid-request.
   def parameter_index
     @parameter_index ||= begin
-      raw = extract_raw_parameters
+      raw = raw_parameters
       ids = raw.map { |p| p["id"] }.to_set
       aliases = raw.each_with_object({}) do |param, map|
         alt_identifiers(param).each { |alias_id| map[alias_id] ||= param["id"] unless ids.include?(alias_id) }
@@ -249,6 +256,23 @@ class BaselineParameterService
 
   def alt_identifiers(param)
     Array(param["props"]).select { |prop| prop["name"] == "alt-identifier" }.filter_map { |prop| prop["value"].presence }
+  end
+
+  # Every parameter definition of the profile, walked out of the catalog once
+  # per service instance (the catalog does not change mid-request).
+  #
+  # `update_parameters` asked for this list once per entry it was sent, to find
+  # the control that owns the parameter, and each ask walked the whole resolved
+  # catalog again: about 700 walks for the HIGH worksheet. It is the same list
+  # every time.
+  def raw_parameters
+    @raw_parameters ||= extract_raw_parameters
+  end
+
+  # param id => its definitions, in catalog order (a parameter is listed by the
+  # control that declares it and by any that only cite it).
+  def raw_parameters_by_id
+    @raw_parameters_by_id ||= raw_parameters.group_by { |p| p["id"] }
   end
 
   # Extracts raw OSCAL parameter definitions from catalog controls or resolved JSON.
@@ -444,13 +468,13 @@ class BaselineParameterService
   end
 
   def choices_for(select_id)
-    param = extract_raw_parameters.find { |p| p["id"] == select_id }
+    param = raw_parameters_by_id[select_id]&.first
     Array(param&.dig("select", "choice"))
   end
 
   # param_id => label, across the whole profile.
   def parameter_labels
-    extract_raw_parameters.each_with_object({}) do |param, labels|
+    raw_parameters.each_with_object({}) do |param, labels|
       id = param["id"]
       labels[id] = param["label"] if id.present? && param["label"].present?
     end
@@ -472,6 +496,7 @@ class BaselineParameterService
         control_id: control_id,
         title: control_id.upcase
       )
+      @profile_control_ids = nil
     end
 
     field = profile_control.profile_control_fields.find_or_initialize_by(
@@ -483,14 +508,26 @@ class BaselineParameterService
     # #1007 — a param_id is unique within a profile. Any row left on another
     # control is a duplicate of the same logical ODP and would shadow this
     # write on the next read.
+    #
+    # The profile's controls are named by id rather than joined to. Joined, this
+    # ran as `DELETE ... WHERE id IN (SELECT ... JOIN profile_controls ...)`
+    # once per entry, and when the planner's row estimates for these tables
+    # were low it chose to scan every field of every profile for each field it
+    # considered: a quarter of a second per entry, minutes for one worksheet.
+    # With the ids given, the (profile_control_id, field_name) index answers it
+    # whatever the estimates are.
     ProfileControlField
-      .joins(:profile_control)
-      .where(profile_controls: { profile_document_id: profile.id },
-             field_name: "parameter:#{param_id}")
+      .where(profile_control_id: profile_control_ids, field_name: "parameter:#{param_id}")
       .where.not(id: field.id)
       .delete_all
 
     true
+  end
+
+  # The ids of the profile's controls, read once per service instance and
+  # again after this service adds a control.
+  def profile_control_ids
+    @profile_control_ids ||= profile.profile_controls.pluck(:id)
   end
 
   # Which control a parameter is stored against.
@@ -500,8 +537,8 @@ class BaselineParameterService
   # taking whichever came first made the storage location depend on catalog
   # iteration order.
   def find_control_id_for_param(param_id)
-    matches = extract_raw_parameters.select { |p| p["id"] == param_id }
-    return nil if matches.empty?
+    matches = raw_parameters_by_id[param_id]
+    return nil if matches.blank?
 
     owner = matches.find { |p| p["_owns_param"] }
     (owner || matches.first)["_control_id"]
