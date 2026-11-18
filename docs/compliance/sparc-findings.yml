@@ -309,7 +309,11 @@ findings:
   next_review_date: '2026-12-06'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that applies changesets an attacker supplies. No process in
       the image loads libsqlite3 and SPARC stores nothing in SQLite (measured 2026-11-06, below). No fix exists
@@ -344,7 +348,11 @@ findings:
   next_review_date: '2026-12-06'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that opens and deletes from an attacker's FTS5 database.
       No process in the image loads libsqlite3 and SPARC stores nothing in SQLite (measured 2026-11-06, below).
@@ -383,7 +391,11 @@ findings:
   next_review_date: '2026-12-15'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a PostgreSQL server that an authenticated database user can drive.
       The image runs no PostgreSQL server; it carries the client library and client tools only (measured
@@ -423,7 +435,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -469,7 +485,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -515,7 +535,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades the KDC (krb5kdc) reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -561,7 +585,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -607,7 +635,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -653,7 +685,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -699,7 +735,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -745,7 +785,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -791,7 +835,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -837,7 +885,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades the KDC (krb5kdc) reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -883,7 +935,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades the KDC (krb5kdc) reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -929,7 +985,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades kadmind, the Kerberos admin server reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -975,7 +1035,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades the KDC and Kerberos services that verify CAMMAC containers reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
@@ -1021,7 +1085,11 @@ findings:
   next_review_date: '2026-11-24'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1353"
+    approved_at: "2026-11-18"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades the KDC (krb5kdc) reachable from the network. The image runs no Kerberos
       server, has no Kerberos realm or credentials, and arm64 already ships the fix (measured 2026-11-17,
