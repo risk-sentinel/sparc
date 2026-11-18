@@ -12,12 +12,15 @@ RSpec.describe "Rev 5 ODP worksheets against SPARC profiles", type: :request do
     source = Rails.root.join(OdpWorksheetBuilder::CATALOG)
     result = CatalogImportService.call(File.open(source), File.basename(source))
     @catalog = result.is_a?(Hash) ? result[:catalog] : result
+    # Read-only below (`filled` builds new hashes); building them parses the
+    # 10 MB catalog and was done again for every example.
+    @worksheets = OdpWorksheetBuilder.new.worksheets
   end
 
   after(:context) do
     # before(:context) writes outside the per-example transaction.
     ProfileDocument.where(control_catalog_id: @catalog&.id).destroy_all
-    @catalog&.destroy
+    @catalog&.destroy! # a refused destroy must fail here, not leave the catalog for every later spec
   end
 
   let(:admin) { create(:user, :admin) }
@@ -25,7 +28,7 @@ RSpec.describe "Rev 5 ODP worksheets against SPARC profiles", type: :request do
   let(:headers) do
     { "Authorization" => "Bearer #{api_token.plaintext_token}", "Content-Type" => "application/json" }
   end
-  let(:worksheets) { OdpWorksheetBuilder.new.worksheets }
+  let(:worksheets) { @worksheets }
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
@@ -73,6 +76,16 @@ RSpec.describe "Rev 5 ODP worksheets against SPARC profiles", type: :request do
         expect(data["parameters_updated"]).to eq(sheet["parameters"].size)
         expect(data["selections_updated"]).to eq(sheet["selections"].size)
         expect(response).to have_http_status(:ok)
+
+        # The counters say what the service believes it wrote; this reads it back.
+        stored = parameter_rows(profile).to_h { |_, name, value, _| [ name.delete_prefix("parameter:"), value ] }
+        sheet["parameters"].each do |p|
+          expect(stored[p["param_id"]]).to eq("value for #{p['param_id']}"), "#{p['param_id']} was not stored"
+        end
+        sheet["selections"].each do |sel|
+          expect(stored[sel["select_id"]]).to eq(ParameterValueList.join([ sel["choices"].first ])),
+            "#{sel['select_id']} was not stored"
+        end
       end
 
       it "changes nothing when sent untouched" do
