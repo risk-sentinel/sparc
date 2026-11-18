@@ -21,7 +21,7 @@ name: SonarQube → HDF (evidence)
 #
 # Two producers behind the `use_saf` toggle:
 #   - hdf-cli (Go, mitre/hdf-libs) — `hdf fetch sonarqube`. STRATEGIC, default.
-#   - SAF CLI (npm @mitre/saf)     — `saf convert sonarqube2hdf`. Bridge/fallback.
+#   - SAF CLI (mitre/saf image)    — `saf convert sonarqube2hdf`. Bridge/fallback.
 #
 # NIST SP 800-53 Rev 5:
 #   RA-5  Vulnerability Monitoring & Scanning — SAST (SonarCloud) findings are
@@ -150,35 +150,26 @@ jobs:
             [ -n "$ORG" ] && args+=(--organization "$ORG")
             hdf "${args[@]}"
           else
-            # Bridge: npm @mitre/saf, pinned. Uses the runner's Node (>=20).
+            # Bridge: SAF CLI 1.8.0 from MITRE's release image, pinned by digest
+            # (#1362, #1368): npm's 1.8.0 needs Node >= 24.22.1 and is inside the
+            # seven-day soak. The image holds the same 522 package files as the
+            # npm release (compared 2026-11-18) and is not signed; the digest is
+            # the control. This call needs the network (it fetches from
+            # SonarQube), so it runs the image directly rather than through
+            # script/ci/install_saf_image.sh, which disables it, and this job
+            # has no checkout. Pinned LITERALLY (githubactions:S8543, PR #1126).
             # saf's sonarqube2hdf takes no --organization flag; the token scopes
             # the SonarCloud org. (hdf-cli is the org-aware strategic path.)
-            # #966 — no `npx`: it runs lifecycle scripts with no opt-out (S6505).
-            # `npm install --ignore-scripts` was verified by RUNNING this exact
-            # subcommand, not by `saf --version`: it returned 524 issues / 49
-            # controls, byte-identical to an install WITH scripts except for the
-            # profile sha256. The postinstall is not load-bearing here.
             #
-            # NOTE, pre-existing and NOT caused by --ignore-scripts: saf 1.6.0's
-            # sonarqube2hdf output omits `baselines`, so the `hdf validate` step
-            # below REJECTS it ("not a valid HDF results document") on both
-            # hdf-cli 3.4.1 and 3.5.1. Measured with scripts enabled too — same
-            # result. This bridge is therefore believed broken end-to-end
-            # whenever SONARQUBE_HDF_USE_SAF=true; the default hdf-cli path is
-            # unaffected. Not fixed here: out of scope for #966, and the fix is
-            # upstream's or a post-processing step someone must choose.
-            # Version pinned LITERALLY, not via an env var: `githubactions:S8543`
-            # fired on PR #1126 because the analyzer cannot see through
-            # `${SAF_VER}`, and neither can a reader of this line. Single-use
-            # indirection bought nothing. Matches the cdxgen call in security.yml.
-            # The two commands of script/ci/npm_install_soaked.sh, inline: this
-            # job has no checkout. Dependencies from versions at least 7 days
-            # old, every registry signature verified.
-            npm install --no-save --ignore-scripts --no-fund --no-audit \
-              --before="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)" @mitre/saf@1.7.0
-            npm audit signatures
-            ./node_modules/.bin/saf convert sonarqube2hdf \
-              -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
+            # NOTE, pre-existing: saf's sonarqube2hdf output omitted `baselines`
+            # on 1.6.0, so the `hdf validate` step below rejected it. This
+            # bridge is believed broken end-to-end whenever
+            # SONARQUBE_HDF_USE_SAF=true, and #1362 retires it; the default
+            # hdf-cli path is unaffected.
+            docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e SHELL=/bin/sh \
+              -v "$PWD:$PWD" -w "$PWD" \
+              mitre/saf@sha256:32bf20bb674286d2b420be8c6f5acf60e5ecf572d6e9052d4e70c39f6ee3c49d \
+              convert sonarqube2hdf -n "$KEY" -u "$URL" --auth "$SONAR_TOKEN" -o "$out"
           fi
 
       - name: Validate OHDF output

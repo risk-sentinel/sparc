@@ -20,7 +20,8 @@ RSpec.describe FindingDisposition do
   it "accepts all seven v3.4.0 override kinds" do
     described_class::KINDS.each do |kind|
       disp = build(:finding_disposition, kind: kind, expiration: 30.days.from_now,
-                   linked_subject: (kind == "riskAdjustment" ? build(:risk_assessment) : nil))
+                   linked_subject: (kind == "riskAdjustment" ? build(:risk_assessment) : nil),
+                   adjusted_impact: (kind == "riskAdjustment" ? 0.3 : nil))
       expect(disp).to be_valid, "expected kind=#{kind} to be valid: #{disp.errors.full_messages}"
     end
   end
@@ -104,6 +105,28 @@ RSpec.describe FindingDisposition do
       # is not also "outside the review window", and reporting both would tell
       # the operator to fix something that is not wrong.
       expect(d.errors[:expiration]).to eq([ "can't be blank" ])
+    end
+  end
+
+  # #1368 — hdf-cli 3.8.0 re-rates a riskAdjustment through `impact` only.
+  describe "adjusted impact" do
+    it "is required on a riskAdjustment" do
+      disp = build(:finding_disposition, :risk_adjustment, adjusted_impact: nil)
+      expect(disp).not_to be_valid
+      expect(disp.errors[:adjusted_impact]).to include("can't be blank")
+    end
+
+    it "must be between 0 and 1" do
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 1.2)).not_to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: -0.1)).not_to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 0)).to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 1)).to be_valid
+    end
+
+    it "is refused on any other kind" do
+      disp = build(:finding_disposition, kind: "poam", adjusted_impact: 0.3)
+      expect(disp).not_to be_valid
+      expect(disp.errors[:adjusted_impact]).to include("is only for a riskAdjustment")
     end
   end
 

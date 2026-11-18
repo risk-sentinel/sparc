@@ -63,14 +63,14 @@ env:
   # rather than in either job. The previous single-job pin drifted to 3.4.1
   # while the image baked 3.5.1; a second hardcoded copy is exactly how that
   # recurs. Dockerfile carries the same ARG — grep repo-wide before changing.
-  HDF_LIBS_VERSION: '3.7.2'
+  HDF_LIBS_VERSION: '3.8.0'
   # golang.org/x/text FLOOR, not a forced version. 3.5.1 pinned v0.27.0
   # (CVE-2026-56852, HIGH) and this job forced v0.39.0 ahead of upstream;
   # 3.7.0 ships v0.39.0 itself. Forcing it now would DOWNGRADE a future
   # v0.40.x while an equality check reported success, so the requirement is
   # gone and the floor is asserted against the built binary instead.
-  # v0.41.0 (v1.17.1): GO-2026-6629. hdf-libs 3.7.2 builds through a Go
-  # workspace that resolves x/text to v0.42.0, so the release clears it.
+  # v0.41.0 (v1.17.1): GO-2026-6629. hdf-libs 3.8.0 builds through a Go
+  # workspace that resolves x/text to v0.43.0, so the release clears it.
   XTEXT_VERSION: '0.41.0'
   # 3.5.1's published binary was built with go1.26.5 and the GO-2026-5026 fix
   # line is go1.26.6, so a download could not clear a stdlib CVE. 3.7.0's
@@ -84,6 +84,13 @@ env:
   # the gate's correctness depends on this tool emitting source-RPM (upstream=)
   # purl qualifiers, so the version is not something to float.
   SYFT_VERSION: v1.50.0
+  # SAF CLI 1.8.0 (#1362, #1368), from MITRE's release image pinned by digest:
+  # npm's 1.8.0 (published 2026-11-17) needs Node >= 24.22.1 and falls inside
+  # the seven-day soak npm_install_soaked.sh enforces. The image holds the same
+  # 522 package files as the npm release (compared byte for byte 2026-11-18)
+  # and its own Node 24.22.2. It is not signed; the digest is the control.
+  # script/ci/install_saf_image.sh runs it with no network.
+  SAF_IMAGE: 'mitre/saf@sha256:32bf20bb674286d2b420be8c6f5acf60e5ecf572d6e9052d4e70c39f6ee3c49d'
 
 # Permissions are declared per-job (least privilege) rather than workflow-wide,
 # so a job never silently inherits more than it needs (githubactions:S8233/S8264).
@@ -1102,9 +1109,10 @@ jobs:
             bin/bundler_audit_to_hdf.rb
             bin/sarif_drop_suppressed.rb
             bin/hdf_ensure_canary.rb
+            bin/hdf_mark_grype_ignored.rb
             Dockerfile
             script/ci/hdf_pins.sh
-            script/ci/npm_install_soaked.sh
+            script/ci/install_saf_image.sh
             script/dev/install-hdf.sh
           sparse-checkout-cone-mode: false
 
@@ -1154,32 +1162,14 @@ jobs:
       # ── Parallel SARIF/SBOM/ASFF → HDF conversions ──
       # All conversions run in parallel via background processes for ~3x speedup
       #
-      # #463 — @mitre/saf transitively depends on @mitre/heimdall-lite which
-      # requires Node >=22. The default ubuntu-latest runner Node (v20.x)
-      # produces an EBADENGINE *warning* (not error), so npm install completes
-      # but cyclonedx_sbom2hdf + anchoregrype2hdf silently fail at runtime
-      # with MODULE_NOT_FOUND. Pin Node 22 + a known-good @mitre/saf version.
-      - name: Set up Node 22 (required by @mitre/saf transitive deps)
-        if: always()
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
-        with:
-          node-version: '22'
-
+      # SAF CLI 1.8.0 from MITRE's image (env.SAF_IMAGE). The runner needs no
+      # Node and installs nothing from npm; each saf call runs in a container
+      # with no network that sees only the workspace.
       - name: Install SAF CLI
         if: always()
-        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
-        # any of the ~545 transitive packages would otherwise execute arbitrary
-        # code on a runner holding this workflow's token. saf needs none of
-        # them — verified by installing with the flag and then actually running
-        # `validate threshold` and `convert sarif2hdf` against real inputs, not
-        # merely checking `saf --version`.
-        # Dependencies from versions at least 7 days old, every registry
-        # signature verified (script/ci/npm_install_soaked.sh). Signature
-        # checks do not support global installs, so saf installs under
-        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
         run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.7.0
-          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
+          script/ci/install_saf_image.sh "$RUNNER_TEMP/saf-bin" "$SAF_IMAGE"
+          echo "$RUNNER_TEMP/saf-bin" >> "$GITHUB_PATH"
 
       - name: Verify SAF CLI converters are available
         if: always()
@@ -1246,7 +1236,11 @@ jobs:
             echo "::error::hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor"
             exit 1
           fi
-          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+          # Capture, then match (as the Dockerfile does): `hdf version | grep -q`
+          # under pipefail fails if grep exits before hdf finishes writing.
+          hdf_out="$(hdf version 2>&1)"
+          echo "$hdf_out"
+          grep -q "${HDF_LIBS_VERSION}" <<< "$hdf_out" \
             || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
 
       - name: Convert all scan results to HDF (parallel)
@@ -1449,8 +1443,8 @@ jobs:
           # no threshold and nothing ever assessed it. GHSA-mvxr-6m87-mv2q
           # (`mail` 2.9.0) rode 85 green runs into main through this hole.
           #
-          # @mitre/saf 1.7.0 (the pin above) has no bundler-audit converter
-          # among its 41, and 1.6.0 had none among its 37 — verified against the
+          # @mitre/saf 1.8.0 (env.SAF_IMAGE) has no bundler-audit converter
+          # among its 41, nor did 1.7.0 (41) or 1.6.0 (37) — verified against the
           # published packages. Hence the in-repo translator, precedent
           # bin/sparc_findings_to_hdf_amendments.rb. Retire it if an upstream
           # bundleraudit2hdf lands.
@@ -1503,6 +1497,23 @@ jobs:
       # canary assertion into a tautology. If an input is absent, no HDF is
       # written and the gate's expected-set assertion reports the scanner
       # missing, which is the correct signal.
+      # #1368 — SAF writes each grype `ignoredMatches` entry as a
+      # `Grype-Ignored-Match/<id>` control at impact 0 with a `failed` result.
+      # hdf-cli 3.8.0 no longer reads impact 0 as notApplicable, so these came
+      # out as failures (measured: 89 failed instead of 67 failed and 22 not
+      # applicable on run 44369358364). Marking their results `skipped` is the
+      # InSpec convention 3.8.0 still translates to notApplicable. Only those
+      # controls are touched.
+      - name: Mark grype ignore-rule matches not applicable
+        if: always()
+        run: |
+          for name in grype-ruby grype-fs grype-container; do
+            hdf="hdf-results/$name.hdf.json"
+            [ -f "$hdf" ] || continue
+            ruby bin/hdf_mark_grype_ignored.rb --input "$hdf" \
+              || echo "::error::could not mark ignored matches in $name"
+          done
+
       - name: Record execution for scanners that reported nothing
         if: always()
         run: |
@@ -1652,12 +1663,17 @@ jobs:
             echo "args=${files[*]}" >> $GITHUB_OUTPUT
           fi
 
+      # #1368 — the pinned saf (env.SAF_IMAGE), not mitre/saf_action, which
+      # ran its own bundled @mitre/saf (^1.7.0). Output goes to the log, as
+      # the action's did.
       - name: Generate GitHub Step Summary
         if: always() && steps.saf_args.outputs.args != ''
-        uses: mitre/saf_action@e22ffa50e549272511b722d202f8fbd152167472 # v1
         continue-on-error: true
-        with:
-          command_string: 'view summary ${{ steps.saf_args.outputs.args }}'
+        env:
+          SAF_ARGS: ${{ steps.saf_args.outputs.args }}
+        run: |
+          # shellcheck disable=SC2086 # SAF_ARGS is "-i a -i b ...", split on purpose
+          saf view summary $SAF_ARGS
 
       - name: Write summary header
         if: always()
@@ -1786,8 +1802,8 @@ jobs:
             # missing from this list fails at RUNTIME, not at checkout.
             bin/codeql_pin_check.rb
             bin/hdf_amend_chain_gate.rb
-            # Installs saf for the threshold step (soaked, signatures checked).
-            script/ci/npm_install_soaked.sh
+            # Installs saf for the threshold step (MITRE's image, by digest).
+            script/ci/install_saf_image.sh
           sparse-checkout-cone-mode: false
 
       - name: Set up Ruby (converter only — no bundle)
@@ -1846,8 +1862,8 @@ jobs:
             -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
             -o /usr/local/bin/hdf ./cmd/hdf
           # Read x/text back out of the binary and require it at or ABOVE the
-          # floor: hdf-libs 3.7.2 builds through a Go workspace that resolves a newer
-          # x/text (v0.42.0) than hdf-cli/go.mod names, so an exact match or a forced
+          # floor: hdf-libs 3.8.0 builds through a Go workspace that resolves a newer
+          # x/text (v0.43.0) than hdf-cli/go.mod names, so an exact match or a forced
           # `go mod edit -require` would be wrong. Same check as the Dockerfile.
           ACTUAL="$(go version -m /usr/local/bin/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')"
           if [ -z "${ACTUAL}" ] || \
@@ -1855,7 +1871,11 @@ jobs:
             echo "::error::hdf carries x/text v${ACTUAL:-<none>}, below the v${XTEXT_VERSION} floor"
             exit 1
           fi
-          hdf version | grep -q "${HDF_LIBS_VERSION}" \
+          # Capture, then match (as the Dockerfile does): `hdf version | grep -q`
+          # under pipefail fails if grep exits before hdf finishes writing.
+          hdf_out="$(hdf version 2>&1)"
+          echo "$hdf_out"
+          grep -q "${HDF_LIBS_VERSION}" <<< "$hdf_out" \
             || { echo "::error::hdf is not version ${HDF_LIBS_VERSION}"; exit 1; }
 
       - name: Convert sparc-findings.yml to HDF Amendments
@@ -1982,25 +2002,10 @@ jobs:
       #
       # Every file is evaluated before the job fails, so one breach does not
       # hide the rest.
-      - name: Install SAF CLI (pinned — same version normalize_hdf uses)
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
-        with:
-          node-version: '22'
-
-      - name: Install SAF CLI
-        # --ignore-scripts: npm lifecycle scripts (preinstall/postinstall) from
-        # any of the ~545 transitive packages would otherwise execute arbitrary
-        # code on a runner holding this workflow's token. saf needs none of
-        # them — verified by installing with the flag and then actually running
-        # `validate threshold` and `convert sarif2hdf` against real inputs, not
-        # merely checking `saf --version`.
-        # Dependencies from versions at least 7 days old, every registry
-        # signature verified (script/ci/npm_install_soaked.sh). Signature
-        # checks do not support global installs, so saf installs under
-        # RUNNER_TEMP and its bin goes on PATH for the steps that follow.
+      - name: Install SAF CLI (the image normalize_hdf uses, env.SAF_IMAGE)
         run: |
-          script/ci/npm_install_soaked.sh "$RUNNER_TEMP/saf" @mitre/saf@1.7.0
-          echo "$RUNNER_TEMP/saf/node_modules/.bin" >> "$GITHUB_PATH"
+          script/ci/install_saf_image.sh "$RUNNER_TEMP/saf-bin" "$SAF_IMAGE"
+          echo "$RUNNER_TEMP/saf-bin" >> "$GITHUB_PATH"
 
       - name: Validate each amended HDF against its scanner threshold
         run: |

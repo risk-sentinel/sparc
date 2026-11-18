@@ -29,6 +29,8 @@ FactoryBot.define do
 
     trait :risk_adjustment do
       kind { "riskAdjustment" }
+      # #1368 — hdf-cli 3.8.0 requires the re-rated impact on this override.
+      adjusted_impact { 0.3 }
       association :linked_subject, factory: :risk_assessment
     end
   end
