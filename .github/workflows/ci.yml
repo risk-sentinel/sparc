@@ -315,7 +315,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/ssp_tpr_manager_test  # gitleaks:allow
           COVERAGE: "1"
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare && bundle exec rspec
+        run: bin/rails db:test:prepare && bundle exec rspec --format documentation
 
       # The point of installing hdf was that the translation specs stop
       # skipping. A build that succeeds while the specs still skip would look
