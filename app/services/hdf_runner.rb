@@ -41,7 +41,12 @@ class HdfRunner
   # component selector guards and CSV effective impact. Its embedded
   # hdf-system schema is byte-identical to 3.7.0's and still carries the
   # v3.7.0 $id, so Hdf::SystemSchema::VERSION (the SCHEMA version) stays 3.7.0.
-  PINNED_VERSION = "3.7.2".freeze
+  #
+  # 3.8.0 (2026-11-16, v1.17.9, #1368) — an impact of 0 no longer means
+  # notApplicable, SARIF severities follow SARIF §3.27.10, `extensions` is
+  # closed, and a riskAdjustment override may not carry a status. Its embedded
+  # hdf-system schema changed and carries the v3.8.0 $id, re-vendored with it.
+  PINNED_VERSION = "3.8.0".freeze
   DEFAULT_BINARY = "hdf".freeze
 
   class Error < StandardError

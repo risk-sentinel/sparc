@@ -5,7 +5,7 @@ require "json_schemer"
 
 module Hdf
   # #1179 — in-process validation of an hdf-system document against the
-  # vendored v3.7.0 schema (lib/data/hdf/hdf-system.v3.7.0.schema.json).
+  # vendored v3.8.0 schema (lib/data/hdf/hdf-system.v3.8.0.schema.json).
   #
   # WHY A SECOND VALIDATOR WHEN THE CLI EXISTS
   #
@@ -29,7 +29,7 @@ module Hdf
   # indistinguishable from one that was never called (hdf-cli 3.5.1 gave four
   # false passes).
   module SystemSchema
-    VERSION = "3.7.0"
+    VERSION = "3.8.0"
     PATH = File.expand_path("../data/hdf/hdf-system.v#{VERSION}.schema.json", __dir__)
 
     extend self

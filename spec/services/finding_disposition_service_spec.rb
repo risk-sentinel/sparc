@@ -71,11 +71,37 @@ RSpec.describe FindingDispositionService do
       expect(disp.hdf_status).to eq("failed")
     end
 
-    it "creates a riskAdjustment linked to a RiskAssessment" do
+    it "creates a riskAdjustment linked to a RiskAssessment, with its adjusted impact" do
       disp = service.upsert(kind: "riskAdjustment", reason: "downgraded", decided_by: "a@b.co",
                             linked_subject: create(:risk_assessment, authorization_boundary: boundary),
-                            expiration: 90.days.from_now)
+                            expiration: 90.days.from_now, adjusted_impact: "0.3")
       expect(disp.kind).to eq("riskAdjustment")
+      expect(disp.adjusted_impact).to eq(BigDecimal("0.3"))
+    end
+
+    # #1368 — hdf-cli 3.8.0 requires the re-rated impact on a riskAdjustment.
+    it "refuses a riskAdjustment without an adjusted impact" do
+      expect {
+        service.upsert(kind: "riskAdjustment", reason: "downgraded", decided_by: "a@b.co",
+                       linked_subject: create(:risk_assessment, authorization_boundary: boundary),
+                       expiration: 90.days.from_now)
+      }.to raise_error(described_class::DispositionError, /Adjusted impact can't be blank/)
+    end
+
+    it "binds the adjusted impact into the signature, and leaves other signatures as they were" do
+      assessment = create(:risk_assessment, authorization_boundary: boundary)
+      args = { kind: "riskAdjustment", reason: "downgraded", decided_by: "a@b.co",
+               linked_subject: assessment, expiration: Time.utc(2027, 1, 1) }
+      low = service.upsert(**args, adjusted_impact: "0.3").signature_hash
+      high = service.upsert(**args, adjusted_impact: "0.5").signature_hash
+      expect(low).not_to eq(high)
+
+      poam = service.upsert(kind: "poam", reason: "tracked", decided_by: "a@b.co",
+                            linked_subject: create(:poam_finding), expiration: Time.utc(2027, 1, 1))
+      legacy = Digest::SHA256.hexdigest([ poam.authorization_boundary_id, poam.control_id, "poam", "tracked",
+                                          poam.linked_subject_type, poam.linked_subject_id,
+                                          poam.expiration.utc.iso8601, "a@b.co" ].join("|"))
+      expect(poam.signature_hash).to eq(legacy)
     end
 
     it "creates an inherited disposition linked to an upstream boundary" do

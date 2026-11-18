@@ -317,7 +317,7 @@ container image published by this repo's CI:
 | OSCAL JSON | Validated against official NIST schemas (1.2.3 by default) | Primary export; also over the API (`GET /api/v1/<documents>/:id/export?format=oscal`) for SSP, SAP, SAR, POA&M and CDEF |
 | OSCAL YAML / XML | JSON schema; XML against the XSDs of the release the document declares | `format=oscal-yaml` / `format=oscal-xml` |
 | OSCAL mapping collection | Validated against the mapping schema | `GET /api/v1/control_mappings/:id/export` — with provenance; no confidence score |
-| HDF `hdf-system` (v3.7.0) | Vendored hdf-libs schema, in process | `GET /api/v1/authorization_boundaries/:id/hdf_system` — the boundary as an HDF system document |
+| HDF `hdf-system` (v3.8.0) | Vendored hdf-libs schema, in process | `GET /api/v1/authorization_boundaries/:id/hdf_system` — the boundary as an HDF system document |
 | JSON | N/A | Simplified internal format |
 
 ### sparc-horizon and sparc-validate

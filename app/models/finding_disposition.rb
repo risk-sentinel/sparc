@@ -49,6 +49,14 @@ class FindingDisposition < ApplicationRecord
   validates :control_id, presence: true,
             uniqueness: { scope: :authorization_boundary_id, case_sensitive: true }
   validates :kind, presence: true, inclusion: { in: KINDS }
+  # #1368 — a riskAdjustment re-rates the finding's impact and changes nothing
+  # else: hdf-cli 3.8.0 requires the new impact (0.0–1.0) on that override and
+  # refuses a status. Every other kind leaves impact alone, so carrying one
+  # there would be a value nothing reads.
+  validates :adjusted_impact, presence: true,
+            numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 },
+            if: :risk_adjustment?
+  validates :adjusted_impact, absence: { message: "is only for a riskAdjustment" }, unless: :risk_adjustment?
   validates :reason, presence: true
   validates :decided_by, presence: true
   validates :decided_at, presence: true
@@ -95,6 +103,10 @@ class FindingDisposition < ApplicationRecord
   end
 
   # The HDF status this disposition amends the finding to.
+  def risk_adjustment?
+    kind == "riskAdjustment"
+  end
+
   def hdf_status
     NOT_APPLICABLE_KINDS.include?(kind) ? "notApplicable" : "failed"
   end

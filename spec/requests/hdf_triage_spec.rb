@@ -73,6 +73,26 @@ RSpec.describe "HdfTriage", type: :request do
       expect(finding.disposition&.kind).to eq("falsePositive")
     end
 
+    # #1368 — the form's adjusted impact reaches the disposition.
+    it "saves a riskAdjustment with its adjusted impact" do
+      assessment = create(:risk_assessment, authorization_boundary: boundary)
+      post triage_disposition_authorization_boundary_path(boundary),
+           params: { finding_uuid: finding.uuid, kind: "riskAdjustment", reason: "compensating control",
+                     linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
+                     adjusted_impact: "0.3", expiration: 90.days.from_now.to_date.to_s }
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(finding.disposition&.adjusted_impact).to eq(BigDecimal("0.3"))
+    end
+
+    it "offers the adjusted impact field, hidden and disabled until riskAdjustment is chosen" do
+      get triage_authorization_boundary_path(boundary)
+      field = Nokogiri::HTML(response.body).at_css("input[name='adjusted_impact']")
+
+      expect(field).to be_present
+      expect(field["disabled"]).to be_present
+      expect(field.ancestors("[data-hdf-triage-target='impact']").first["hidden"]).not_to be_nil
+    end
+
     it "redirects with an alert on invalid linkage" do
       post triage_disposition_authorization_boundary_path(boundary),
            params: { finding_uuid: finding.uuid, kind: "poam", reason: "x",

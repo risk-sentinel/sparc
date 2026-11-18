@@ -101,15 +101,19 @@ decision carries provenance:
 | `poam` | Real, tracked, will be fixed | an existing **POA&M finding** | Failed (tracked) |
 | `vendorDependency` | Upstream/vendor issue tracked as a POA&M | an existing **POA&M finding** | Failed (tracked) |
 | `inherited` | Provided by an upstream system | the upstream **Authorization Boundary** | Not Applicable |
-| `riskAdjustment` | Severity downgraded with rationale | a **Risk Assessment** record | Failed (adjusted) |
+| `riskAdjustment` | Impact re-rated with rationale | a **Risk Assessment** record, plus the **adjusted impact** | Failed, at the adjusted impact |
 | `operationalRequirement` | Can't fix; business need | an **Attestation** by an *Authorizing Official* (+ expiration) | Failed |
 
 To link a supporting record, enter its **type** (e.g. `Evidence`, `PoamFinding`,
 `Attestation`, `AuthorizationBoundary`, `RiskAssessment`) and its **id**, add a
-**justification**, and — for `waiver` / `operationalRequirement` — an
-**expiration** date. Save.
+**justification** and a **review date** (required for every kind). Save.
 
 The form updates a hint showing which record type the selected kind requires.
+
+For `riskAdjustment`, an **Adjusted impact (0.0–1.0)** field appears: the impact
+the finding carries in this system (0.9 critical, 0.7 high, 0.5 medium, 0.3 low).
+It is required for that kind. The exported amendment re-rates the finding to that
+impact and leaves its pass/fail status unchanged, as HDF requires.
 
 ### Rules SPARC enforces
 

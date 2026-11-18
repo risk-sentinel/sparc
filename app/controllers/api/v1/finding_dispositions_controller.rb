@@ -38,7 +38,9 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
       # above is a display name and cannot serve: two users can share one.
       decided_by_user: current_user,
       linked_subject: subject,
-      expiration: params[:expiration].presence
+      expiration: params[:expiration].presence,
+      # #1368 — required for riskAdjustment (0.0–1.0), refused for every other kind.
+      adjusted_impact: params[:adjusted_impact].presence
     )
     audit_log("finding_disposition_set", subject: disposition,
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
@@ -112,6 +114,7 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
       kind: disposition.kind,
       reason: disposition.reason,
       hdf_status: disposition.hdf_status,
+      adjusted_impact: disposition.adjusted_impact&.to_f,
       expiration: disposition.expiration&.utc&.iso8601,
       expired: disposition.expired?,
       linked_subject_type: disposition.linked_subject_type,
