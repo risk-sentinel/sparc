@@ -329,6 +329,7 @@ One row per logical endpoint (PATCH/PUT aliases collapsed; nested routes shown w
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | `finding_dispositions#reject` | [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/guides` | `guides#index` | [`guides.md`](endpoints/guides.md) | yes | yes |
 | `GET` | `/api/v1/guides/:slug` | `guides#show` | [`guides.md`](endpoints/guides.md) | yes | yes |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam` | `disposition_poams#show` | [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | `hdf_amendments#show` | [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | `hdf_packages#show` | [`hdf-triage.md`](endpoints/hdf-triage.md) | yes | yes |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_system` | `hdf_systems#show` | [`authorization-boundaries.md`](endpoints/authorization-boundaries.md) | yes | yes |

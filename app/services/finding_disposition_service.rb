@@ -35,7 +35,10 @@ class FindingDispositionService
     "vendorDependency"       => "PoamFinding",
     "inherited"              => "AuthorizationBoundary",
     "riskAdjustment"         => "RiskAssessment",
-    "operationalRequirement" => "Attestation"
+    "operationalRequirement" => "Attestation",
+    # #1368 — HDF's `attestation`: an assessor verified the requirement by
+    # hand. Any Attestation; an Authorizing Official is not required.
+    "attestation"            => "Attestation"
   }.freeze
 
   # Attestation-linked kinds require an Authorizing Official attestation.
@@ -68,6 +71,12 @@ class FindingDispositionService
     @boundary = finding.authorization_boundary
   end
 
+  # #1368 — the NIST POA&M fields from request params, as the form and the
+  # API both send them (blank is missing).
+  def self.nist_from(params)
+    FindingDisposition::NIST_FIELDS.index_with { |field| params[field].to_s.presence }
+  end
+
   # Resolve a polymorphic linked subject from a whitelisted (type, id) pair.
   # Returns nil when either is blank; raises on an unknown type or missing record.
   def self.resolve_subject(type, id)
@@ -80,8 +89,9 @@ class FindingDispositionService
   end
 
   def upsert(kind:, reason:, decided_by:, decided_by_user: nil, linked_subject: nil, expiration: nil,
-             adjusted_impact: nil)
+             adjusted_impact: nil, nist: {})
     validate_kind!(kind)
+    validate_nist!(nist)
     validate_severity!(kind)
     validate_linkage!(kind, linked_subject)
 
@@ -91,7 +101,8 @@ class FindingDispositionService
     disposition.assign_attributes(
       kind: kind, reason: reason, decided_by: decided_by, decided_by_user: decided_by_user,
       linked_subject: linked_subject, expiration: expiration, decided_at: Time.current,
-      adjusted_impact: adjusted_impact
+      adjusted_impact: adjusted_impact,
+      **FindingDisposition::NIST_FIELDS.index_with { |field| nist[field].presence }
     )
     # Editing a disposition resets its approval; it must be re-approved.
     # #1034 — the approver identity clears with the rest of it, or an edited
@@ -170,6 +181,15 @@ class FindingDispositionService
     raise DispositionError, "Unknown override kind '#{kind}'"
   end
 
+  # #1368 — every disposition decided now states how its POA&M risk is said
+  # in NIST OSCAL; the model checks each value is NIST's.
+  def validate_nist!(nist)
+    missing = FindingDisposition::NIST_FIELDS.select { |field| nist[field].blank? }
+    return if missing.empty?
+
+    raise DispositionError, "NIST POA&M fields are required: #{missing.join(', ')}"
+  end
+
   def validate_severity!(kind)
     return unless @finding.severity.to_s.upcase == "CRITICAL"
     return unless CRITICAL_BANNED_KINDS.include?(kind)
@@ -203,6 +223,11 @@ class FindingDispositionService
     # #1368 — bound into the signature only when set, so every disposition
     # signed before the field existed (none carry one) keeps its signature.
     payload << disposition.adjusted_impact.to_d.round(2).to_s("F") unless disposition.adjusted_impact.nil?
+    # #1368 — and the NIST POA&M fields, named, when set (none were before).
+    FindingDisposition::NIST_FIELDS.each do |field|
+      value = disposition.public_send(field)
+      payload << "#{field}=#{value}" if value.present?
+    end
     payload = payload.join("|")
     Digest::SHA256.hexdigest(payload)
   end

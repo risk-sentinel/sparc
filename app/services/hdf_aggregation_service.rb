@@ -66,7 +66,9 @@ class HdfAggregationService
       next unless finding.status == "failed"
 
       disp = finding.disposition
-      next if disp && FindingDisposition::NOT_APPLICABLE_KINDS.include?(disp.kind) && disp.applicable?
+      # #1368 — an attestation (verified passing) is no open finding either.
+      resolved = FindingDisposition::NOT_APPLICABLE_KINDS + FindingDisposition::PASSED_KINDS
+      next if disp && resolved.include?(disp.kind) && disp.applicable?
 
       pf = poam.poam_findings.find_or_initialize_by(title: "HDF: #{finding.control_id}")
       pf.uuid ||= SecureRandom.uuid

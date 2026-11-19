@@ -113,6 +113,7 @@ Rails.application.routes.draw do
       post   "triage/disposition/reject",  to: "hdf_triage#reject_disposition",  as: :triage_reject_disposition
       post   "triage/aggregate",   to: "hdf_triage#aggregate",         as: :triage_aggregate
       get    "triage/amendments",  to: "hdf_triage#amendments",        as: :triage_amendments
+      get    "triage/poam",        to: "hdf_triage#poam",              as: :triage_poam
       get    "triage/package",     to: "hdf_triage#package",           as: :triage_package
     end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
@@ -1131,6 +1132,8 @@ Rails.application.routes.draw do
         resources :scan_runs, only: [ :index, :show, :create ]
         resources :scanner_findings, only: [ :index ]
         resource :hdf_amendments, only: [ :show ], controller: "hdf_amendments"
+        # #1368 — the dispositions as an OSCAL POA&M, in NIST's vocabulary.
+        resource :disposition_poam, only: [ :show ], controller: "disposition_poams"
         # #809 — aggregate findings into SSP/SAP/SAR/POA&M (sync, or ?async=true).
         post :aggregate, to: "aggregations#create"
         # #809 — signed package (amendments + findings + dispositions) for the consumer.
