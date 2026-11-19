@@ -24,7 +24,21 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 - **One button system:** the Settings detail pages use the shared page header, the remaining Bootstrap buttons use SPARC's button roles, and a test keeps it that way ([#1346](https://github.com/risk-sentinel/sparc/issues/1346)).
 - **Settings fit and colour:** every Settings list fits beside the settings menu at 1024px, and the Settings overview's sections carry the home page's group colours ([#1349](https://github.com/risk-sentinel/sparc/issues/1349)).
 - **Login consent banner** behaviour covered by its own browser test ([#1341](https://github.com/risk-sentinel/sparc/issues/1341)).
-- **Includes v1.17.9** and every release before it: control priority is optional, the UBI 10.3 base, the November dependency updates and Rails 8.1.4.1.
+- **Includes v1.17.10** and every release before it: Ruby 3.4.13 and every build download pinned, control priority is optional, the UBI 10.3 base, the November dependency updates and Rails 8.1.4.1.
+
+---
+
+## v1.17.10 -- Ruby 3.4.13 (2026-11-19)
+
+A security release ([#1380](https://github.com/risk-sentinel/sparc/issues/1380)).
+
+- **Ruby 3.4.13**, up from 3.4.12. It fixes six advisories in the Ruby interpreter itself, published on 2026-11-19: three Critical (heap buffer overflows in string case conversion and regular expression compilation, and a double free in regular expression compilation) and three High (`Regexp#to_s`, integer overflow in case conversion, an out-of-bounds read in case-insensitive matching). v1.17.9 ships 3.4.12.
+- Ruby 3.4.13 ships the same default gems as 3.4.12, so the gem pins are unchanged.
+- **Every file the image build downloads is now verified** against a pinned value, and a changed download fails the build: the Ruby and jemalloc source tarballs by SHA-256, the AWS RDS CA bundle by checksum, the Go build image and the Dockerfile frontend by digest, the hdf-libs source by commit, and NIST's 81 OSCAL schema files by SHA-256. Each value was checked against two publisher sources where they exist.
+
+**Upgrading:** an image swap from v1.17.9, with no migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.10).
 
 ---
 

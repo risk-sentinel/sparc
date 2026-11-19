@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.27.1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 # ── SPARC production image — Red Hat UBI 10 minimal, hardened (#1200; UBI9 since #742, v1.12.0). ──
 # Ruby + jemalloc compiled from source (UBI ships neither a ruby:3.4 image nor a
 # jemalloc package); native gems build via microdnf. Retires the Debian perl/glibc
@@ -9,6 +9,19 @@ ARG RUBY_VERSION=3.4.13
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
 ARG HDF_LIBS_VERSION=3.8.0
+# #1380 (NIST SI-7, SR-11) — every file the build downloads is verified against a pinned value, so
+# a changed or substituted download fails the build instead of shipping. Each
+# value was checked against two sources on 2026-11-19; a version bump updates
+# its value here, from the publisher, in the same change.
+#   Ruby: ruby-lang.org's index.txt and its release data (www.ruby-lang.org
+#     _data/releases.yml), both SHA-256.
+#   jemalloc: GitHub publishes no checksum for this asset; Alpine's aports
+#     APKBUILD carries the same tarball's SHA-512, which matched our download.
+#   hdf-libs: the commit the v3.8.0 tag points at (git ls-remote and the GitHub
+#     API agree; GitHub reports its signature verified).
+ARG RUBY_SHA256=d0d3bf3dd8c224a3c3b7ecd816a0f1b2cbcf4f87b5afcbdbe91d3fef177f351a
+ARG JEMALLOC_SHA256=2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa
+ARG HDF_LIBS_COMMIT=b556f22f1339219e9db5fd4a755e1b0217fe7845
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
@@ -98,13 +111,20 @@ ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:45b15b88980995
 # 1.26.9 -> 1.26.10 (2026-10-21, v1.17.2): CVE-2026-111943 (HIGH, stdlib).
 # 1.26.10 -> 1.26.11 (2026-11-13, v1.17.9): GO-2026-6859 (stdlib net/http,
 # MaxBytesReader header race), fixed in go1.26.11.
-FROM --platform=$BUILDPLATFORM golang:1.26.11-bookworm AS hdf-builder
+# By digest (#1380): the tag can be re-pointed; the registry and Docker Hub's API
+# agreed on this digest for golang:1.26.11-bookworm on 2026-11-19.
+FROM --platform=$BUILDPLATFORM golang:1.26.11-bookworm@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0 AS hdf-builder
 ARG HDF_LIBS_VERSION
+ARG HDF_LIBS_COMMIT
 ARG TARGETOS
 ARG TARGETARCH
 
+# A tag can be moved, so the clone must land on the pinned commit (#1380).
 RUN git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
-        https://github.com/mitre/hdf-libs.git /src
+        https://github.com/mitre/hdf-libs.git /src \
+    && actual="$(git -C /src rev-parse HEAD)" \
+    && { [ "$actual" = "$HDF_LIBS_COMMIT" ] \
+         || { echo "FAIL: hdf-libs v${HDF_LIBS_VERSION} is ${actual}, not the pinned ${HDF_LIBS_COMMIT}" >&2; exit 1; }; }
 WORKDIR /src/hdf-cli
 
 # golang.org/x/text MINIMUM, not a forced version. hdf-libs v3.5.1 pinned
@@ -166,6 +186,8 @@ ARG RUBY_VERSION
 ARG RUBY_MAJOR
 ARG JEMALLOC_VERSION
 ARG HDF_LIBS_VERSION
+ARG RUBY_SHA256
+ARG JEMALLOC_SHA256
 
 # Required -devel for a Rails Ruby: openssl (TLS), zlib, libyaml (psych), libffi
 # (fiddle) + libpq (pg). nodejs for assets:precompile. readline/gdbm -devel are
@@ -179,12 +201,14 @@ RUN microdnf install -y --nodocs --setopt=install_weak_deps=0 \
 
 # jemalloc from source -> /usr/local/lib/libjemalloc.so.2 (LD_PRELOAD'd at runtime)
 RUN curl -sSfL --proto '=https' --tlsv1.2 "https://github.com/jemalloc/jemalloc/releases/download/${JEMALLOC_VERSION}/jemalloc-${JEMALLOC_VERSION}.tar.bz2" -o /tmp/jemalloc.tar.bz2 \
+    && echo "${JEMALLOC_SHA256}  /tmp/jemalloc.tar.bz2" | sha256sum -c - \
     && mkdir -p /tmp/jemalloc && tar -xjf /tmp/jemalloc.tar.bz2 -C /tmp/jemalloc --strip-components=1 \
     && cd /tmp/jemalloc && ./configure --prefix=/usr/local && make -j"$(nproc)" && make install \
     && rm -rf /tmp/jemalloc*
 
 # Ruby from source -> /usr/local
 RUN curl -sSfL --proto '=https' --tlsv1.2 "https://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz" -o /tmp/ruby.tar.gz \
+    && echo "${RUBY_SHA256}  /tmp/ruby.tar.gz" | sha256sum -c - \
     && mkdir -p /tmp/ruby && tar -xzf /tmp/ruby.tar.gz -C /tmp/ruby --strip-components=1 \
     && cd /tmp/ruby && ./configure --prefix=/usr/local --enable-shared --disable-install-doc \
     && make -j"$(nproc)" && make install && rm -rf /tmp/ruby*
@@ -198,7 +222,13 @@ RUN curl -sSfL --proto '=https' --tlsv1.2 "https://cache.ruby-lang.org/pub/ruby/
 # (sonar docker:S7026). The URL is a literal https:// source, not an ARG, so the
 # scheme is fixed at build time — there is no dynamic value that could resolve to
 # plaintext (sonar docker:S6506). To build against a mirror, edit this line.
-ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-global-bundle.pem
+#
+# Checksum-pinned (#1380). AWS publishes no checksum, so the value is the bundle
+# as served on 2026-11-19 (unchanged since 2026-10-14; S3's ETag matched its MD5;
+# all 114 certificates issued by Amazon Web Services). When AWS rotates the
+# bundle the build fails here: review the new bundle, then update this value.
+ADD --checksum=sha256:90a6f1a7978a1b1b096dca6c57511ca48d3b8cf052f8e704baf358f34ea2f21b \
+    https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-global-bundle.pem
 # Validated in a separate step — a silently absent, empty, or non-PEM bundle
 # would otherwise surface as a production boot error, a far worse place to find
 # it. Content check (not the openssl CLI) because the runtime image has neither.
