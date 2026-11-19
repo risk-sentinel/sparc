@@ -116,3 +116,10 @@
 # where neither exists (#1368).
 /scratchpad/
 saf-cli.log
+# #1380 — the same for editor, tool and OS files a local checkout carries; a
+# local gate image then holds what CI's image holds. .powenv can carry
+# environment values.
+.powenv
+**/.DS_Store
+/.ruby-lsp/
+/.ruff_cache/
