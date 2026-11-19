@@ -20,6 +20,9 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
   before do
     bundle_task.reenable
     seed_task.reenable
+    # Rake keeps a failed task's exception and raises it again on the next
+    # invoke, so a refused fetch in one example would surface in the next.
+    Rake::Task["oscal:bundle_xsd_schemas"].reenable
     OscalSchema.delete_all
   end
 
@@ -33,6 +36,50 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
     example.run
   ensure
     Thread.current[:oscal_task_io] = nil
+  end
+
+  # #1380 — every path the bundle tasks fetch, as the pin file names them.
+  def pinned_paths
+    json = OscalSchema::SUPPORTED_VERSIONS.flat_map do |version|
+      OscalSchema::DOCUMENT_TYPE_MAP.filter_map do |doc_type, config|
+        next if doc_type == "mapping" && !OscalSchema::MAPPING_VERSIONS.include?(version)
+
+        "v#{version}/#{config[:file]}"
+      end
+    end
+    xsd = OscalSchema::XSD_VERSIONS.flat_map do |version|
+      OscalSchemaValidationService::XSD_SCHEMA_MAP.values.map { |file| "v#{version}/#{file}" }
+    end
+    { "json" => json, "xsd" => xsd }
+  end
+
+  # Pins that accept exactly these bodies, so a stubbed fetch is the pinned file.
+  def pins_accepting(json_body, xsd_body)
+    paths = pinned_paths
+    {
+      "json" => paths["json"].index_with { Digest::SHA256.hexdigest(json_body) },
+      "xsd" => paths["xsd"].index_with { Digest::SHA256.hexdigest(xsd_body) }
+    }
+  end
+
+  def with_pins(pins)
+    Thread.current[:oscal_schema_pins] = pins
+    yield
+  ensure
+    Thread.current[:oscal_schema_pins] = nil
+  end
+
+  describe "lib/oscal_schema_pins.json (#1380)" do
+    let(:pins) { JSON.parse(File.read(Rails.root.join("lib/oscal_schema_pins.json"))) }
+
+    it "pins every schema the bundle tasks fetch, and nothing else" do
+      expect(pins["json"].keys).to match_array(pinned_paths["json"])
+      expect(pins["xsd"].keys).to match_array(pinned_paths["xsd"])
+    end
+
+    it "pins each one by a SHA-256" do
+      expect(pins["json"].values + pins["xsd"].values).to all(match(/\A\h{64}\z/))
+    end
   end
 
   describe "oscal:seed_schemas — bundle path" do
@@ -147,6 +194,8 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
       end
     end
 
+    around { |example| with_pins(pins_accepting(fake_body, fake_xsd)) { example.run } }
+
     it "writes manifest.json with one entry per (version × document_type)" do
       bundle_task.invoke
       manifest_path = Pathname.new(tmpdir).join("lib", "oscal_schemas_bundle", "manifest.json")
@@ -178,6 +227,56 @@ RSpec.describe "lib/tasks/oscal_schemas.rake", type: :task do
       bundle_task.invoke
       manifest = JSON.parse(File.read(Pathname.new(tmpdir).join("lib", "oscal_schemas_bundle", "manifest.json")))
       expect(manifest["schemas"]).to all(include("sha256" => Digest::SHA256.hexdigest(fake_body)))
+    end
+  end
+
+  # #1380 — a download that is not the pinned file is refused, and not written.
+  describe "pinned checksums" do
+    let(:tmpdir) { Dir.mktmpdir("oscal-pins-spec-") }
+    after { FileUtils.rm_rf(tmpdir) }
+
+    let(:fake_body) { '{"$id":"http://localhost/x","type":"object"}' }
+    let(:fake_xsd) do
+      %(<?xml version="1.0"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="x"/></xs:schema>)
+    end
+    let(:xsd_task) { Rake::Task["oscal:bundle_xsd_schemas"] }
+
+    before do
+      allow(Rails).to receive(:root).and_return(Pathname.new(tmpdir))
+      allow_any_instance_of(Object).to receive(:fetch_following_redirects) do |_receiver, url|
+        url.to_s.end_with?(".xsd") ? fake_xsd : fake_body
+      end
+    end
+
+    it "refuses a JSON schema whose SHA-256 differs from its pin, and does not write it" do
+      pins = pins_accepting(fake_body, fake_xsd)
+      pins["json"]["v1.2.3/oscal_ssp_schema.json"] = "0" * 64
+
+      with_pins(pins) { expect { bundle_task.invoke }.to raise_error(SystemExit) }
+
+      expect(task_output.string).to include("ssp v1.2.3: SHA-256 #{Digest::SHA256.hexdigest(fake_body)} " \
+                                            "does not match the pinned #{'0' * 64}")
+      expect(Pathname.new(tmpdir).join("lib/oscal_schemas_bundle/v1.2.3/oscal_ssp_schema.json")).not_to exist
+      expect(Pathname.new(tmpdir).join("lib/oscal_schemas_bundle/v1.2.3/oscal_catalog_schema.json")).to exist
+    end
+
+    it "refuses an XSD whose SHA-256 differs from its pin, and does not write it" do
+      pins = pins_accepting(fake_body, fake_xsd)
+      pins["xsd"]["v1.2.3/oscal_poam_schema.xsd"] = "f" * 64
+
+      with_pins(pins) do
+        expect { xsd_task.invoke }.to raise_error(SparcHttp::Error, /poam v1\.2\.3: SHA-256 \h{64} does not match the pinned f{64}/)
+      end
+      expect(Pathname.new(tmpdir).join("lib/oscal_xsd_schemas/v1.2.3/oscal_poam_schema.xsd")).not_to exist
+    end
+
+    it "refuses a schema that has no pin at all" do
+      pins = pins_accepting(fake_body, fake_xsd)
+      pins["xsd"].delete("v1.1.2/oscal_ssp_schema.xsd")
+
+      with_pins(pins) do
+        expect { xsd_task.invoke }.to raise_error(SparcHttp::Error, %r{no pinned SHA-256 for v1\.1\.2/oscal_ssp_schema\.xsd})
+      end
     end
   end
 end
