@@ -3,15 +3,17 @@
 require "rails_helper"
 
 # #1368 — every value DispositionVocabulary uses is NIST's or HDF's, checked
-# against the sources rather than against itself: the vendored OSCAL v1.2.3
-# schema, and fixtures extracted verbatim from NIST's v1.2.3 metaschema and
+# against the sources rather than against itself: the committed OSCAL v1.2.3
+# schema (lib/oscal_schemas/), and fixtures extracted verbatim from NIST's v1.2.3 metaschema and
 # hdf-libs v3.8.0's amendments schema (each records its source and checksum).
 RSpec.describe DispositionVocabulary do
   let(:fixtures) { Rails.root.join("spec/fixtures/files/vocabularies") }
   let(:nist) { JSON.parse(fixtures.join("nist_oscal_v1.2.3_poam_risk.json").read) }
   let(:hdf) { JSON.parse(fixtures.join("hdf_v3.8.0_amendments.json").read) }
   let(:oscal_poam_schema) do
-    JSON.parse(Rails.root.join("lib/oscal_schemas_bundle/v1.2.3/oscal_poam_schema.json").read)["definitions"]
+    # The committed v1.2.3 schema (lib/oscal_schemas_bundle/ is generated, and
+    # absent on CI).
+    JSON.parse(Rails.root.join("lib/oscal_schemas/oscal_poam_schema.json").read)["definitions"]
   end
 
   def schema_enum(definition)
