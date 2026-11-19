@@ -100,3 +100,9 @@ coverage.xml
 .coverage
 .venv/
 *.egg-info/
+
+# Nix development shell (flake.nix): gems, Postgres data, direnv cache
+/.devshell/
+/.direnv/
+!/.envrc
+/result
