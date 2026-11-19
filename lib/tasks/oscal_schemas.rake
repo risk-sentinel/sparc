@@ -18,6 +18,28 @@ namespace :oscal do
     oscal_out.puts(message)
   end
 
+  # #1380 (NIST SI-7, SR-11) — every schema the build downloads must match the
+  # SHA-256 pinned for it in lib/oscal_schema_pins.json, or the bundle fails. The
+  # manifests below only record what was fetched; this decides whether it was the
+  # file NIST published. Specs supply their own pins through
+  # Thread.current[:oscal_schema_pins], as they do the log IO above.
+  OSCAL_SCHEMA_PINS = File.expand_path("../oscal_schema_pins.json", __dir__)
+
+  def oscal_schema_pins
+    Thread.current[:oscal_schema_pins] || JSON.parse(File.read(OSCAL_SCHEMA_PINS))
+  end
+
+  # nil when `body` is the pinned file for `kind` ("json" or "xsd") at `path`
+  # ("v<version>/<file>"); otherwise why it is not.
+  def oscal_pin_problem(kind, path, body)
+    require "digest"
+    expected = oscal_schema_pins.fetch(kind, {})[path]
+    return "no pinned SHA-256 for #{path} in lib/oscal_schema_pins.json" if expected.nil?
+
+    actual = Digest::SHA256.hexdigest(body)
+    "SHA-256 #{actual} does not match the pinned #{expected}" unless actual == expected
+  end
+
   def fetch_following_redirects(url, depth = 0)
     raise SparcHttp::Error, "redirect loop (>#{MAX_REDIRECTS}) for #{url}" if depth > MAX_REDIRECTS
 
@@ -88,6 +110,12 @@ namespace :oscal do
         rescue JSON::ParserError => e
           failures << "#{label}: malformed JSON — #{e.message}"
           oscal_log "  ✗ #{label}: malformed JSON"
+          next
+        end
+
+        if (problem = oscal_pin_problem("json", "v#{version}/#{config[:file]}", body))
+          failures << "#{label}: #{problem}"
+          oscal_log "  ✗ #{label}: #{problem}"
           next
         end
 
@@ -208,6 +236,12 @@ namespace :oscal do
       rescue Nokogiri::XML::SyntaxError => e
         failures << "#{label}: not well-formed XML — #{e.message}"
         oscal_log "  ✗ #{label}: not well-formed XML"
+        next
+      end
+
+      if (problem = oscal_pin_problem("xsd", "v#{version}/#{file}", body))
+        failures << "#{label}: #{problem}"
+        oscal_log "  ✗ #{label}: #{problem}"
         next
       end
 
