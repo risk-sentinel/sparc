@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "sparc-api-v1-collection",
     "name": "SPARC API v1",
-    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 331 endpoints across 59 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
+    "description": "Complete API collection for SPARC (Systematic Policy and Regulatory Compliance). 332 endpoints across 60 folders covering OSCAL document lifecycle, FedRAMP 20x KSI management, federation, and platform administration. Reconciled against the route table by bin/api_postman_check.rb.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -6256,6 +6256,37 @@
               "body": "{\"api_version\":\"v1\",\"system_id\":\"sparc-application\",\"authenticated_as\":\"SPARC Admin\",\"auth_mode\":\"local\",\"endpoints\":[{\"path\":\"/api/v1/available\",\"methods\":[\"GET\"],\"description\":\"API discovery — lists available endpoints scoped to caller permissions\"},{\"path\":\"/api/v1/sessions/from_token\",\"methods\":[\"POST\"],\"description\":\"Exchange a Bearer API token for a Rails session cookie (UI test automation)\"},{\"path\":\"/api/v1/ssp_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"System Security Plans\"},{\"path\":\"/api/v1/ssp_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single SSP document\"},{\"path\":\"/api/v1/ssp_documents/convert\",\"methods\":[\"POST\"],\"description\":\"Parse Excel file into SSP\"},{\"path\":\"/api/v1/ssp_documents/:slug/update_fields\",\"methods\":[\"PUT\"],\"description\":\"Bulk update SSP control fields\"},{\"path\":\"/api/v1/ssp_documents/:slug/export\",\"methods\":[\"GET\"],\"description\":\"Export SSP as JSON\"},{\"path\":\"/api/v1/sar_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Security Assessment Results\"},{\"path\":\"/api/v1/sar_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single SAR document\"},{\"path\":\"/api/v1/sar_documents/convert\",\"methods\":[\"POST\"],\"description\":\"Parse Excel file into SAR\"},{\"path\":\"/api/v1/sar_documents/:slug/update_fields\",\"methods\":[\"PUT\"],\"description\":\"Bulk update SAR control fields\"},{\"path\":\"/api/v1/sar_documents/:slug/export\",\"methods\":[\"GET\"],\"description\":\"Export SAR as JSON\"},{\"path\":\"/api/v1/sap_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Security Assessment Plans\"},{\"path\":\"/api/v1/sap_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single SAP document\"},{\"path\":\"/api/v1/poam_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Plans of Action and Milestones\"},{\"path\":\"/api/v1/poam_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single POA\\u0026M document\"},{\"path\":\"/api/v1/control_catalogs\",\"methods\":[\"GET\",\"POST\"],\"description\":\"NIST and custom control catalogs\"},{\"path\":\"/api/v1/control_catalogs/:id\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single control catalog\"},{\"path\":\"/api/v1/profile_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Baselines and resolved profiles\"},{\"path\":\"/api/v1/profile_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single profile document\"},{\"path\":\"/api/v1/profile_documents/:slug/parameters\",\"methods\":[\"GET\",\"PUT\"],\"description\":\"Baseline parameter and enumeration management\"},{\"path\":\"/api/v1/profile_documents/:slug/parameters/export\",\"methods\":[\"GET\"],\"description\":\"Export baseline parameters as JSON, YAML, or XML\"},{\"path\":\"/api/v1/cdef_documents\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Component Definitions\"},{\"path\":\"/api/v1/cdef_documents/:slug\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single component definition\"},{\"path\":\"/api/v1/control_mappings\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Cross-framework control mappings\"},{\"path\":\"/api/v1/control_mappings/:id\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single control mapping\"},{\"path\":\"/api/v1/ksi_catalog/themes\",\"methods\":[\"GET\"],\"description\":\"FedRAMP 20x KSI themes\"},{\"path\":\"/api/v1/ksi_catalog/indicators\",\"methods\":[\"GET\"],\"description\":\"FedRAMP 20x Key Security Indicators\"},{\"path\":\"/api/v1/ksi_catalog/indicators/:id\",\"methods\":[\"GET\"],\"description\":\"Single KSI indicator with mapped NIST controls\"},{\"path\":\"/api/v1/ksi_catalog/mappings\",\"methods\":[\"GET\"],\"description\":\"KSI-to-NIST 800-53 control mappings\"},{\"path\":\"/api/v1/authorization_boundaries\",\"methods\":[\"GET\",\"POST\"],\"description\":\"Authorization boundaries\"},{\"path\":\"/api/v1/authorization_boundaries/:id\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single authorization boundary\"},{\"path\":\"/api/v1/authorization_boundaries/:id/ksi_validations\",\"methods\":[\"GET\",\"POST\"],\"description\":\"KSI validation records for an authorization boundary\"},{\"path\":\"/api/v1/authorization_boundaries/:id/ksi_validations/:vid\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single KSI validation record\"},{\"path\":\"/api/v1/authorization_boundaries/:id/ksi_validations/summary\",\"methods\":[\"GET\"],\"description\":\"KSI validation summary for an authorization boundary\"},{\"path\":\"/api/v1/authorization_boundaries/:id/ksi_validations/export\",\"methods\":[\"GET\"],\"description\":\"Export KSI compliance report (JSON, YAML, XML)\"},{\"path\":\"/api/v1/users\",\"methods\":[\"GET\",\"POST\"],\"description\":\"User management\"},{\"path\":\"/api/v1/users/:id\",\"methods\":[\"GET\",\"PUT\",\"DELETE\"],\"description\":\"Single user\"},{\"path\":\"/api/v1/oscal/sar_from_hdf\",\"methods\":[\"POST\"],\"description\":\"Translate HDF results to OSCAL SAR (stateless)\"},{\"path\":\"/api/v1/oscal/poam_from_hdf\",\"methods\":[\"POST\"],\"description\":\"Translate HDF results to OSCAL POAM (stateless)\"},{\"path\":\"/api/v1/hdf/amendments_from_oscal_poam\",\"methods\":[\"POST\"],\"description\":\"Translate OSCAL POAM to HDF Amendments (stateless; for `hdf amend apply`)\"}]}"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Disposition Poams",
+      "item": [
+        {
+          "name": "GET show",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/authorization_boundaries/{{authorization_boundary_id}}/disposition_poam",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "authorization_boundaries",
+                "{{authorization_boundary_id}}",
+                "disposition_poam"
+              ]
+            },
+            "description": "`disposition_poams#show`. Generated by bin/api_postman_check.rb from the route table and the controller's own permitted-field list."
+          }
         }
       ]
     },
