@@ -1,8 +1,44 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-17 (v1.17.9 — control priority is optional; UBI 10.3 base, krb5-libs on arm64, Go, msgpack, puma and the November gem updates)
+**Last reviewed:** 2026-11-19 (v1.17.9 release image — UBI 10.3 base of 2026-11-18 with Red Hat's krb5-libs fix on both architectures; PostgreSQL client tools removed)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
-or whenever a new> **v1.17.9 rescan (2026-11-17).** Real rescan of the built `sparc:v1.17.9`
+or whenever a new suppression is added.
+
+> **v1.17.9 release rescan (2026-11-19).** Real rescan of the v1.17.9 release
+> code's image (arm64, `984b1e6acd6a`, on the UBI 10.3 base
+> `ubi10/ubi-minimal@sha256:45b15b88`), not an SBOM, with grype 0.114.0 (DB
+> built 2026-11-19 06:23 UTC) and Trivy 0.74.0. The published image is
+> `risksentinel/sparc:v1.17.9`
+> (`sha256:faa1cca80a9da1f0505a9b1ae308fc16c01fdda78ec5c03102183405f1f2efca`,
+> amd64 and arm64); amd64's scan is the release PR's grype-container job.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype 0.114.0 (arm64 image, DB built 2026-11-19) | **0** | **5** | 36 | 31 |
+> | Trivy 0.74.0 (arm64 image) | 0 | 0 | 0 | 1 |
+>
+> 72 grype matches, 62 distinct ids. One is fixable: the Ruby-shipped on-disk
+> `json` 2.9.1 (GHSA-x2f5-4prf-w687, Low), which Bundler shadows.
+>
+> - **krb5-libs 1.21.3-11.el10_3.2 on both architectures.** The UBI 10.3 base
+>   of 2026-11-18 carries Red Hat's fix (RHSA-2026:99624), so the runtime
+>   stage no longer updates krb5-libs from the repo; the build asserts that
+>   version as a floor. The 14 krb5 Highs are retired from the register
+>   (`verified_absent_on` 2026-11-19), and CI's amd64 scan reports none of them.
+> - **No PostgreSQL client tools.** `postgresql` and `postgresql-private-libs`
+>   are gone (the entrypoint checks readiness through libpq), and with them
+>   37 PostgreSQL advisories with no upstream fix that grype reported on
+>   2026-11-18. CVE-2026-116328 is still reported on `libpq`.
+> - **The 5 Highs**, all not-fixed by Red Hat and all approved deviations:
+>   - `sqlite-libs` 3.46.1-6.el10_2: CVE-2026-119373, -119374, -119379 and
+>     -119586. Nothing in the image loads libsqlite3.
+>   - CVE-2026-116328, a PostgreSQL server advisory reported on `libpq`. The
+>     image holds no server.
+> - **bundle-audit:** no vulnerabilities.
+> - **Trivy:** its one Low is still Ruby's on-disk `json` 2.9.1.
+> - **Register:** 10 active entries, 138 retired.
+
+> **v1.17.9 rescan (2026-11-17).** Real rescan of the built `sparc:v1.17.9`
 > image (arm64, `5e53edc6035a`, the consolidated release branch on the UBI 10.3
 > base `ubi10/ubi-minimal@sha256:fb2f7f85`), not an SBOM, with grype 0.114.0
 > (DB v6.1.10 built 2026-11-17 06:20 UTC) and Trivy 0.74.0 (DB updated
@@ -52,7 +88,6 @@ or whenever a new> **v1.17.9 rescan (2026-11-17).** Real rescan of the built `sp
 > - **Register:** 24 active entries. 17 deviations await `/approve-deviation`
 >   on the release PR: 14 krb5, 2 sqlite and 1 libpq.
 
- `/approve-deviation`.
 
 > **v1.17.8 rescan (2026-11-05).** Real rescan of the built `sparc:v1.17.8`
 > image (arm64, `df41343ea694`, the release code with the November dependency
