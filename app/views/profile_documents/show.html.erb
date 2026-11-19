@@ -231,7 +231,7 @@
         <% end %>
       <% end %>
       <% resolved_catalog_item = capture do %>
-        <% if @profile_document.resolved_catalog_json.present? %>
+        <% if resolved_catalog_available?(@profile_document) %>
           <li><h6 class="dropdown-header">Resolved Catalog</h6></li>
           <li><%= link_to "JSON (Resolved)", download_resolved_catalog_profile_document_path(@profile_document), class: "dropdown-item" %></li>
         <% end %>
