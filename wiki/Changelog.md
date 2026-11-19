@@ -10,6 +10,7 @@ A security release ([#1380](https://github.com/risk-sentinel/sparc/issues/1380))
 
 - **Ruby 3.4.13**, up from 3.4.12. It fixes six advisories in the Ruby interpreter itself, published on 2026-11-19: three Critical (heap buffer overflows in string case conversion and regular expression compilation, and a double free in regular expression compilation) and three High (`Regexp#to_s`, integer overflow in case conversion, an out-of-bounds read in case-insensitive matching). v1.17.9 ships 3.4.12.
 - Ruby 3.4.13 ships the same default gems as 3.4.12, so the gem pins are unchanged.
+- **Every file the image build downloads is now verified** against a pinned value, and a changed download fails the build: the Ruby and jemalloc source tarballs by SHA-256, the AWS RDS CA bundle by checksum, the Go build image and the Dockerfile frontend by digest, and the hdf-libs source by commit. Each value was checked against two publisher sources where they exist.
 
 **Upgrading:** an image swap from v1.17.9, with no migrations.
 
