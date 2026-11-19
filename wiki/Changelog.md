@@ -28,7 +28,7 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 
 ---
 
-## v1.17.9 -- Control Priority Is Optional (2026-11-10)
+## v1.17.9 -- Control Priority Is Optional (2026-11-19)
 
 Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so a baseline no longer needs them ([#1357](https://github.com/risk-sentinel/sparc/issues/1357)).
 
