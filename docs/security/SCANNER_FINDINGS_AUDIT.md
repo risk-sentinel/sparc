@@ -1,8 +1,32 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-19 (v1.17.9 release image — UBI 10.3 base of 2026-11-18 with Red Hat's krb5-libs fix on both architectures; PostgreSQL client tools removed)
+**Last reviewed:** 2026-11-19 (v1.17.10 — Ruby 3.4.13, for six advisories in the interpreter)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.10 rescan (2026-11-19).** Real rescan of the built `sparc:v1.17.10`
+> image (arm64, `a19828d74a3c`, Ruby 3.4.13), not an SBOM, with grype 0.114.0
+> (DB built 2026-11-19 18:41 UTC) and Trivy 0.74.0. v1.17.9's image was
+> rescanned on the same database for comparison.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype, v1.17.9 image (`984b1e6acd6a`) | **3** | **8** | 38 | 31 |
+> | Grype, v1.17.10 image | **0** | **5** | 37 | 31 |
+> | Trivy 0.74.0, v1.17.10 image | 0 | 0 | 0 | 1 |
+>
+> - **Ruby 3.4.12 → 3.4.13 (#1380).** The 18:41 database added seven `ruby/ruby`
+>   advisories against the interpreter (`/usr/local/bin/ruby`,
+>   `libruby.so.3.4.12`), published that day after v1.17.9 shipped: three
+>   Critical (GHSA-34m4-m9fh-gqp5, GHSA-3p8q-wmhx-vm2w, GHSA-7x2q-68qv-6p8x),
+>   three High (GHSA-7whj-cfh7-xgm4, GHSA-87fm-7w84-j2px, GHSA-wpqw-5qxg-m68r)
+>   and one Medium (GHSA-pvgc-g7gj-pv6h). All are fixed in 3.4.13, whose image
+>   reports none. 3.4.13 ships the same default gems as 3.4.12.
+> - **The 5 Highs** are unchanged from v1.17.9: `libpq` CVE-2026-116328 and four
+>   `sqlite-libs`, all approved deviations.
+> - **bundle-audit** (Ruby 3.4.13): no vulnerabilities.
+> - **Register:** unchanged, 10 active entries. The Ruby advisories were never
+>   registered: they are fixed in the release that first meets them.
 
 > **v1.17.9 release rescan (2026-11-19).** Real rescan of the v1.17.9 release
 > code's image (arm64, `984b1e6acd6a`, on the UBI 10.3 base
