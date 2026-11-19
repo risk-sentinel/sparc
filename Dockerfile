@@ -52,7 +52,14 @@ ARG HDF_LIBS_VERSION=3.8.0
 # 1:3.5.8-2.el10_2 -> 1:3.5.9-1.el10_3 is Red Hat's fix for CVE-2026-75804
 # (RHSA-2026:98588). krb5-libs moves only to 1.21.3-11.el10, which still carries
 # the 14 krb5 HIGHs; the krb5 step below takes the fix where the repo has it.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:fb2f7f857cc60d88e3fad19da505083a682ca4569d7b55a61f64aaa43641f741
+#
+# Bumped 2026-11-19 (v1.17.9, owner): release 1795002774, built 2026-11-18 for
+# amd64, arm64, ppc64le and s390x. Its base carries krb5-libs 1.21.3-11.el10_3.2
+# (RHSA-2026:99624, the 14 krb5 HIGHs) and rpm 4.19.1.1-29.el10_3 (stripped
+# below); nothing else changed (arm64 rpm lists compared, 98 packages each). Red
+# Hat's x86_64 repo serves the same krb5 build now, so the per-architecture
+# krb5 step is retired and the floor below asserts the fix instead.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:45b15b88980995a4939b33dfbdfdb2a5998198d478947ee1e1477d08425a1f25
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -258,17 +265,11 @@ FROM ${UBI_IMAGE} AS runtime
 # A blanket `microdnf update` would instead float every BASE package and defeat
 # the digest pin; base packages move only with a deliberate digest bump.
 COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
-# krb5-libs is the one BASE package taken from the repo ahead of a digest bump
-# (#1357, v1.17.9, owner-approved): 1.21.3-11.el10_3.2 fixes 14 HIGH advisories
-# (CVE-2026-112315..112323, -119079, -107364, -118380, -71199, -71200) that the
-# base's 1.21.3-11.el10 carries. libpq links it (and pg_ext.so links libpq),
-# so it cannot be stripped. Each architecture takes the newest
-# build its own repo serves: on 2026-11-17 aarch64 serves the fix and x86_64
-# still serves -11.el10, so there is no version floor - a floor fails every
-# amd64 build until Red Hat publishes. The amd64 residual is a deviation in
-# docs/compliance/sparc-findings.yml; the next build after x86_64 publishes
-# takes the fix with no change here. Retire this step with the first digest
-# bump whose base carries the fix.
+# krb5-libs comes with the base (#1357): libpq links it, so it cannot be
+# stripped, and the build fails below if it is older than 1.21.3-11.el10_3.2,
+# the build that fixes 14 HIGH advisories (CVE-2026-112315..112323, -119079,
+# -107364, -118380, -71199, -71200). A digest bump that regressed it would
+# otherwise bring them back silently.
 # Runtime shared libs the compiled Ruby + pg link against, plus bash for
 # docker-entrypoint.
 #
@@ -283,10 +284,12 @@ COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
 RUN rm /tmp/sparc-version-key.rb \
     && microdnf install -y --nodocs --setopt=install_weak_deps=0 \
       openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash ca-certificates \
-    && microdnf update -y --nodocs --setopt=install_weak_deps=0 krb5-libs \
     && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
     && rpm -q openssl-libs libpq libevent krb5-libs \
+    && krb5="$(rpm -q --qf '%{VERSION}-%{RELEASE}' krb5-libs)" \
+    && printf '%s\n%s\n' "1.21.3-11.el10_3.2" "$krb5" | sort -V -C \
+      || { echo "FAIL: krb5-libs $krb5 is older than 1.21.3-11.el10_3.2 (#1357)" >&2; exit 1; } \
     && for p in postgresql postgresql-private-libs; do \
          ! rpm -q "$p" > /dev/null \
            || { echo "FAIL: $p is back in the image (#1368)" >&2; exit 1; }; \
