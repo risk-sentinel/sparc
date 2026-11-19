@@ -4,6 +4,19 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.10 -- Ruby 3.4.13 (2026-11-19)
+
+A security release ([#1380](https://github.com/risk-sentinel/sparc/issues/1380)).
+
+- **Ruby 3.4.13**, up from 3.4.12. It fixes six advisories in the Ruby interpreter itself, published on 2026-11-19: three Critical (heap buffer overflows in string case conversion and regular expression compilation, and a double free in regular expression compilation) and three High (`Regexp#to_s`, integer overflow in case conversion, an out-of-bounds read in case-insensitive matching). v1.17.9 ships 3.4.12.
+- Ruby 3.4.13 ships the same default gems as 3.4.12, so the gem pins are unchanged.
+
+**Upgrading:** an image swap from v1.17.9, with no migrations.
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.10).
+
+---
+
 ## v1.17.9 -- Control Priority Is Optional (2026-11-19)
 
 Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so a baseline no longer needs them ([#1357](https://github.com/risk-sentinel/sparc/issues/1357)).

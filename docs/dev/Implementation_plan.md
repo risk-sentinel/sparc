@@ -117,6 +117,17 @@ help guides have no navigation entry in that posture.
 
 ---
 
+### Hotfix: `v1.17.10` — Ruby 3.4.13
+
+Owner, 2026-11-19: a security release for #1380. Ruby 3.4.12 → 3.4.13 for six advisories in the
+interpreter (three Critical, three High) published that day, after v1.17.9 shipped; and
+`ruby/setup-ruby` v1.338.0 → v1.342.0, the first release that installs 3.4.13. One branch
+(`bug/1380_ruby_3413`) from `main`, one PR, then carried onto `release-1.18.0-rf`. It also carries
+v1.17.9's changelog date and the v1.17.9 release-image rescan (moved here from #1379, which
+validates #1375 for #1264 and rebases onto this).
+
+---
+
 ### Hotfix: `v1.17.9` — a baseline control's priority is optional
 
 Plan approved by the owner on 2026-11-10; one branch (`bug/1357_profile_priority_optional`) from
