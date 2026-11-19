@@ -3,9 +3,9 @@
     "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
     "metadata": {
       "title": "SPARC Security Scanning and System Integrity",
-      "version": "1.2.4",
+      "version": "1.2.5",
       "oscal-version": "1.2.3",
-      "last-modified": "2026-09-29T00:00:00Z",
+      "last-modified": "2026-11-19T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -59,8 +59,8 @@
               {
                 "uuid": "b6e3d4f9-7a82-4d1c-8e5a-9c4b3e7f8a21",
                 "control-id": "sr-11",
-                "description": "SPARC verifies component authenticity through Gemfile.lock specific-version pins, container image provenance, and CycloneDX SBOM tracking of component origins. Grype SBOM scanning (#461) augments this by matching each SBOM-declared component against Anchore's vulnerability database — components whose declared identity in the SBOM matches known-vulnerable versions are surfaced as CI failures. The release also publishes an OpenVEX attestation of the vulnerability posture (#917), signed with cosign and bound to the image digest. Each statement names the image it describes by purl and digest rather than a converter placeholder (#1144), and the release asserts that identity against the digest being attested, so the document remains interpretable when read apart from its in-toto subject.",
-                "remarks": "Implemented in Gemfile.lock and .github/workflows/security.yml (grype_sbom_scan)."
+                "description": "SPARC verifies component authenticity through Gemfile.lock specific-version pins, container image provenance, and CycloneDX SBOM tracking of component origins. Grype SBOM scanning (#461) augments this by matching each SBOM-declared component against Anchore's vulnerability database — components whose declared identity in the SBOM matches known-vulnerable versions are surfaced as CI failures. The release also publishes an OpenVEX attestation of the vulnerability posture (#917), signed with cosign and bound to the image digest. Each statement names the image it describes by purl and digest rather than a converter placeholder (#1144), and the release asserts that identity against the digest being attested, so the document remains interpretable when read apart from its in-toto subject. Every file the image build downloads is verified against a pinned value before it is used (#1380): the Ruby and jemalloc source tarballs by SHA-256, the AWS RDS CA bundle by ADD --checksum, the golang build image and the Dockerfile frontend by digest, and the hdf-libs source by the commit its release tag must resolve to. Each value is checked against two publisher sources where they exist, and a changed or substituted download fails the build.",
+                "remarks": "Implemented in Gemfile.lock and .github/workflows/security.yml (grype_sbom_scan); build-time download verification in Dockerfile (#1380)."
               },
               {
                 "uuid": "c8f5e1a2-4d63-4f8b-9e21-1a3c5d7b9e02",
@@ -95,8 +95,8 @@
               {
                 "uuid": "c9c7d9e7-db82-42c2-a2df-0fe36a82bbda",
                 "control-id": "si-7",
-                "description": "SPARC verifies software integrity through CycloneDX SBOM generation that inventories all software components and their versions. Docker image builds produce digest-verified images, and the CI pipeline ensures that only tested and scanned artifacts are promoted to deployment. The SBOM provides a verifiable record of the software supply chain. SPARC also verifies the integrity of its own database schema before it serves (#1151): the container entrypoint reconciles the schema against db/schema.rb additively and then verifies it, and refuses to start the web server on structural drift; the unauthenticated /up/ready readiness probe reports schema drift to the load balancer (counts only), so an instance whose schema stops matching is taken out of service. Findings dispositions are tamper-evident: the HDF amendment chain must be established, not merely unbroken, or the security gate fails (#1184).",
-                "remarks": "Implemented in .github/workflows/security.yml (CycloneDX SBOM, Docker image digests). Schema integrity: bin/docker-entrypoint, app/services/schema_drift_service.rb, app/services/schema_reconciliation_service.rb, app/controllers/health_controller.rb. Chain gate: bin/hdf_amend_chain_gate.rb in .github/workflows/security.yml (security_gate)."
+                "description": "SPARC verifies software integrity through CycloneDX SBOM generation that inventories all software components and their versions. Docker image builds produce digest-verified images, and the CI pipeline ensures that only tested and scanned artifacts are promoted to deployment. The SBOM provides a verifiable record of the software supply chain. SPARC also verifies the integrity of its own database schema before it serves (#1151): the container entrypoint reconciles the schema against db/schema.rb additively and then verifies it, and refuses to start the web server on structural drift; the unauthenticated /up/ready readiness probe reports schema drift to the load balancer (counts only), so an instance whose schema stops matching is taken out of service. Findings dispositions are tamper-evident: the HDF amendment chain must be established, not merely unbroken, or the security gate fails (#1184). The image build verifies the integrity of every source and toolchain it downloads against pinned SHA-256 values, digests and commits, and fails on a mismatch (#1380).",
+                "remarks": "Implemented in .github/workflows/security.yml (CycloneDX SBOM, Docker image digests). Schema integrity: bin/docker-entrypoint, app/services/schema_drift_service.rb, app/services/schema_reconciliation_service.rb, app/controllers/health_controller.rb. Chain gate: bin/hdf_amend_chain_gate.rb in .github/workflows/security.yml (security_gate). Build-time download integrity: Dockerfile (#1380)."
               },
               {
                 "uuid": "00ffe797-5c93-4b48-a7b8-bd391e4f6bcf",
