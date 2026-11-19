@@ -472,14 +472,6 @@ class BaselineParameterService
     Array(param&.dig("select", "choice"))
   end
 
-  # param_id => label, across the whole profile.
-  def parameter_labels
-    raw_parameters.each_with_object({}) do |param, labels|
-      id = param["id"]
-      labels[id] = param["label"] if id.present? && param["label"].present?
-    end
-  end
-
   # Finds or creates a ProfileControlField for the given parameter.
   # Returns true when a value was written, false when the parameter resolved to
   # no control in this profile. The caller counts the trues: #1007 shipped a
