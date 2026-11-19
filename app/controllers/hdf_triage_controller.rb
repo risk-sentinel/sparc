@@ -35,6 +35,7 @@ class HdfTriageController < ApplicationController
     @scan_runs = @boundary.scan_runs.recent.limit(10)
     @dispositions_by_control = @boundary.finding_dispositions.index_by(&:control_id)
     @kinds = FindingDisposition::KINDS
+    @vocabulary = DispositionVocabulary
     @linkage = FindingDispositionService::LINKAGE
     @cdef_documents = @boundary.respond_to?(:cdef_documents) ? @boundary.cdef_documents.order(:name) : CdefDocument.order(:name)
     @scanner_scopes = ScanRun::SCANNER_SCOPES
@@ -108,7 +109,8 @@ class HdfTriageController < ApplicationController
       # guard is inert for anything decided through this screen.
       decided_by_user: current_user,
       linked_subject: subject, expiration: params[:expiration].presence,
-      adjusted_impact: params[:adjusted_impact].presence
+      adjusted_impact: params[:adjusted_impact].presence,
+      nist: FindingDispositionService.nist_from(params)
     )
     redirect_to triage_path, success: "Disposition saved for #{finding.control_id}."
   rescue FindingDispositionService::DispositionError => e
@@ -128,6 +130,21 @@ class HdfTriageController < ApplicationController
     send_data JSON.pretty_generate(doc),
               filename: "#{@boundary.slug || @boundary.uuid}-amendments.hdf.json",
               type: "application/json", disposition: "attachment"
+  end
+
+  # #1368 — the dispositions as an OSCAL POA&M in NIST's vocabulary. Needs the
+  # hdf binary (it converts the amendments); refused with the reason when a
+  # disposition lacks its NIST fields or cannot be exported.
+  def poam
+    doc = DispositionPoamExportService.new(@boundary).export
+    audit_log("disposition_poam_exported", subject: @boundary,
+              metadata: { risks: Array(doc.dig("plan-of-action-and-milestones", "risks")).size })
+    send_data JSON.pretty_generate(doc),
+              filename: "#{@boundary.slug || @boundary.uuid}-poam.oscal.json",
+              type: "application/json", disposition: "attachment"
+  rescue DispositionPoamExportService::MissingNistFields, HdfAmendmentExportService::UnexportableDisposition,
+         HdfRunner::Error, OscalValidationError => e
+    redirect_to triage_path, error: "OSCAL POA&M not exported: #{e.message}"
   end
 
   private

@@ -66,7 +66,7 @@ RSpec.describe "HdfTriage", type: :request do
     it "saves a disposition linked to a valid subject" do
       evidence = create(:evidence)
       post triage_disposition_authorization_boundary_path(boundary),
-           params: { finding_uuid: finding.uuid, kind: "falsePositive", reason: "scanner wrong",
+           params: { **nist_params("falsePositive"), finding_uuid: finding.uuid, kind: "falsePositive", reason: "scanner wrong",
                      linked_subject_type: "Evidence", linked_subject_id: evidence.id,
                      expiration: 90.days.from_now.to_date.to_s }
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
@@ -77,7 +77,7 @@ RSpec.describe "HdfTriage", type: :request do
     it "saves a riskAdjustment with its adjusted impact" do
       assessment = create(:risk_assessment, authorization_boundary: boundary)
       post triage_disposition_authorization_boundary_path(boundary),
-           params: { finding_uuid: finding.uuid, kind: "riskAdjustment", reason: "compensating control",
+           params: { **nist_params("riskAdjustment"), finding_uuid: finding.uuid, kind: "riskAdjustment", reason: "compensating control",
                      linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
                      adjusted_impact: "0.3", expiration: 90.days.from_now.to_date.to_s }
       expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
@@ -93,11 +93,62 @@ RSpec.describe "HdfTriage", type: :request do
       expect(field.ancestors("[data-hdf-triage-target='impact']").first["hidden"]).not_to be_nil
     end
 
+    # #1368 — the form asks for the NIST POA&M fields and the server requires them.
+    it "offers the six NIST POA&M fields, required, with NIST's values" do
+      get triage_authorization_boundary_path(boundary)
+      fieldset = Nokogiri::HTML(response.body).at_css("[data-testid='nist-poam-fields']")
+      selects = fieldset.css("select").to_h { |s| [ s["name"], s.css("option").map { |o| o["value"] }.reject(&:blank?) ] }
+
+      expect(selects.keys).to match_array(FindingDisposition::NIST_FIELDS.map(&:to_s))
+      expect(selects["nist_risk_status"]).to eq(DispositionVocabulary::RISK_STATUSES)
+      expect(selects["nist_likelihood"]).to eq(DispositionVocabulary::LEVELS)
+      expect(fieldset.css("select").map { |s| s["required"] }).to all(be_present)
+    end
+
+    it "refuses a disposition without the NIST fields, saying which" do
+      evidence = create(:evidence)
+      post triage_disposition_authorization_boundary_path(boundary),
+           params: { finding_uuid: finding.uuid, kind: "falsePositive", reason: "scanner wrong",
+                     linked_subject_type: "Evidence", linked_subject_id: evidence.id,
+                     expiration: 90.days.from_now.to_date.to_s }
+      expect(flash[:error]).to include("NIST POA&M fields are required")
+      expect(finding.disposition).to be_nil
+    end
+
     it "redirects with an alert on invalid linkage" do
       post triage_disposition_authorization_boundary_path(boundary),
-           params: { finding_uuid: finding.uuid, kind: "poam", reason: "x",
+           params: { **nist_params("poam"), finding_uuid: finding.uuid, kind: "poam", reason: "x",
                      linked_subject_type: "Evidence", linked_subject_id: create(:evidence).id }
       expect(flash[:error]).to match(/must link a PoamFinding/)
+    end
+  end
+
+  # #1368 — the dispositions as an OSCAL POA&M; refused, with why, when one
+  # lacks its NIST fields. hdf is stubbed with the POA&M hdf-cli 3.8.0 produced.
+  describe "GET triage/poam" do
+    before do
+      hdf_poam = JSON.parse(Rails.root.join("spec/fixtures/files/hdf/oscal_poam_from_amendments_v3.8.0.json").read)
+                     .except("_provenance")
+      allow_any_instance_of(HdfRunner).to receive(:amend_verify).and_return(true)
+      allow_any_instance_of(HdfRunner).to receive(:convert).and_return(hdf_poam)
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-2026-0001")
+    end
+
+    it "downloads the OSCAL POA&M" do
+      create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-2026-0001", kind: "poam")
+      get triage_poam_authorization_boundary_path(boundary)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Content-Disposition"]).to include("poam.oscal.json")
+      expect(JSON.parse(response.body)).to have_key("plan-of-action-and-milestones")
+    end
+
+    it "returns to the page with the reason when a disposition lacks its NIST fields" do
+      create(:finding_disposition, :without_nist, authorization_boundary: boundary, control_id: "CVE-2026-0001", kind: "poam")
+      get triage_poam_authorization_boundary_path(boundary)
+
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:error]).to include("OSCAL POA&M not exported", "CVE-2026-0001 (nist_risk_prop")
     end
   end
 
@@ -170,7 +221,7 @@ RSpec.describe "HdfTriage", type: :request do
         allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
         sign_in_as(triager)
         post triage_disposition_authorization_boundary_path(
-          boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
+          boundary, **nist_params("poam"), finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
           linked_subject_type: "PoamFinding", linked_subject_id: poam_finding.id,
           expiration: 90.days.from_now.to_date.to_s
         )
@@ -224,7 +275,7 @@ RSpec.describe "HdfTriage", type: :request do
 
       it "can still set a disposition" do
         post triage_disposition_authorization_boundary_path(
-          boundary, finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
+          boundary, **nist_params("poam"), finding_uuid: finding.uuid, kind: "poam", reason: "tracked",
           linked_subject_type: "PoamFinding", linked_subject_id: create(:poam_finding).id
         )
         expect(response).to redirect_to(triage_authorization_boundary_path(boundary))

@@ -749,6 +749,7 @@ controllers:
       aggregate: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/aggregate"]
       package: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package"]
       amendments: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments?verify=false"]
+      poam: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

@@ -243,6 +243,20 @@ RSpec.describe HdfAmendmentExportService do
       expect(override).not_to have_key("impact")
     end
 
+    # #1368 — vendorDependency is an HDF POA&M type, not an override type.
+    it "sends a vendorDependency as a poam override that says what it is" do
+      dispositioned("CVE-1", kind: "vendorDependency", reason: "awaiting the vendor's patch")
+      override = service.export["overrides"].first
+
+      expect(override).to include("type" => "poam", "status" => "failed")
+      expect(override["reason"]).to eq("Vendor dependency: awaiting the vendor's patch")
+    end
+
+    it "sends an attestation as passed" do
+      dispositioned("CVE-1", kind: "attestation", linked_subject: create(:attestation))
+      expect(service.export["overrides"].first).to include("type" => "attestation", "status" => "passed")
+    end
+
     it "sends every other kind with its status and no impact" do
       %w[falsePositive waiver poam vendorDependency inherited].each_with_index do |kind, i|
         dispositioned("CVE-#{i}", kind: kind)
@@ -272,18 +286,17 @@ RSpec.describe HdfAmendmentExportService do
     # operationalRequirement fails `hdf amend verify`, and so does a
     # riskAdjustment without an impact. One of every kind, verified together.
     #
-    # Except vendorDependency: it is a POA&M type in HDF, not an override type,
-    # and `hdf amend verify` refuses it on 3.7.2 and 3.8.0 alike (measured
-    # 2026-11-18). That predates #1368 and is left to its own decision.
-    it "passes `hdf amend verify` with one disposition of every exportable kind" do
-      kinds = FindingDisposition::KINDS - %w[vendorDependency]
-      kinds.each_with_index do |kind, i|
+    # vendorDependency, an HDF POA&M type that hdf refused as an override on
+    # 3.7.2 and 3.8.0 alike, goes out as `poam` since #1368.
+    it "passes `hdf amend verify` with one disposition of every kind" do
+      FindingDisposition::KINDS.each_with_index do |kind, i|
         attrs = kind == "riskAdjustment" ? { adjusted_impact: 0.3 } : {}
         dispositioned("CVE-K#{i}", kind: kind, **attrs)
       end
       doc = described_class.new(boundary, runner: HdfRunner.new).export
 
-      expect(doc["overrides"].map { |o| o["type"] }).to match_array(kinds)
+      expect(doc["overrides"].map { |o| o["type"] })
+        .to match_array(FindingDisposition::KINDS.map { |k| DispositionVocabulary.for(k).hdf_override_type })
     end
 
     it "passes `hdf amend verify` with systemRef and the uuid label" do

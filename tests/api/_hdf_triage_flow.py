@@ -34,6 +34,19 @@ import httpx
 BOUNDARIES_PATH = "/api/v1/authorization_boundaries"
 FINDINGS_PATH = "/api/v1/scanner_findings"
 
+# #1368 — every disposition decided now states how its POA&M risk is said in
+# NIST OSCAL v1.2.3 (likelihood and impact on NIST SP 800-30's five levels);
+# the API refuses one without these. Not for a falsePositive, whose risk prop
+# must be `false-positive`.
+NIST_POAM_FIELDS: dict[str, str] = {
+    "nist_risk_prop": "accepted",
+    "nist_risk_status": "deviation-requested",
+    "nist_response_lifecycle": "planned",
+    "nist_facet_state": "initial",
+    "nist_likelihood": "moderate",
+    "nist_impact": "high",
+}
+
 _SAMPLE_HDF = Path(__file__).parent / "fixtures" / "sample.hdf.json"
 
 
@@ -81,6 +94,7 @@ def triaged_boundary(admin_client: httpx.Client, label: str) -> dict[str, Any]:
     dispositioned = admin_client.post(
         f"{FINDINGS_PATH}/{finding['uuid']}/disposition",
         json={
+            **NIST_POAM_FIELDS,
             "kind": "inherited",
             "reason": "#995 HDF triage sweep",
             "linked_subject_type": "AuthorizationBoundary",

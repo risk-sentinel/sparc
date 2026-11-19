@@ -99,10 +99,25 @@ decision carries provenance:
 | `falsePositive` | The scanner is wrong / the code path isn't reachable | an **Evidence** record justifying it | Not Applicable |
 | `waiver` | Risk formally accepted | an **Attestation** by an *Authorizing Official* (+ expiration) | Not Applicable |
 | `poam` | Real, tracked, will be fixed | an existing **POA&M finding** | Failed (tracked) |
-| `vendorDependency` | Upstream/vendor issue tracked as a POA&M | an existing **POA&M finding** | Failed (tracked) |
+| `vendorDependency` | A fix that depends on a vendor releasing it | an existing **POA&M finding** | Failed (tracked) |
 | `inherited` | Provided by an upstream system | the upstream **Authorization Boundary** | Not Applicable |
 | `riskAdjustment` | Impact re-rated with rationale | a **Risk Assessment** record, plus the **adjusted impact** | Failed, at the adjusted impact |
 | `operationalRequirement` | Can't fix; business need | an **Attestation** by an *Authorizing Official* (+ expiration) | Failed |
+| `attestation` | An assessor verified the requirement by hand | an **Attestation** | Passed |
+
+How each kind is said in HDF (the amendments export) and in NIST OSCAL (the POA&M
+export). The response type and risk-log entry follow from the kind:
+
+| Kind | HDF override | NIST response type | NIST risk-log entry |
+|---|---|---|---|
+| `falsePositive` | `falsePositive` | `none` | `dr-submission`, then `dr-approved` or `dr-rejected` |
+| `waiver` | `waiver` | `accept` | same |
+| `operationalRequirement` | `operationalRequirement` | `accept` | same |
+| `riskAdjustment` | `riskAdjustment` | `mitigate` | same |
+| `poam` | `poam` | `mitigate` | `status-update` |
+| `vendorDependency` | `poam` (HDF calls vendor dependency a kind of POA&M) | `transfer` | `vendor-check-in` |
+| `inherited` | `inherited` | `share` | `status-update` |
+| `attestation` | `attestation` | `none` | `status-update` |
 
 To link a supporting record, enter its **type** (e.g. `Evidence`, `PoamFinding`,
 `Attestation`, `AuthorizationBoundary`, `RiskAssessment`) and its **id**, add a
@@ -114,6 +129,24 @@ For `riskAdjustment`, an **Adjusted impact (0.0–1.0)** field appears: the impa
 the finding carries in this system (0.9 critical, 0.7 high, 0.5 medium, 0.3 low).
 It is required for that kind. The exported amendment re-rates the finding to that
 impact and leaves its pass/fail status unchanged, as HDF requires.
+
+### The NIST POA&M risk
+
+Every disposition also records how its POA&M risk is said in NIST OSCAL v1.2.3.
+All six are required, and only NIST's values are offered:
+
+| Field | Values |
+|---|---|
+| **Risk prop** | `false-positive`, `accepted`, `risk-adjusted`. A `falsePositive` uses `false-positive`, and only it does |
+| **Risk status** | `open`, `investigating`, `remediating`, `deviation-requested`, `deviation-approved`, `closed` |
+| **Response lifecycle** | `recommendation`, `planned`, `completed` |
+| **Rating state** | `initial` (as first identified) or `adjusted` (residual risk after adjustments) |
+| **Likelihood**, **Impact** | NIST SP 800-30 Rev. 1's five levels: Very Low, Low, Moderate, High, Very High |
+
+The **risk level** is not chosen: it follows from likelihood and impact by NIST SP
+800-30 Rev. 1, Table I-2 (for example, moderate likelihood and high impact is a
+moderate risk). OSCAL itself leaves these ratings open; SPARC holds them to SP
+800-30's scale, the same one its POA&M and SAR risk ratings use.
 
 ### Rules SPARC enforces
 
@@ -177,6 +210,20 @@ artefact in your pipeline. A control that no longer appears in your latest scan
 
 ---
 
+### Download the dispositions as an OSCAL POA&M
+
+**Download OSCAL POA&M** turns the same dispositions into an OSCAL POA&M: the
+amendments go through the bundled `hdf` converter, and SPARC writes each risk's
+NIST status, risk prop, response (type and lifecycle), a typed risk-log entry and
+its likelihood, impact and risk ratings, then validates the document against the
+OSCAL schema.
+
+A disposition decided before v1.17.9 has none of the NIST fields. The download is
+then refused, and the page names each such disposition and the fields it lacks:
+edit it, choose them, and download again.
+
+---
+
 ## 4. Aggregate findings into your ATO documents (#809)
 
 Scanner evidence belongs in the boundary's assessment documents, not just the
@@ -219,6 +266,7 @@ API token:
 | Approve / reject an amendment | `POST /api/v1/scanner_findings/:uuid/disposition/approve` · `…/reject` |
 | Aggregate into SSP/SAP/SAR/POA&M (`?async=true` to enqueue) | `POST /api/v1/authorization_boundaries/:id/aggregate` |
 | Export amendments | `GET /api/v1/authorization_boundaries/:id/hdf_amendments` |
+| Export the dispositions as an OSCAL POA&M | `GET /api/v1/authorization_boundaries/:id/disposition_poam` |
 | Download the signed package | `GET /api/v1/authorization_boundaries/:id/hdf_package` |
 | Remediation timelines (admin) | `GET` / `PUT /api/v1/admin/remediation_timelines` |
 

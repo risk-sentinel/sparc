@@ -40,7 +40,9 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
       linked_subject: subject,
       expiration: params[:expiration].presence,
       # #1368 — required for riskAdjustment (0.0–1.0), refused for every other kind.
-      adjusted_impact: params[:adjusted_impact].presence
+      adjusted_impact: params[:adjusted_impact].presence,
+      # #1368 — NIST OSCAL POA&M vocabulary; all six required.
+      nist: FindingDispositionService.nist_from(params)
     )
     audit_log("finding_disposition_set", subject: disposition,
               metadata: { control_id: disposition.control_id, kind: disposition.kind })
@@ -115,6 +117,14 @@ class Api::V1::FindingDispositionsController < Api::V1::BaseController
       reason: disposition.reason,
       hdf_status: disposition.hdf_status,
       adjusted_impact: disposition.adjusted_impact&.to_f,
+      nist_risk_prop: disposition.nist_risk_prop,
+      nist_risk_status: disposition.nist_risk_status,
+      nist_response_lifecycle: disposition.nist_response_lifecycle,
+      nist_facet_state: disposition.nist_facet_state,
+      nist_likelihood: disposition.nist_likelihood,
+      nist_impact: disposition.nist_impact,
+      nist_risk_level: disposition.nist_risk_level,
+      hdf_override_type: DispositionVocabulary.for(disposition.kind).hdf_override_type,
       expiration: disposition.expiration&.utc&.iso8601,
       expired: disposition.expired?,
       linked_subject_type: disposition.linked_subject_type,
