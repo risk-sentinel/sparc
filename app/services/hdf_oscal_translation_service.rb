@@ -47,9 +47,13 @@ class HdfOscalTranslationService
   # `hdf convert --from hdf-amendments --to oscal-poam`.
   # @param amendments_input [String, IO] file path or IO of an HDF Amendments JSON
   # @param boundary [AuthorizationBoundary, nil] optional back-matter enrichment
+  # @yieldparam oscal [Hash] #1368 — the converted POA&M, to complete before it
+  #   is validated (DispositionPoamExportService adds the NIST vocabulary hdf
+  #   does not write)
   # @return [Hash] OSCAL POAM document
   def oscal_poam_from_hdf_amendments(amendments_input, boundary: nil)
     oscal = @runner.convert(amendments_input, from: "hdf-amendments", to: OSCAL_POAM)
+    oscal = yield(oscal) if block_given?
     validate_oscal!(:poam, enrich_back_matter(oscal, boundary))
   end
 
@@ -198,13 +202,15 @@ class HdfOscalTranslationService
     root_key = oscal.keys.first
     return oscal if root_key.nil?
 
-    oscal[root_key] ||= {}
-    oscal[root_key][BACK_MATTER] ||= {}
-    oscal[root_key][BACK_MATTER]["resources"] ||= []
+    resources = boundary.evidences.includes(:attestations, :evidence_control_links).map { |e| build_resource(e) }
+    # #1368 — a boundary with no evidence adds nothing. This used to write an
+    # empty `resources` array, which OSCAL refuses (minItems 1), so every
+    # document translated for such a boundary failed validation.
+    return oscal if resources.empty?
 
-    boundary.evidences.includes(:attestations, :evidence_control_links).find_each do |evidence|
-      oscal[root_key][BACK_MATTER]["resources"] << build_resource(evidence)
-    end
+    oscal[root_key] ||= {}
+    back_matter = oscal[root_key][BACK_MATTER] ||= {}
+    (back_matter["resources"] ||= []).concat(resources)
 
     oscal
   end

@@ -42,7 +42,7 @@ RSpec.describe HdfSystemExportService do
   describe "#export" do
     let!(:cdef) { link_cdef(name: "Web tier", component_type: "software", component_title: "Portal web tier") }
 
-    it "emits a document that passes the vendored hdf-system v3.7.0 schema" do
+    it "emits a document that passes the vendored hdf-system schema" do
       doc = service.export
 
       expect(Hdf::SystemSchema.errors(doc)).to eq([])

@@ -77,10 +77,23 @@ RSpec.describe HdfIngestService do
         expect(boundary.scanner_findings.first.status).to eq("failed")
       end
 
-      it "marks notApplicable when impact is zero" do
+      # #1368 — hdf-cli 3.8.0: impact 0 alone no longer means notApplicable.
+      it "keeps a passed result passed at impact zero" do
         doc = hdf_doc([ { "id" => "C", "impact" => 0.0, "results" => [ { "status" => "passed" } ] } ])
         ingest(doc)
+        expect(boundary.scanner_findings.first.status).to eq("passed")
+      end
+
+      it "marks notApplicable when every result is skipped at impact zero (InSpec's convention)" do
+        doc = hdf_doc([ { "id" => "C", "impact" => 0.0, "results" => [ { "status" => "skipped" } ] } ])
+        ingest(doc)
         expect(boundary.scanner_findings.first.status).to eq("notApplicable")
+      end
+
+      it "keeps a skipped result skipped when the control carries an impact" do
+        doc = hdf_doc([ { "id" => "C", "impact" => 0.5, "results" => [ { "status" => "skipped" } ] } ])
+        ingest(doc)
+        expect(boundary.scanner_findings.first.status).to eq("skipped")
       end
     end
 

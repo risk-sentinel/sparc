@@ -8,7 +8,7 @@
 ARG RUBY_VERSION=3.4.12
 ARG RUBY_MAJOR=3.4
 ARG JEMALLOC_VERSION=5.3.0
-ARG HDF_LIBS_VERSION=3.7.2
+ARG HDF_LIBS_VERSION=3.8.0
 # Digest-pinned manifest-list (multi-arch: amd64, arm64, ppc64le, s390x) for
 # reproducibility (#742 / folded #639 pinning policy). Currently ubi-minimal 10.2.
 # Digest-only (no version tag) so the reference is unambiguous (SonarQube
@@ -52,7 +52,14 @@ ARG HDF_LIBS_VERSION=3.7.2
 # 1:3.5.8-2.el10_2 -> 1:3.5.9-1.el10_3 is Red Hat's fix for CVE-2026-75804
 # (RHSA-2026:98588). krb5-libs moves only to 1.21.3-11.el10, which still carries
 # the 14 krb5 HIGHs; the krb5 step below takes the fix where the repo has it.
-ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:fb2f7f857cc60d88e3fad19da505083a682ca4569d7b55a61f64aaa43641f741
+#
+# Bumped 2026-11-19 (v1.17.9, owner): release 1795002774, built 2026-11-18 for
+# amd64, arm64, ppc64le and s390x. Its base carries krb5-libs 1.21.3-11.el10_3.2
+# (RHSA-2026:99624, the 14 krb5 HIGHs) and rpm 4.19.1.1-29.el10_3 (stripped
+# below); nothing else changed (arm64 rpm lists compared, 98 packages each). Red
+# Hat's x86_64 repo serves the same krb5 build now, so the per-architecture
+# krb5 step is retired and the floor below asserts the fix instead.
+ARG UBI_IMAGE=registry.access.redhat.com/ubi10/ubi-minimal@sha256:45b15b88980995a4939b33dfbdfdb2a5998198d478947ee1e1477d08425a1f25
 
 # ── hdf-builder: hdf-cli compiled from source, toolchain pinned (#1001) ──────
 # This used to be a release-tarball download (script/dev/install-hdf.sh, then
@@ -119,6 +126,9 @@ WORKDIR /src/hdf-cli
 # to v0.42.0 even though hdf-cli/go.mod alone still says v0.39.0 — so the
 # release already clears the floor, nothing is forced, and the assertion below
 # reads what the emitted binary actually carries.
+#
+# 2026-11-18 (v1.17.9, #1368): hdf-libs v3.8.0 resolves x/text to v0.43.0
+# (measured on the emitted binary); the floor is unchanged.
 ARG XTEXT_VERSION=0.41.0
 
 # hadolint ignore=DL3003
@@ -255,28 +265,35 @@ FROM ${UBI_IMAGE} AS runtime
 # A blanket `microdnf update` would instead float every BASE package and defeat
 # the digest pin; base packages move only with a deliberate digest bump.
 COPY app/models/sparc_config.rb /tmp/sparc-version-key.rb
-# krb5-libs is the one BASE package taken from the repo ahead of a digest bump
-# (#1357, v1.17.9, owner-approved): 1.21.3-11.el10_3.2 fixes 14 HIGH advisories
-# (CVE-2026-112315..112323, -119079, -107364, -118380, -71199, -71200) that the
-# base's 1.21.3-11.el10 carries. libpq links it (and pg_ext.so and pg_isready
-# link libpq), so it cannot be stripped. Each architecture takes the newest
-# build its own repo serves: on 2026-11-17 aarch64 serves the fix and x86_64
-# still serves -11.el10, so there is no version floor - a floor fails every
-# amd64 build until Red Hat publishes. The amd64 residual is a deviation in
-# docs/compliance/sparc-findings.yml; the next build after x86_64 publishes
-# takes the fix with no change here. Retire this step with the first digest
-# bump whose base carries the fix.
-# Runtime shared libs the compiled Ruby + pg link against, plus the client tools
-# the entrypoint needs: pg_isready (postgresql) and bash (docker-entrypoint).
+# krb5-libs comes with the base (#1357): libpq links it, so it cannot be
+# stripped, and the build fails below if it is older than 1.21.3-11.el10_3.2,
+# the build that fixes 14 HIGH advisories (CVE-2026-112315..112323, -119079,
+# -107364, -118380, -71199, -71200). A digest bump that regressed it would
+# otherwise bring them back silently.
+# Runtime shared libs the compiled Ruby + pg link against, plus bash for
+# docker-entrypoint.
+#
+# NOT the `postgresql` client package (#1368, owner 2026-11-18). Of its tools
+# the image used only pg_isready, in the entrypoint's wait loop, which now asks
+# libpq directly (PG::Connection.ping, the same PQping). The package and its
+# postgresql-private-libs carried 74 grype HIGHs on 2026-11-18, 37 advisories
+# with no upstream fix, almost all PostgreSQL SERVER flaws Red Hat attaches to
+# the client package. libpq, which pg links, is its own package and stays.
 # `update --assumeno` changes nothing: it prints the BASE packages that have a
 # newer build in the repo, so a stale digest is visible in every build log.
 RUN rm /tmp/sparc-version-key.rb \
     && microdnf install -y --nodocs --setopt=install_weak_deps=0 \
-      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash postgresql ca-certificates \
-    && microdnf update -y --nodocs --setopt=install_weak_deps=0 krb5-libs \
+      openssl-libs zlib libyaml libffi libpq tzdata shadow-utils bash ca-certificates \
     && { microdnf update --assumeno --nodocs 2>&1 | sed -n '/Upgrading/,$p' || true; } \
     && microdnf clean all \
-    && rpm -q openssl-libs libpq postgresql libevent krb5-libs
+    && rpm -q openssl-libs libpq libevent krb5-libs \
+    && krb5="$(rpm -q --qf '%{VERSION}-%{RELEASE}' krb5-libs)" \
+    && printf '%s\n%s\n' "1.21.3-11.el10_3.2" "$krb5" | sort -V -C \
+      || { echo "FAIL: krb5-libs $krb5 is older than 1.21.3-11.el10_3.2 (#1357)" >&2; exit 1; } \
+    && for p in postgresql postgresql-private-libs; do \
+         ! rpm -q "$p" > /dev/null \
+           || { echo "FAIL: $p is back in the image (#1368)" >&2; exit 1; }; \
+       done
 
 # Custom/private-CA trust (#774), mechanism 1 — build-time bake-in. Drop PEM/CRT
 # files into ./certs/ (empty by default; corporate proxy / DoD-PKI / internal
@@ -358,7 +375,7 @@ COPY --from=builder /rails /rails
 # setup and the runtime strip below into a single layer (sonar docker:S7031).
 # ── Runtime strip: remove what nothing at runtime loads (#1001, #1200; CM-7) ──
 # MEASURED, not assumed, on the finished image (`rpm --whatrequires` + `ldd` over
-# ruby, every gem extension, pg_isready, bash and hdf):
+# ruby, every gem extension, bash and hdf):
 #   * curl + libcurl-minimal — nothing of ours calls or links them. Every
 #     outbound fetch goes through Ruby's Net::HTTP on Ruby's OpenSSL; hdf is a
 #     static Go binary; no gem links libcurl (no curb/typhoeus/ethon/patron).
@@ -412,7 +429,7 @@ RUN ruby /rails/bin/prune-shadowed-gems.rb \
                 /usr/lib64/librpm.so.10 /usr/lib64/librpm_sequoia.so.1; do \
          [ ! -e "$f" ] || { echo "::error::$f survived the strip"; exit 1; }; \
        done \
-    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf /usr/bin/pg_isready \
+    && unresolved=$( { ldd /usr/local/bin/ruby /usr/local/bin/hdf \
                            /usr/bin/bash /usr/bin/grep 2>&1; \
                        find /usr/local/bundle /usr/local/lib/ruby -name '*.so' \
                             -exec ldd {} \; 2>&1; } | grep 'not found' || true ) \

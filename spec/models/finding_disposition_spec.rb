@@ -20,7 +20,8 @@ RSpec.describe FindingDisposition do
   it "accepts all seven v3.4.0 override kinds" do
     described_class::KINDS.each do |kind|
       disp = build(:finding_disposition, kind: kind, expiration: 30.days.from_now,
-                   linked_subject: (kind == "riskAdjustment" ? build(:risk_assessment) : nil))
+                   linked_subject: (kind == "riskAdjustment" ? build(:risk_assessment) : nil),
+                   adjusted_impact: (kind == "riskAdjustment" ? 0.3 : nil))
       expect(disp).to be_valid, "expected kind=#{kind} to be valid: #{disp.errors.full_messages}"
     end
   end
@@ -104,6 +105,60 @@ RSpec.describe FindingDisposition do
       # is not also "outside the review window", and reporting both would tell
       # the operator to fix something that is not wrong.
       expect(d.errors[:expiration]).to eq([ "can't be blank" ])
+    end
+  end
+
+  # #1368 — hdf-cli 3.8.0 re-rates a riskAdjustment through `impact` only.
+  describe "adjusted impact" do
+    it "is required on a riskAdjustment" do
+      disp = build(:finding_disposition, :risk_adjustment, adjusted_impact: nil)
+      expect(disp).not_to be_valid
+      expect(disp.errors[:adjusted_impact]).to include("can't be blank")
+    end
+
+    it "must be between 0 and 1" do
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 1.2)).not_to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: -0.1)).not_to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 0)).to be_valid
+      expect(build(:finding_disposition, :risk_adjustment, adjusted_impact: 1)).to be_valid
+    end
+
+    it "is refused on any other kind" do
+      disp = build(:finding_disposition, kind: "poam", adjusted_impact: 0.3)
+      expect(disp).not_to be_valid
+      expect(disp.errors[:adjusted_impact]).to include("is only for a riskAdjustment")
+    end
+  end
+
+  # #1368 — NIST OSCAL v1.2.3's vocabulary for the POA&M risk.
+  describe "NIST POA&M fields" do
+    it "accepts only NIST's values" do
+      %i[nist_risk_prop nist_risk_status nist_response_lifecycle nist_facet_state nist_likelihood nist_impact].each do |field|
+        disp = build(:finding_disposition, field => "not-nist")
+        expect(disp).not_to be_valid, field
+        expect(disp.errors[field]).to be_present, field
+      end
+    end
+
+    it "pairs the false-positive prop with the falsePositive kind, both ways" do
+      expect(build(:finding_disposition, :false_positive, nist_risk_prop: "accepted")).not_to be_valid
+      expect(build(:finding_disposition, kind: "poam", nist_risk_prop: "false-positive")).not_to be_valid
+      expect(build(:finding_disposition, :false_positive)).to be_valid
+    end
+
+    it "lets a disposition decided before the fields existed be saved, and says what it lacks" do
+      disp = create(:finding_disposition, :without_nist)
+      expect(disp.update(approval_status: "approved")).to be(true)
+      expect(disp.missing_nist_fields).to eq(FindingDisposition::NIST_FIELDS)
+    end
+
+    it "derives the risk level from likelihood and impact (SP 800-30 Table I-2)" do
+      expect(build(:finding_disposition, nist_likelihood: "low", nist_impact: "very-high").nist_risk_level).to eq("moderate")
+      expect(build(:finding_disposition, :without_nist).nist_risk_level).to be_nil
+    end
+
+    it "treats an attestation as passed" do
+      expect(build(:finding_disposition, :attestation).hdf_status).to eq("passed")
     end
   end
 

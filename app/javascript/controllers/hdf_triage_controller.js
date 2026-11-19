@@ -13,15 +13,27 @@ const LINKAGE = {
   vendorDependency: "PoamFinding",
   inherited: "AuthorizationBoundary (upstream)",
   riskAdjustment: "RiskAssessment",
-  operationalRequirement: "Attestation (role: authorizing_official) + expiration"
+  operationalRequirement: "Attestation (role: authorizing_official) + expiration",
+  attestation: "Attestation"
 }
 
 export default class HdfTriageController extends Controller {
-  static targets = ["kind", "hint"]
+  static targets = ["kind", "hint", "impact", "impactInput"]
 
   showLinkage() {
     if (!this.hasKindTarget || !this.hasHintTarget) return
     const kind = this.kindTarget.value
     this.hintTarget.textContent = `Links a: ${LINKAGE[kind] || "—"}`
+    this.toggleImpact(kind)
+  }
+
+  // #1368 — only a riskAdjustment carries an adjusted impact. A hidden field is
+  // also disabled, so it is not submitted for any other kind.
+  toggleImpact(kind) {
+    if (!this.hasImpactTarget || !this.hasImpactInputTarget) return
+    const adjusting = kind === "riskAdjustment"
+    this.impactTarget.hidden = !adjusting
+    this.impactInputTarget.disabled = !adjusting
+    this.impactInputTarget.required = adjusting
   }
 }

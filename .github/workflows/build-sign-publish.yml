@@ -1039,8 +1039,8 @@ jobs:
             -ldflags "-s -w -X ${PKG}.version=${HDF_LIBS_VERSION}" \
             -o /usr/local/bin/hdf ./cmd/hdf
           # Read x/text back out of the binary and require it at or ABOVE the
-          # floor: hdf-libs 3.7.2 builds through a Go workspace that resolves a newer
-          # x/text (v0.42.0) than hdf-cli/go.mod names, so an exact match or a forced
+          # floor: hdf-libs 3.8.0 builds through a Go workspace that resolves a newer
+          # x/text (v0.43.0) than hdf-cli/go.mod names, so an exact match or a forced
           # `go mod edit -require` would be wrong. Same check as the Dockerfile.
           ACTUAL="$(go version -m /usr/local/bin/hdf | awk '$2 == "golang.org/x/text" { print $3 }' | sed 's/^v//')"
           if [ -z "${ACTUAL}" ] || \

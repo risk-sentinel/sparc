@@ -13,6 +13,10 @@
           class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
     <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
           class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm", data: { turbo: false } %>
+    <%# #1368 — the dispositions as an OSCAL POA&M in NIST's vocabulary. %>
+    <%= link_to "Download OSCAL POA&M", triage_poam_authorization_boundary_path(@boundary),
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+          data: { turbo: false, testid: "triage-download-poam" } %>
     <%= link_to "Back to Boundary", authorization_boundary_path(@boundary),
           class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
@@ -186,6 +190,51 @@
                   <p class="small text-muted mb-1" data-hdf-triage-target="hint">
                     Links a: <%= @linkage[disp&.kind || @kinds.first] %>
                   </p>
+                  <%# #1368 — a riskAdjustment re-rates the finding's impact, and
+                      hdf requires the new value on that override. Shown, and
+                      submitted, only for that kind; hidden fields are disabled
+                      so another kind never carries one. %>
+                  <% adjusting = (disp&.kind || @kinds.first) == "riskAdjustment" %>
+                  <div class="mb-2" data-hdf-triage-target="impact" <%= "hidden" unless adjusting %>>
+                    <%= label_tag "adjusted_impact_#{finding.id}", "Adjusted impact (0.0–1.0)", class: "form-label small mb-0" %>
+                    <%= number_field_tag :adjusted_impact, disp&.adjusted_impact,
+                          id: "adjusted_impact_#{finding.id}", class: "form-control form-control-sm",
+                          min: 0, max: 1, step: 0.01, required: adjusting, disabled: !adjusting,
+                          data: { hdf_triage_target: "impactInput" } %>
+                    <div class="form-text small">
+                      The impact this finding carries in this system: 0.9 critical, 0.7 high,
+                      0.5 medium, 0.3 low. Its pass/fail status does not change.
+                    </div>
+                  </div>
+                  <%# #1368 — how this disposition's POA&M risk is said in NIST
+                      OSCAL v1.2.3, all required. Likelihood and impact use NIST
+                      SP 800-30 Rev. 1's five levels; the risk level is derived
+                      from them (Table I-2). %>
+                  <fieldset class="mb-2" data-testid="nist-poam-fields">
+                    <legend class="form-label small mb-1">NIST POA&amp;M risk</legend>
+                    <div class="row g-2">
+                      <% nist_selects = [
+                           [ :nist_risk_prop, "Risk prop", @vocabulary::RISK_PROPS.map { |v| [ v, v ] } ],
+                           [ :nist_risk_status, "Risk status", @vocabulary::RISK_STATUSES.map { |v| [ v, v ] } ],
+                           [ :nist_response_lifecycle, "Response lifecycle", @vocabulary::RESPONSE_LIFECYCLES.map { |v| [ v, v ] } ],
+                           [ :nist_facet_state, "Rating state", @vocabulary::FACET_STATES.map { |v| [ v, v ] } ],
+                           [ :nist_likelihood, "Likelihood", RiskRating::LEVEL_OPTIONS ],
+                           [ :nist_impact, "Impact", RiskRating::LEVEL_OPTIONS ]
+                         ] %>
+                      <% nist_selects.each do |field, label, choices| %>
+                        <div class="col-6">
+                          <%= label_tag "#{field}_#{finding.id}", label, class: "form-label small mb-0" %>
+                          <%= select_tag field, options_for_select(choices, disp&.public_send(field)),
+                                id: "#{field}_#{finding.id}", include_blank: "Choose…", required: true,
+                                class: "form-select form-select-sm" %>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div class="form-text small">
+                      A falsePositive uses the false-positive prop, and only it does. The risk level is
+                      derived from likelihood and impact (NIST SP 800-30 Rev. 1, Table I-2).
+                    </div>
+                  </fieldset>
                   <div class="row g-2 mb-2">
                     <div class="col">
                       <%= text_field_tag :linked_subject_type, disp&.linked_subject_type,

@@ -1,0 +1,56 @@
+{
+  "source": "https://raw.githubusercontent.com/usnistgov/OSCAL/v1.2.3/src/metaschema/oscal_assessment-common_metaschema.xml",
+  "source_sha256": "b67744cc1a8cb1fe43e0af85b9c0c79494f59f8ce7468739eb5b2a05cda5f388",
+  "retrieved": "2026-11-19",
+  "note": "Allowed values NIST's v1.2.3 metaschema defines for a POA&M risk; extracted verbatim for spec/lib/disposition_vocabulary_spec.rb (#1368).",
+  "risk_status": [
+    "open",
+    "investigating",
+    "remediating",
+    "deviation-requested",
+    "deviation-approved",
+    "closed"
+  ],
+  "risk_prop_names": [
+    "false-positive",
+    "accepted",
+    "risk-adjusted",
+    "priority"
+  ],
+  "response_type": [
+    "avoid",
+    "mitigate",
+    "transfer",
+    "accept",
+    "share",
+    "contingency",
+    "none"
+  ],
+  "response_lifecycle": [
+    "recommendation",
+    "planned",
+    "completed"
+  ],
+  "risk_log_entry_type": [
+    "vendor-check-in",
+    "status-update",
+    "milestone-complete",
+    "mitigation",
+    "remediated",
+    "closed",
+    "dr-submission",
+    "dr-updated",
+    "dr-approved",
+    "dr-rejected"
+  ],
+  "facet_state": [
+    "initial",
+    "adjusted"
+  ],
+  "nist_facet_names": [
+    "likelihood",
+    "impact",
+    "risk",
+    "severity"
+  ]
+}

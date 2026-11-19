@@ -20,14 +20,16 @@ class FindingDisposition < ApplicationRecord
   before_validation :assign_uuid_if_blank
   before_validation :default_decided_at, on: :create
 
-  # The complete v3.4.0 HDF Amendment override enum (`exception` removed upstream).
-  KINDS = %w[
-    falsePositive waiver poam vendorDependency inherited riskAdjustment operationalRequirement
-  ].freeze
+  # #1368 — the kinds and how each is said in HDF and NIST OSCAL live in
+  # DispositionVocabulary, the one definition. `attestation` is HDF's;
+  # `vendorDependency` is an HDF POA&M type, exported as a `poam` override.
+  KINDS = DispositionVocabulary::KINDS
 
-  # How each kind maps to the amended HDF status (used by the export service).
-  NOT_APPLICABLE_KINDS = %w[falsePositive waiver inherited].freeze
-  FAILED_KINDS = %w[poam vendorDependency riskAdjustment operationalRequirement].freeze
+  # The amended HDF status of each kind (DispositionVocabulary's hdf_status;
+  # a kind whose override carries no status leaves the finding failed).
+  NOT_APPLICABLE_KINDS = DispositionVocabulary::MAPPINGS.select { |_, m| m.hdf_status == "notApplicable" }.keys.freeze
+  PASSED_KINDS = DispositionVocabulary::MAPPINGS.select { |_, m| m.hdf_status == "passed" }.keys.freeze
+  FAILED_KINDS = (KINDS - NOT_APPLICABLE_KINDS - PASSED_KINDS).freeze
 
   # Kinds that hold or defer risk on a clock. Historically the ONLY kinds that
   # required an expiration; every kind requires one now (see the validation
@@ -49,6 +51,26 @@ class FindingDisposition < ApplicationRecord
   validates :control_id, presence: true,
             uniqueness: { scope: :authorization_boundary_id, case_sensitive: true }
   validates :kind, presence: true, inclusion: { in: KINDS }
+  # #1368 — a riskAdjustment re-rates the finding's impact and changes nothing
+  # else: hdf-cli 3.8.0 requires the new impact (0.0–1.0) on that override and
+  # refuses a status. Every other kind leaves impact alone, so carrying one
+  # there would be a value nothing reads.
+  validates :adjusted_impact, presence: true,
+            numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 },
+            if: :risk_adjustment?
+  validates :adjusted_impact, absence: { message: "is only for a riskAdjustment" }, unless: :risk_adjustment?
+  # #1368 — NIST OSCAL v1.2.3's vocabulary for the POA&M risk this disposition
+  # becomes. Required when a disposition is decided (FindingDispositionService);
+  # checked here only for being NIST's, so a row decided before these existed
+  # can still be approved, and is refused at POA&M export instead.
+  validates :nist_risk_prop, inclusion: { in: DispositionVocabulary::RISK_PROPS }, allow_nil: true
+  validates :nist_risk_status, inclusion: { in: DispositionVocabulary::RISK_STATUSES }, allow_nil: true
+  validates :nist_response_lifecycle, inclusion: { in: DispositionVocabulary::RESPONSE_LIFECYCLES }, allow_nil: true
+  validates :nist_facet_state, inclusion: { in: DispositionVocabulary::FACET_STATES }, allow_nil: true
+  # NIST SP 800-30 Rev. 1's five levels; the risk level is derived (Table I-2).
+  validates :nist_likelihood, :nist_impact, inclusion: { in: DispositionVocabulary::LEVELS }, allow_nil: true
+  # A falsePositive is NIST's `false-positive` risk, and only it is.
+  validate :false_positive_prop_matches_kind
   validates :reason, presence: true
   validates :decided_by, presence: true
   validates :decided_at, presence: true
@@ -95,8 +117,28 @@ class FindingDisposition < ApplicationRecord
   end
 
   # The HDF status this disposition amends the finding to.
+  def risk_adjustment?
+    kind == "riskAdjustment"
+  end
+
   def hdf_status
-    NOT_APPLICABLE_KINDS.include?(kind) ? "notApplicable" : "failed"
+    DispositionVocabulary.for(kind).hdf_status || "failed"
+  end
+
+  # The NIST fields a POA&M export needs that this disposition lacks.
+  def missing_nist_fields
+    NIST_FIELDS.select { |field| public_send(field).blank? }
+  end
+
+  NIST_FIELDS = %i[
+    nist_risk_prop nist_risk_status nist_response_lifecycle nist_facet_state nist_likelihood nist_impact
+  ].freeze
+
+  # SP 800-30 Rev. 1 Table I-2: the level of risk from likelihood and impact.
+  def nist_risk_level
+    return if nist_likelihood.blank? || nist_impact.blank?
+
+    DispositionVocabulary.risk_level(nist_likelihood, nist_impact)
   end
 
   # Kept for callers that ask whether a kind is one a reviewer would EXPECT to
@@ -124,6 +166,17 @@ class FindingDisposition < ApplicationRecord
   end
 
   private
+
+  def false_positive_prop_matches_kind
+    return if nist_risk_prop.blank?
+    return if (kind == "falsePositive") == (nist_risk_prop == "false-positive")
+
+    if kind == "falsePositive"
+      errors.add(:nist_risk_prop, "must be false-positive for a falsePositive")
+    else
+      errors.add(:nist_risk_prop, "false-positive is only for a falsePositive")
+    end
+  end
 
   def assign_uuid_if_blank
     self.uuid = SecureRandom.uuid if uuid.blank?

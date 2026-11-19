@@ -44,6 +44,7 @@ behaviour; this table is the index.
 | `POST` | `/api/v1/scanner_findings/:scanner_finding_id/disposition/reject` | Reject the amendment |
 | `POST` | `/api/v1/authorization_boundaries/:authorization_boundary_id/aggregate` | Roll findings and dispositions into the boundary's SSP / SAP / SAR / POA&M. `?async=true` enqueues instead and returns `202` |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments` | Export the Amendments document for `hdf amend apply`. `?verify=false` skips validation |
+| `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam` | The dispositions as an OSCAL POA&M in NIST's vocabulary (#1368) |
 | `GET` | `/api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package` | Download the signed package: amendments + findings + dispositions |
 | `GET` | `/api/v1/admin/remediation_timelines` | The remediation SLA table (admin) |
 | `PUT` | `/api/v1/admin/remediation_timelines` | Upsert one SLA row, keyed on baseline level x criticality (admin) |
@@ -113,10 +114,16 @@ DELETE /api/v1/scanner_findings/:uuid/disposition
 
 | Param | Notes |
 |---|---|
-| `kind` | one of `falsePositive`, `waiver`, `poam`, `vendorDependency`, `inherited`, `riskAdjustment`, `operationalRequirement` |
+| `kind` | one of `falsePositive`, `waiver`, `poam`, `vendorDependency`, `inherited`, `riskAdjustment`, `operationalRequirement`, `attestation` (linked to an `Attestation`) |
 | `reason` | required justification |
 | `linked_subject_type` / `linked_subject_id` | the supporting record (`Evidence`, `Attestation`, `PoamFinding`, `AuthorizationBoundary`, `RiskAssessment`) |
-| `expiration` | required for `waiver` / `operationalRequirement` |
+| `expiration` | review date, required for every kind, at most one year out |
+| `adjusted_impact` | required for `riskAdjustment` and refused for every other kind: the impact (0.0–1.0) the finding carries in this system. Exported as the override's `impact`; a `riskAdjustment` carries no status (hdf-cli 3.8.0) |
+| `nist_risk_prop` | required: `false-positive` (for a `falsePositive`, and only it), `accepted` or `risk-adjusted` — NIST OSCAL v1.2.3's risk props |
+| `nist_risk_status` | required: `open`, `investigating`, `remediating`, `deviation-requested`, `deviation-approved` or `closed` |
+| `nist_response_lifecycle` | required: `recommendation`, `planned` or `completed` |
+| `nist_facet_state` | required: `initial` or `adjusted`, carried on each rating |
+| `nist_likelihood`, `nist_impact` | required: `very-low`, `low`, `moderate`, `high` or `very-high` (NIST SP 800-30 Rev. 1). The risk level is derived from them (Table I-2) |
 
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
@@ -125,7 +132,13 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
   https://sparc.example.com/api/v1/scanner_findings/$UUID/disposition
 ```
 
-Enforced rules (`422` on violation): the linked type must match the kind; `waiver`
+The response's `data` includes `adjusted_impact` (a number, or `null`), the six
+NIST fields, `nist_risk_level` (derived) and `hdf_override_type` (what the
+amendments export writes: a `vendorDependency` is a `poam` there, as HDF names
+vendor dependency a kind of POA&M).
+
+Enforced rules (`422` on violation): the linked type must match the kind; a
+`riskAdjustment` needs an `adjusted_impact` between 0 and 1; `waiver`
 / `operationalRequirement` need an *Authorizing Official* attestation; CRITICAL
 findings cannot be waived, downgraded, or marked operational (remediate or POA&M).
 
@@ -183,7 +196,7 @@ compute amendment validity when the boundary profile carries no ODP.
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments[?verify=false]
 ```
 
-Returns the raw HDF Amendments JSON (schema v3.7.0) — one override per current,
+Returns the raw HDF Amendments JSON (hdf-libs 3.8.0) — one override per current,
 non-expired disposition, deterministic (stable ordering + content-seeded
 `amendmentId`). The output is validated with `hdf amend verify` before it is
 returned (`?verify=false` skips this); a schema drift returns `422`.
@@ -208,3 +221,38 @@ curl -H "Authorization: Bearer $TOKEN" \
 hdf amend apply --results scan.hdf.json --amendments amendments.hdf.json -o amended.hdf.json
 saf validate threshold -i amended.hdf.json -T threshold.yml
 ```
+
+## Export the dispositions as an OSCAL POA&M
+
+```
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam
+```
+
+#1368. The amendments above go through the bundled `hdf` converter
+(`--from hdf-amendments --to oscal-poam`), and SPARC completes each risk from its
+disposition, in NIST OSCAL v1.2.3's vocabulary:
+
+- `status` — the disposition's `nist_risk_status`;
+- a risk prop named by `nist_risk_prop`, valued `yes` (NIST defines the prop
+  names, not their values; `yes` is FedRAMP's convention);
+- a characterization with `likelihood`, `impact` and `risk` facets in the
+  `http://csrc.nist.gov/ns/oscal` system, on NIST SP 800-30 Rev. 1's scale (risk
+  derived by its Table I-2), each with a `state` prop (`nist_facet_state`);
+- a response (`remediations[]`) with `nist_response_lifecycle` and a `type` prop
+  from the kind: `none` (falsePositive, attestation), `accept` (waiver,
+  operationalRequirement), `mitigate` (riskAdjustment, poam), `transfer`
+  (vendorDependency), `share` (inherited);
+- risk-log entries typed by the kind: `vendor-check-in` (vendorDependency),
+  `status-update` (poam, inherited, attestation), or for the deviation kinds
+  `dr-submission`, then `dr-approved` / `dr-rejected` once decided.
+
+The document is validated against the OSCAL schema before it is returned.
+
+| Status | Body |
+|---|---|
+| `200` | the OSCAL POA&M |
+| `422` | `missing_nist_fields` — `{control_id: [fields]}` for each disposition decided before v1.17.9 recorded them; also the amendments export's refusals |
+| `502` | the completed document failed OSCAL validation (a defect; never returned) |
+
+Requires admin or `evidence.read` on the boundary.
+

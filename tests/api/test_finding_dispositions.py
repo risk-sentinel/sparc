@@ -34,6 +34,7 @@ from typing import Any
 import httpx
 import pytest
 
+from _hdf_triage_flow import NIST_POAM_FIELDS
 from conftest import assert_error_envelope
 
 pytestmark = [pytest.mark.findings, pytest.mark.phase2]
@@ -98,6 +99,7 @@ def finding(admin_client: httpx.Client, scanned: dict[str, Any]) -> Iterator[dic
 
 def _payload(scanned: dict[str, Any], **overrides: Any) -> dict[str, Any]:
     body = {
+        **NIST_POAM_FIELDS,
         "kind": "inherited",
         "reason": "#995 sweep — inherited from the parent boundary",
         "linked_subject_type": "AuthorizationBoundary",

@@ -37,7 +37,7 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
   def set_disposition(headers: admin_headers, kind: "inherited", reason: "Inherited from the platform",
                       subject_type: "AuthorizationBoundary", subject_id: nil,
                       expiration: 90.days.from_now.iso8601)
-    params = { kind: kind, reason: reason,
+    params = { **nist_params(kind), kind: kind, reason: reason,
                linked_subject_type: subject_type,
                linked_subject_id: subject_id || inherited_from.id }
     params[:expiration] = expiration unless expiration.nil?
@@ -48,6 +48,63 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
   describe "POST .../disposition" do
+    # #1368 — a riskAdjustment carries the re-rated impact hdf-cli 3.8.0 requires.
+    describe "adjusted impact" do
+      let(:assessment) { create(:risk_assessment, authorization_boundary: boundary) }
+
+      it "creates a riskAdjustment with its adjusted impact and reads it back" do
+        post path, params: { **nist_params("riskAdjustment"), kind: "riskAdjustment", reason: "compensating control", adjusted_impact: 0.3,
+                             linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(response.parsed_body.dig("data", "adjusted_impact")).to eq(0.3)
+      end
+
+      it "refuses a riskAdjustment without one" do
+        post path, params: { **nist_params("riskAdjustment"), kind: "riskAdjustment", reason: "compensating control",
+                             linked_subject_type: "RiskAssessment", linked_subject_id: assessment.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(FindingDisposition.count).to eq(0)
+      end
+
+      it "refuses one on any other kind" do
+        set_disposition
+        expect(response).to have_http_status(:created)
+        post path, params: { **nist_params("inherited"), kind: "inherited", reason: "x", adjusted_impact: 0.3,
+                             linked_subject_type: "AuthorizationBoundary", linked_subject_id: inherited_from.id,
+                             expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    # #1368 — how the POA&M risk is said in NIST OSCAL, required on every decision.
+    describe "NIST POA&M fields" do
+      it "refuses a disposition without them, naming each" do
+        post path, params: { kind: "inherited", reason: "x", linked_subject_type: "AuthorizationBoundary",
+                             linked_subject_id: inherited_from.id, expiration: 90.days.from_now.iso8601 },
+                   headers: admin_headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["error"]).to include("nist_risk_prop", "nist_likelihood", "nist_impact")
+      end
+
+      it "reads them back, with the derived risk level and the HDF override type" do
+        set_disposition
+        data = response.parsed_body["data"]
+
+        expect(data).to include("nist_risk_status" => "deviation-requested", "nist_likelihood" => "moderate",
+                                "nist_impact" => "high", "nist_risk_level" => "moderate",
+                                "hdf_override_type" => "inherited")
+      end
+    end
+
     it "creates a disposition and reads back what was sent" do
       expect { set_disposition }.to change(FindingDisposition, :count).by(1)
 
@@ -114,7 +171,7 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
     # each kind requires a SPECIFIC one. A disposition is a claim that something
     # else justifies discounting the finding, so the justification has to exist.
     it "refuses a kind whose required linkage is missing, naming what it needs" do
-      post path, params: { kind: "waiver", reason: "no link" }, headers: admin_headers, as: :json
+      post path, params: { **nist_params("waiver"), kind: "waiver", reason: "no link" }, headers: admin_headers, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["error"]).to eq("waiver requires a linked Attestation")
@@ -158,7 +215,7 @@ RSpec.describe "Api::V1 finding dispositions", type: :request do
     end
 
     it "refuses an anonymous caller" do
-      post path, params: { kind: "inherited", reason: "x",
+      post path, params: { **nist_params("inherited"), kind: "inherited", reason: "x",
                            linked_subject_type: "AuthorizationBoundary",
                            linked_subject_id: inherited_from.id }, as: :json
 
