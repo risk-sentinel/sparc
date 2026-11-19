@@ -27,8 +27,9 @@ require "stringio"
 # naturally drops from the amendment, which is exactly what a translation layer
 # should do.
 #
-# Our FindingDisposition.kind values ARE the HDF override type names, so a kind
-# maps straight to `override.type`.
+# #1368 — DispositionVocabulary maps each kind to its HDF override type (all
+# but vendorDependency, an HDF POA&M type exported as `poam`, are the same
+# name).
 #
 # NIST 800-53: CA-7 (continuous monitoring), SI-2 (flaw remediation),
 # AU-10 (provenance — appliedBy + signature-seeded id).
@@ -138,9 +139,12 @@ class HdfAmendmentExportService
   def build_overrides
     overrides = dispositions.map do |d|
       override = {
-        "type"          => d.kind,
+        # #1368 — the HDF override type for the kind (vendorDependency is a
+        # POA&M type in HDF, so it goes out as a `poam` override).
+        "type"          => DispositionVocabulary.for(d.kind).hdf_override_type,
         "requirementId" => d.control_id,
-        "reason"        => d.reason,
+        # A vendorDependency goes out as a `poam`, so its reason says what it is.
+        "reason"        => d.kind == "vendorDependency" ? "Vendor dependency: #{d.reason}" : d.reason,
         "appliedBy"     => identity_for(d.decided_by),
         "appliedAt"     => (d.decided_at || d.created_at).utc.iso8601
       }
@@ -160,11 +164,10 @@ class HdfAmendmentExportService
   #   * every other kind sets a status, as before.
   # 3.7.2 accepted a status on all seven, so this export wrote one on each.
   def status_or_impact(disposition)
-    case disposition.kind
-    when "riskAdjustment" then { "impact" => { "value" => disposition.adjusted_impact.to_f } }
-    when "operationalRequirement" then {}
-    else { "status" => disposition.hdf_status }
-    end
+    return { "impact" => { "value" => disposition.adjusted_impact.to_f } } if disposition.risk_adjustment?
+
+    status = DispositionVocabulary.for(disposition.kind).hdf_status
+    status ? { "status" => status } : {}
   end
 
   # Both the vocabulary and the chain live in Hdf::AmendmentChain, shared with

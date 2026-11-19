@@ -130,6 +130,38 @@ RSpec.describe FindingDisposition do
     end
   end
 
+  # #1368 — NIST OSCAL v1.2.3's vocabulary for the POA&M risk.
+  describe "NIST POA&M fields" do
+    it "accepts only NIST's values" do
+      %i[nist_risk_prop nist_risk_status nist_response_lifecycle nist_facet_state nist_likelihood nist_impact].each do |field|
+        disp = build(:finding_disposition, field => "not-nist")
+        expect(disp).not_to be_valid, field
+        expect(disp.errors[field]).to be_present, field
+      end
+    end
+
+    it "pairs the false-positive prop with the falsePositive kind, both ways" do
+      expect(build(:finding_disposition, :false_positive, nist_risk_prop: "accepted")).not_to be_valid
+      expect(build(:finding_disposition, kind: "poam", nist_risk_prop: "false-positive")).not_to be_valid
+      expect(build(:finding_disposition, :false_positive)).to be_valid
+    end
+
+    it "lets a disposition decided before the fields existed be saved, and says what it lacks" do
+      disp = create(:finding_disposition, :without_nist)
+      expect(disp.update(approval_status: "approved")).to be(true)
+      expect(disp.missing_nist_fields).to eq(FindingDisposition::NIST_FIELDS)
+    end
+
+    it "derives the risk level from likelihood and impact (SP 800-30 Table I-2)" do
+      expect(build(:finding_disposition, nist_likelihood: "low", nist_impact: "very-high").nist_risk_level).to eq("moderate")
+      expect(build(:finding_disposition, :without_nist).nist_risk_level).to be_nil
+    end
+
+    it "treats an attestation as passed" do
+      expect(build(:finding_disposition, :attestation).hdf_status).to eq("passed")
+    end
+  end
+
   describe "#hdf_status" do
     it "maps suppressing kinds to notApplicable" do
       %w[falsePositive waiver inherited].each do |kind|

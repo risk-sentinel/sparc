@@ -13,7 +13,8 @@ const LINKAGE = {
   vendorDependency: "PoamFinding",
   inherited: "AuthorizationBoundary (upstream)",
   riskAdjustment: "RiskAssessment",
-  operationalRequirement: "Attestation (role: authorizing_official) + expiration"
+  operationalRequirement: "Attestation (role: authorizing_official) + expiration",
+  attestation: "Attestation"
 }
 
 export default class HdfTriageController extends Controller {

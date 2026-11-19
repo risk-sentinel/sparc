@@ -242,3 +242,53 @@ def test_disposition_form_adjusted_impact(authed_page, base_url):
 
     assert_no_csp_violations(page, during="HDF triage adjusted impact field")
 
+
+def test_disposition_form_nist_poam_fields(authed_page, base_url):
+    """#1368 — the six NIST POA&M fields are on the form, required, with
+    NIST's values, and the OSCAL POA&M download is offered."""
+    page = authed_page
+    record_csp(page)
+
+    if not _open_triage(page, base_url):
+        pytest.skip("no authorization boundary available to triage")
+
+    poam = page.locator("[data-testid='triage-download-poam']")
+    assert poam.count() == 1, "the OSCAL POA&M download is missing"
+
+    ingested = False
+    if page.locator("details").count() == 0:
+        with tempfile.NamedTemporaryFile("w", suffix=".hdf.json", delete=False) as f:
+            json.dump(HDF_SAMPLE, f)
+            sample_path = f.name
+        page.locator("input[type='file']").first.set_input_files(sample_path)
+        page.get_by_role("button", name="Upload & Ingest").click()
+        page.wait_for_load_state("networkidle")
+        ingested = True
+
+    details = page.locator("details").first
+    if details.count() == 0:
+        assert not ingested, f"ingested an HDF sample but no finding appeared on {page.url}"
+        pytest.skip("no findings to disposition")
+
+    details.locator("summary").click()
+    fieldset = details.locator("[data-testid='nist-poam-fields']")
+    assert fieldset.is_visible(), "the NIST POA&M fields are not shown"
+
+    selects = fieldset.locator("select")
+    names = selects.evaluate_all("els => els.map(e => e.name)")
+    assert sorted(names) == sorted([
+        "nist_risk_prop", "nist_risk_status", "nist_response_lifecycle",
+        "nist_facet_state", "nist_likelihood", "nist_impact",
+    ]), names
+    assert selects.evaluate_all("els => els.every(e => e.required)"), "a NIST field is not required"
+
+    status_values = fieldset.locator("select[name='nist_risk_status'] option").evaluate_all(
+        "els => els.map(e => e.value).filter(Boolean)"
+    )
+    assert status_values == [
+        "open", "investigating", "remediating",
+        "deviation-requested", "deviation-approved", "closed",
+    ], status_values
+
+    assert_no_csp_violations(page, during="HDF triage NIST POA&M fields")
+

@@ -1,0 +1,28 @@
+{
+  "source": "https://raw.githubusercontent.com/mitre/hdf-libs/v3.8.0/hdf-validators/go/schemas/hdf-amendments.schema.json",
+  "source_commit": "b556f22f1339219e9db5fd4a755e1b0217fe7845",
+  "source_git_blob": "0b942e4144b73f0096649bed40cde8181723b5ba",
+  "source_sha256": "43e6733fe1e2906f4248ded3274bfee85594ec5dce8172a5befe1aacd13ac8b9",
+  "retrieved": "2026-11-19",
+  "note": "HDF v3.8.0 enums for amendments; extracted verbatim for spec/lib/disposition_vocabulary_spec.rb (#1368).",
+  "override_type": [
+    "waiver",
+    "attestation",
+    "poam",
+    "inherited",
+    "falsePositive",
+    "riskAdjustment",
+    "operationalRequirement"
+  ],
+  "poam_type": [
+    "remediation",
+    "mitigation",
+    "riskAcceptance",
+    "vendorDependency"
+  ],
+  "milestone_status": [
+    "pending",
+    "inProgress",
+    "completed"
+  ]
+}
