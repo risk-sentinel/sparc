@@ -373,6 +373,7 @@ class AuditEvent < ApplicationRecord
     hdf_aggregation_run
     hdf_amendments_exported
     hdf_package_exported
+    disposition_poam_exported
 
     hdf_system_exported
 
@@ -584,7 +585,8 @@ class AuditEvent < ApplicationRecord
                                 finding_disposition_approved finding_disposition_rejected
                                 scan_run_ingested
                                 hdf_aggregation_enqueued hdf_aggregation_run
-                                hdf_amendments_exported hdf_package_exported],
+                                hdf_amendments_exported hdf_package_exported
+                                disposition_poam_exported],
     # #1179 — the boundary exported as an HDF hdf-system document.
     "HDF System" => %w[hdf_system_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated

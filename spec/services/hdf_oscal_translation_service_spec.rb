@@ -64,6 +64,15 @@ RSpec.describe HdfOscalTranslationService do
       expect(result.dig("assessment-results", "uuid")).to eq("44444444-4444-4444-8444-444444444444")
     end
 
+    # #1368 — a boundary with no evidence used to add an empty
+    # back-matter.resources, which OSCAL refuses (minItems 1).
+    it "adds no back-matter for a boundary without evidence, and the document still validates" do
+      allow(runner).to receive(:convert).and_return(minimal_sar)
+
+      result = service.hdf_to_oscal_sar("/tmp/scan.hdf.json", boundary: create(:authorization_boundary))
+      expect(result["assessment-results"]).not_to have_key("back-matter")
+    end
+
     context "with a boundary supplying back-matter enrichment (#449 L4)" do
       let(:boundary) { create(:authorization_boundary) }
       let(:evidence) do

@@ -42,6 +42,11 @@ Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so
   - **A `riskAdjustment` disposition records an adjusted impact** (0.0–1.0), required for that kind, in the triage form and the API. The HDF amendments export sends it as the override's impact, with no status, as hdf 3.8.0 requires. An `operationalRequirement` is exported with neither.
   - **HDF ingest:** an impact of 0 no longer marks a finding not applicable on its own; the results decide. A control scored 0 whose results are all skipped is still not applicable.
   - **`hdf-system` documents** now target schema v3.8.0.
+- **Dispositions speak NIST's POA&M vocabulary** ([#1368](https://github.com/risk-sentinel/sparc/issues/1368)):
+  - Every disposition records its POA&M risk in NIST OSCAL v1.2.3 terms, all required: the risk prop (`false-positive`, `accepted`, `risk-adjusted`), the risk status, the response lifecycle, the rating state, and likelihood and impact on NIST SP 800-30's five levels. The risk level is derived from likelihood and impact (SP 800-30 Table I-2).
+  - **Download OSCAL POA&M** on the triage page, and `GET /api/v1/authorization_boundaries/:id/disposition_poam`: the dispositions as a validated OSCAL POA&M, each risk carrying those fields, the kind's NIST response type and a typed risk-log entry. A disposition decided before this release is refused there, by name, until its NIST fields are chosen.
+  - `vendorDependency` now exports: HDF calls vendor dependency a kind of POA&M, so it goes out as a `poam` override, and in NIST terms as a `transfer` response with a `vendor-check-in` log entry. It could not be exported before.
+  - New kind `attestation`, HDF's: an assessor verified the requirement by hand.
 - **SAF CLI 1.8.0** ([#1362](https://github.com/risk-sentinel/sparc/issues/1362)) in the security pipeline, from MITRE's release image pinned by digest.
 - **Security updates:**
   - The image no longer ships the PostgreSQL client tools (`psql`, `pg_dump` and the rest); the entrypoint checks database readiness through libpq. On 2026-11-18 those packages carried 37 PostgreSQL advisories with no upstream fix, nearly all for the database server.
@@ -50,7 +55,7 @@ Priority codes (P1/P2/P3) are not part of NIST SP 800-53 Rev 5 or SP 800-53B, so
   - Go 1.26.11 for the bundled `hdf` tool.
   - `msgpack` 1.8.7, `puma` 8.0.3 and the November patch-level gem updates.
 
-**Upgrading:** an image swap from v1.17.8. One schema migration runs at startup (`finding_dispositions.adjusted_impact`), and one data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
+**Upgrading:** an image swap from v1.17.8. Two schema migrations run at startup (`finding_dispositions.adjusted_impact`, and the disposition's NIST POA&M fields), and one data migration runs after the web server starts; the admin Data migrations screen (`/admin/data_migrations`) shows its result.
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.9).
 

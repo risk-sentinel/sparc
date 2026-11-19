@@ -119,6 +119,7 @@ module ApiRoutePermissions
                                   actions: { "approve" => [ "amendment.approve" ],
                                              "reject"  => [ "amendment.approve" ] } },
     "hdf_amendments"         => { read: [ "evidence.read" ] },
+    "disposition_poams"      => { read: [ "evidence.read" ] }, # #1368
     "hdf_packages"           => { read: [ "evidence.read" ] },
     "ksi_validations"        => { read: [ "evidence.read" ], write: [ "evidence.write" ],
                                   actions: { "destroy" => :admin } },

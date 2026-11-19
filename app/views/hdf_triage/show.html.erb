@@ -17,6 +17,10 @@
       <%= link_to "Download Amendments", triage_amendments_authorization_boundary_path(@boundary),
             class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
             data: { turbo: false, testid: "triage-download-amendments" } %>
+      <%# #1368 — the dispositions as an OSCAL POA&M in NIST's vocabulary. %>
+      <%= link_to "Download OSCAL POA&M", triage_poam_authorization_boundary_path(@boundary),
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+            data: { turbo: false, testid: "triage-download-poam" } %>
     <% else %>
       <span class="sparc-action sparc-action--info sparc-action--outline sparc-action--sm is-disabled"
             aria-disabled="true" data-testid="triage-download-amendments">No dispositions to export</span>
@@ -210,6 +214,35 @@
                       0.5 medium, 0.3 low. Its pass/fail status does not change.
                     </div>
                   </div>
+                  <%# #1368 — how this disposition's POA&M risk is said in NIST
+                      OSCAL v1.2.3, all required. Likelihood and impact use NIST
+                      SP 800-30 Rev. 1's five levels; the risk level is derived
+                      from them (Table I-2). %>
+                  <fieldset class="mb-2" data-testid="nist-poam-fields">
+                    <legend class="form-label small mb-1">NIST POA&amp;M risk</legend>
+                    <div class="row g-2">
+                      <% nist_selects = [
+                           [ :nist_risk_prop, "Risk prop", @vocabulary::RISK_PROPS.map { |v| [ v, v ] } ],
+                           [ :nist_risk_status, "Risk status", @vocabulary::RISK_STATUSES.map { |v| [ v, v ] } ],
+                           [ :nist_response_lifecycle, "Response lifecycle", @vocabulary::RESPONSE_LIFECYCLES.map { |v| [ v, v ] } ],
+                           [ :nist_facet_state, "Rating state", @vocabulary::FACET_STATES.map { |v| [ v, v ] } ],
+                           [ :nist_likelihood, "Likelihood", RiskRating::LEVEL_OPTIONS ],
+                           [ :nist_impact, "Impact", RiskRating::LEVEL_OPTIONS ]
+                         ] %>
+                      <% nist_selects.each do |field, label, choices| %>
+                        <div class="col-6">
+                          <%= label_tag "#{field}_#{finding.id}", label, class: "form-label small mb-0" %>
+                          <%= select_tag field, options_for_select(choices, disp&.public_send(field)),
+                                id: "#{field}_#{finding.id}", include_blank: "Choose…", required: true,
+                                class: "form-select form-select-sm" %>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div class="form-text small">
+                      A falsePositive uses the false-positive prop, and only it does. The risk level is
+                      derived from likelihood and impact (NIST SP 800-30 Rev. 1, Table I-2).
+                    </div>
+                  </fieldset>
                   <div class="row g-2 mb-2">
                     <div class="col">
                       <%= text_field_tag :linked_subject_type, disp&.linked_subject_type,

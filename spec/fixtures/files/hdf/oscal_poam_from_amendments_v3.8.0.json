@@ -1,0 +1,232 @@
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "d48bb753-4ed3-4948-9fba-107e94e9eab9",
+    "metadata": {
+      "title": "spec fixture",
+      "last-modified": "2026-11-19T00:00:00Z",
+      "version": "1",
+      "oscal-version": "1.1.2",
+      "roles": [
+        {
+          "id": "prepared-by",
+          "title": "Prepared By"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "8f5a242c-94bd-48af-9660-11919df2b224",
+          "type": "person",
+          "name": "security-lead",
+          "props": [
+            {
+              "name": "identity-identifier",
+              "value": "security-lead",
+              "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+            },
+            {
+              "name": "identity-type",
+              "value": "username",
+              "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+            }
+          ]
+        },
+        {
+          "uuid": "92cbe6f0-89cd-41c6-a40a-86e0332fe587",
+          "type": "person",
+          "name": "sec@example.com",
+          "props": [
+            {
+              "name": "identity-identifier",
+              "value": "sec@example.com",
+              "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+            },
+            {
+              "name": "identity-type",
+              "value": "email",
+              "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+            }
+          ]
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "prepared-by",
+          "party-uuids": [
+            "8f5a242c-94bd-48af-9660-11919df2b224"
+          ]
+        }
+      ],
+      "props": [
+        {
+          "name": "amendments-name",
+          "value": "spec fixture",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+        },
+        {
+          "name": "amendment-id",
+          "value": "c19407dd-e5aa-4816-9c97-962d541d50f4",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+        },
+        {
+          "name": "absent-field",
+          "value": "systemRef",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+        },
+        {
+          "name": "label-key",
+          "value": "source_yml",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal",
+          "class": "amendment-label",
+          "group": "label-1"
+        },
+        {
+          "name": "label-value",
+          "value": "/Users/brandonfield/risk-sentinel/sparc/docs/compliance/sparc-findings.yml",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal",
+          "class": "amendment-label",
+          "group": "label-1"
+        },
+        {
+          "name": "label-key",
+          "value": "system_id",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal",
+          "class": "amendment-label",
+          "group": "label-2"
+        },
+        {
+          "name": "label-value",
+          "value": "sparc-application",
+          "ns": "https://mitre.github.io/hdf-libs/ns/oscal",
+          "class": "amendment-label",
+          "group": "label-2"
+        }
+      ],
+      "remarks": "Generated from docs/compliance/sparc-findings.yml. Dispositions: false_positive -> falsePositive, accepted -> waiver, deferred -> poam. remediated entries are not emitted."
+    },
+    "import-ssp": {
+      "href": "#"
+    },
+    "risks": [
+      {
+        "uuid": "9c3d71fe-0a3f-4b6d-9712-26c1ae4fef42",
+        "title": "CVE-2026-0001",
+        "description": "Vendor dependency: awaiting the vendor's patch",
+        "statement": "Vendor dependency: awaiting the vendor's patch",
+        "props": [
+          {
+            "name": "hdf-requirement-id",
+            "value": "CVE-2026-0001",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          },
+          {
+            "name": "override-type",
+            "value": "poam",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          },
+          {
+            "name": "override-status",
+            "value": "failed",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          }
+        ],
+        "status": "open",
+        "deadline": "2027-02-17T00:00:00Z",
+        "risk-log": {
+          "entries": [
+            {
+              "uuid": "bf14d1bf-f7b0-45f1-87b0-a083b657141f",
+              "title": "Override applied",
+              "start": "2026-11-19T00:00:00Z",
+              "logged-by": [
+                {
+                  "party-uuid": "92cbe6f0-89cd-41c6-a40a-86e0332fe587"
+                }
+              ]
+            },
+            {
+              "uuid": "56c57e17-91c1-4f40-aac1-f45da6ca3e6b",
+              "title": "Scheduled review",
+              "description": "Amendment expiration date",
+              "start": "2027-02-17T00:00:00Z",
+              "status-change": "open"
+            }
+          ]
+        }
+      },
+      {
+        "uuid": "40fe7628-5f19-461a-92bd-61b47d81bff7",
+        "title": "CVE-2026-0002",
+        "description": "Code path not reachable",
+        "statement": "Code path not reachable",
+        "props": [
+          {
+            "name": "hdf-requirement-id",
+            "value": "CVE-2026-0002",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          },
+          {
+            "name": "override-type",
+            "value": "falsePositive",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          },
+          {
+            "name": "override-status",
+            "value": "notApplicable",
+            "ns": "https://mitre.github.io/hdf-libs/ns/oscal"
+          }
+        ],
+        "status": "closed",
+        "deadline": "2027-02-17T00:00:00Z",
+        "risk-log": {
+          "entries": [
+            {
+              "uuid": "c49f0828-76e8-42ef-8c49-680b859b60bb",
+              "title": "Override applied",
+              "start": "2026-11-19T00:00:00Z",
+              "logged-by": [
+                {
+                  "party-uuid": "92cbe6f0-89cd-41c6-a40a-86e0332fe587"
+                }
+              ]
+            },
+            {
+              "uuid": "cb8826e8-cd7a-424d-a974-33753c98987b",
+              "title": "Scheduled review",
+              "description": "Amendment expiration date",
+              "start": "2027-02-17T00:00:00Z",
+              "status-change": "closed"
+            }
+          ]
+        }
+      }
+    ],
+    "poam-items": [
+      {
+        "uuid": "2bde17e8-f9e4-4e74-8e41-a4ecf25f16f7",
+        "title": "CVE-2026-0001",
+        "description": "Vendor dependency: awaiting the vendor's patch",
+        "related-risks": [
+          {
+            "risk-uuid": "9c3d71fe-0a3f-4b6d-9712-26c1ae4fef42"
+          }
+        ]
+      },
+      {
+        "uuid": "f26c53ec-5bff-45cb-a3cb-ae1e0e0842bd",
+        "title": "CVE-2026-0002",
+        "description": "Code path not reachable",
+        "related-risks": [
+          {
+            "risk-uuid": "40fe7628-5f19-461a-92bd-61b47d81bff7"
+          }
+        ]
+      }
+    ]
+  },
+  "_provenance": {
+    "produced_by": "hdf-cli 3.8.0 (b556f22f), `hdf convert --from hdf-amendments --to oscal-poam`",
+    "on": "2026-11-19",
+    "input": "two overrides: CVE-2026-0001 poam/failed, CVE-2026-0002 falsePositive/notApplicable",
+    "used_by": "spec/services/disposition_poam_export_service_spec.rb (#1368), as the converter's output where CI has no hdf"
+  }
+}

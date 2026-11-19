@@ -112,11 +112,12 @@ module RiskRating
   # The uuid is DERIVED, not random, so re-exporting the same document produces
   # the same actor rather than a new one on every download.
   def rating_origin
-    {
-      "actors" => [
-        { "type" => "tool", "actor-uuid" => OscalUuidService.derived("sparc-tool", "risk-characterization") }
-      ]
-    }
+    { "actors" => [ RiskRating.sparc_tool_actor ] }
+  end
+
+  # The actor itself, shared with DispositionPoamExportService (#1368).
+  def self.sparc_tool_actor
+    { "type" => "tool", "actor-uuid" => OscalUuidService.derived("sparc-tool", "risk-characterization") }
   end
 
   def characterizations_for_export
