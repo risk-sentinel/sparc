@@ -385,6 +385,8 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
 
 ### Patch: `v1.17.11` — connect to any system that speaks FedRAMP, OSCAL, HDF or XCCDF (#1354, #1384)
 
+**Status (2026-11-21):** PRs 1 and 2 shipped combined as #1386 (owner's call: one gate, one review). PR A carries the FedRAMP sample package and its tests, the provider's FedRAMP evaluation of each vulnerability, the Vulnerability Detail Report and Accepted Vulnerability Info, a fix to the triage POA&M download's authorization, and the v1.17.11 version bump. Push and Class A follow as PR B (owner approved the split).
+
 Owner, 2026-11-20: SPARC must connect, for automation, to any system using the FedRAMP, OSCAL,
 HDF or XCCDF schemas, ready by 2026-11-22. A patch release from `main`, then carried onto
 `release-1.18.0-rf`. Decisions are on #1354 (two comments of 2026-11-20). Three PRs, each through
