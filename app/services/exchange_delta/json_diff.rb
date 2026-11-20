@@ -12,7 +12,7 @@ class ExchangeDelta
   module JsonDiff
     KEY_FIELDS = %w[uuid providerTrackingId frrID ksiId controlId control-id statement-id id].freeze
 
-    module_function
+    extend self
 
     # Yields (pointer, before, after) for each difference. `skip` is a
     # pointer predicate: a skipped pointer, and everything below it, is
@@ -23,20 +23,7 @@ class ExchangeDelta
       if before.is_a?(Hash) && after.is_a?(Hash)
         walk_hash(before, after, pointer, skip, &emit)
       elsif before.is_a?(Array) && after.is_a?(Array)
-        keyed_before = before.empty? ? {} : index(before)
-        keyed_after = after.empty? ? {} : index(after)
-        if keyed_before && keyed_after && !(before.empty? && after.empty?)
-          walk_hash(keyed_before, keyed_after, pointer, skip, &emit)
-        else
-          (0...[ before.size, after.size ].max).each do |i|
-            child = "#{pointer}/#{i}"
-            if i < before.size && i < after.size
-              walk(before[i], after[i], child, skip: skip, &emit)
-            elsif !skip&.call(child)
-              emit.call(child, before[i], after[i])
-            end
-          end
-        end
+        walk_array(before, after, pointer, skip, &emit)
       elsif before != after
         emit.call(pointer, before, after)
       end
@@ -68,14 +55,35 @@ class ExchangeDelta
       end
     end
 
+    # Lists whose entries all carry a key are compared by key, so reordering is
+    # no change; any other list is compared by position.
+    def walk_array(before, after, pointer, skip, &emit)
+      keyed_before = before.empty? ? {} : index(before)
+      keyed_after = after.empty? ? {} : index(after)
+      if keyed_before && keyed_after && !(before.empty? && after.empty?)
+        return walk_hash(keyed_before, keyed_after, pointer, skip, &emit)
+      end
+
+      (0...[ before.size, after.size ].max).each do |i|
+        child = "#{pointer}/#{i}"
+        if i < before.size && i < after.size
+          walk(before[i], after[i], child, skip: skip, &emit)
+        elsif !skip&.call(child)
+          emit.call(child, before[i], after[i])
+        end
+      end
+    end
+
     # The identifier of a list entry, or nil.
     def key_of(entry)
       return nil unless entry.is_a?(Hash)
 
-      KEY_FIELDS.each do |field|
-        value = entry[field]
-        return value.to_s if (value.is_a?(String) || value.is_a?(Integer)) && value.to_s.strip.present?
+      field = KEY_FIELDS.find do |name|
+        value = entry[name]
+        (value.is_a?(String) || value.is_a?(Integer)) && value.to_s.strip.present?
       end
+      return entry[field].to_s if field
+
       nested = entry["vulnerabilityDetail"]
       nested.is_a?(Hash) ? key_of(nested) : nil
     end

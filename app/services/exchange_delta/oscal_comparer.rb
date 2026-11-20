@@ -18,6 +18,7 @@ class ExchangeDelta
   # NIST SP 800-53: CA-7, CA-2 (assessment findings), CA-5 (POA&M items),
   # PL-2 (the SSP's implementation statements).
   class OscalComparer
+    IMPLEMENTATION_STATUS = "implementation-status"
     # implementation-status states, best first. Down is a regression.
     STATUS_RANK = { "implemented" => 4, "partial" => 3, "planned" => 2,
                     "alternative" => 1, "not-applicable" => 0 }.freeze
@@ -39,6 +40,7 @@ class ExchangeDelta
       when "system-security-plan" then ssp(was[root], now[root])
       when "assessment-results" then assessment_results(was[root], now[root])
       when "plan-of-action-and-milestones" then poam(was[root], now[root])
+      else nil # other models are compared field by field below
       end
       rest(was, now, root)
     end
@@ -123,8 +125,8 @@ class ExchangeDelta
     # OSCAL 1.x carries the state as a by-component's implementation-status
     # assembly; FedRAMP and older SSPs as an `implementation-status` prop.
     def implementation_status(node)
-      state = node.dig("implementation-status", "state") if node["implementation-status"].is_a?(Hash)
-      state ||= Array(node["props"]).find { |p| p.is_a?(Hash) && p["name"] == "implementation-status" }&.dig("value")
+      state = node.dig(IMPLEMENTATION_STATUS, "state") if node[IMPLEMENTATION_STATUS].is_a?(Hash)
+      state ||= Array(node["props"]).find { |p| p.is_a?(Hash) && p["name"] == IMPLEMENTATION_STATUS }&.dig("value")
       state.to_s.presence
     end
 
@@ -145,7 +147,7 @@ class ExchangeDelta
     end
 
     def status_change(label, was, now)
-      summary = "#{label}: #{was || '(none)'} → #{now || '(none)'}"
+      summary = "#{label}: #{was || ExchangeDelta::NONE} → #{now || ExchangeDelta::NONE}"
       from = STATUS_RANK[was]
       to = STATUS_RANK[now]
       key = "#{label}/implementation-status"
@@ -194,7 +196,7 @@ class ExchangeDelta
 
     def finding_changes(target, before, after)
       if before[:state] != after[:state]
-        summary = "#{target}: #{before[:state] || '(none)'} → #{after[:state] || '(none)'}"
+        summary = "#{target}: #{before[:state] || ExchangeDelta::NONE} → #{after[:state] || ExchangeDelta::NONE}"
         key = "#{target}/finding"
         if after[:state] == NOT_SATISFIED
           @changes.regression(key, summary, before: before[:state], after: after[:state])
@@ -270,7 +272,7 @@ class ExchangeDelta
     end
 
     def risk_status(key, title, was, now)
-      summary = "Risk #{title}: #{was || '(none)'} → #{now || '(none)'}"
+      summary = "Risk #{title}: #{was || ExchangeDelta::NONE} → #{now || ExchangeDelta::NONE}"
       if now == CLOSED then @changes.improvement("#{key}/status", summary, before: was, after: now)
       elsif was == CLOSED then @changes.regression("#{key}/status", summary, before: was, after: now)
       else @changes.neutral("#{key}/status", summary, before: was, after: now)

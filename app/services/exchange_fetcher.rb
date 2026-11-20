@@ -104,9 +104,15 @@ class ExchangeFetcher
 
   # IPv6 forms that carry an IPv4 address; the embedded address is classified
   # as if it were the destination (::ffff:127.0.0.1 is loopback).
-  NAT64_WKP = IPAddr.new("64:ff9b::/96")
-  SIX_TO_FOUR = IPAddr.new("2002::/16")
-  IPV4_COMPAT = IPAddr.new("::/96")
+  # (RFC 6052 NAT64 well-known prefix, RFC 3056 6to4, RFC 4291 IPv4-compatible.)
+  EMBEDDING_PREFIXES = {
+    nat64: "64:ff9b::/96",
+    six_to_four: "2002::/16",
+    ipv4_compat: "::/96"
+  }.transform_values { |cidr| IPAddr.new(cidr) }.freeze
+  NAT64_WKP = EMBEDDING_PREFIXES.fetch(:nat64)
+  SIX_TO_FOUR = EMBEDDING_PREFIXES.fetch(:six_to_four)
+  IPV4_COMPAT = EMBEDDING_PREFIXES.fetch(:ipv4_compat)
 
   HEX_PIN = /\A[0-9a-f]{64}\z/
   MAX_PINS = 2
@@ -223,10 +229,7 @@ class ExchangeFetcher
     embedded = embedded_ipv4(ip)
     return blocked_label(embedded)&.then { |l| "#{l}, embedded in IPv6" } if embedded
 
-    BLOCKED_RANGES.each do |range, label|
-      return label if range.family == ip.family && range.include?(ip)
-    end
-    nil
+    BLOCKED_RANGES.find { |range, _label| range.family == ip.family && range.include?(ip) }&.last
   end
 
   def self.embedded_ipv4(ip)
@@ -301,11 +304,11 @@ class ExchangeFetcher
   # NO_PROXY honoured, loopback never proxied — evaluated against the address
   # vetted above. find_proxy itself would resolve the host a second time.
   def proxy_for(uri, ip)
-    proxy = ENV["https_proxy"].presence || ENV["HTTPS_PROXY"].presence
+    proxy = ENV.fetch("https_proxy", nil).presence || ENV.fetch("HTTPS_PROXY", nil).presence
     return nil if proxy.nil?
     return nil if ip.start_with?("127.") || ip == "::1"
 
-    no_proxy = ENV["no_proxy"] || ENV["NO_PROXY"]
+    no_proxy = ENV.fetch("no_proxy", nil) || ENV.fetch("NO_PROXY", nil)
     return nil if no_proxy && !URI::Generic.use_proxy?(uri.hostname, ip, uri.port, no_proxy)
 
     URI.parse(proxy)
@@ -416,6 +419,7 @@ class ExchangeFetcher
       when Hash then node.each_value(&walk)
       when Array then node.each(&walk)
       when String then strings << node if node.start_with?("https://")
+      else nil # a number, boolean or null carries no link
       end
     end
     walk.call(JSON.parse(body))
@@ -459,6 +463,7 @@ class ExchangeFetcher
     case File.extname(path.to_s).downcase
     when ".json" then "json"
     when ".xml" then "xml"
+    else nil # the address does not say
     end
   end
 end

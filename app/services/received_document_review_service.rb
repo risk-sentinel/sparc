@@ -61,6 +61,7 @@ class ReceivedDocumentReviewService
       when "accept", "auto_accept" then accept!
       when "respond" then @document.state = "responded"
       when "reject" then @document.state = "rejected"
+      else raise Error, "Unknown decision #{action.inspect}"
       end
       @document.update!(review_action: action, review_note: note.presence, reviewed_at: Time.current,
                         reviewed_by: @user)

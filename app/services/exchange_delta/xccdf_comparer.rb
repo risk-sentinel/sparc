@@ -63,7 +63,7 @@ class ExchangeDelta
         else
           result_change(id, b[:result], a[:result]) if b[:result] != a[:result]
           if b[:severity] != a[:severity]
-            @changes.neutral("#{id}/severity", "#{id}: severity #{b[:severity] || '(none)'} → #{a[:severity] || '(none)'}",
+            @changes.neutral("#{id}/severity", "#{id}: severity #{b[:severity] || ExchangeDelta::NONE} → #{a[:severity] || ExchangeDelta::NONE}",
                              before: b[:severity], after: a[:severity])
           end
         end
@@ -72,7 +72,7 @@ class ExchangeDelta
 
     # Into fail, or pass → error: regression. fail → pass/fixed: improvement.
     def result_change(id, was, now)
-      summary = "#{id}: #{was || '(none)'} → #{now || '(none)'}"
+      summary = "#{id}: #{was || ExchangeDelta::NONE} → #{now || ExchangeDelta::NONE}"
       if now == "fail" || (was == "pass" && now == "error")
         @changes.regression(id, summary, before: was, after: now)
       elsif was == "fail" && FIXED.include?(now)
