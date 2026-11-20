@@ -2437,6 +2437,18 @@ end # SeedRunner demo_sample_artifacts
 end # if SEED_DEMO (sample artifacts)
 
 # ══════════════════════════════════════════════════════════════════════
+# DEMO: #1354 FedRAMP sample package, as received documents
+# ══════════════════════════════════════════════════════════════════════
+# samples/fedramp-package-demo/ loaded into the demo boundary's Received
+# documents, waiting for review. Its own section, so a demo instance seeded
+# before it existed picks it up on the next db:seed.
+if SEED_DEMO
+SeedRunner.run_section("demo_fedramp_package_samples") do
+load Rails.root.join("db/seeds/fedramp_package_samples.rb")
+end # SeedRunner demo_fedramp_package_samples
+end # if SEED_DEMO (FedRAMP sample package)
+
+# ══════════════════════════════════════════════════════════════════════
 # DEMO: #984 collection-screen fixtures
 # ══════════════════════════════════════════════════════════════════════
 # review_queue, promotion_queue, leveraged_poams and federation_peers held
