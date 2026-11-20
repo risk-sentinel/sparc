@@ -60,6 +60,8 @@ and the detail) carries these fields:
 | `name` | string | Boundary name |
 | `description` | string | Short description |
 | `status` | string | Lifecycle status |
+| `authorization_date` / `next_decision_date` | string (`YYYY-MM-DD`) or `null` | Decision dates (#1154) |
+| `fedramp_package_overview_uri` | string or `null` | The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it (`certificationPackageOverviewUri`; #1354) |
 | `created_at` / `updated_at` | string (ISO 8601) | Timestamps |
 
 The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
@@ -214,6 +216,7 @@ Create a new authorization boundary.
 | `authorization_boundary_description` | string | No | Detailed description of the boundary scope and included components |
 | `authorization_date` | string | No | When the authorization in force was granted, `YYYY-MM-DD` (#1154). `null` or `""` clears it |
 | `next_decision_date` | string | No | When the authorizing official is next due to decide, `YYYY-MM-DD` (#1154). Exported on the boundary's SSP as the SPARC-namespace prop `next-decision-date`. `null` or `""` clears it |
+| `fedramp_package_overview_uri` | string | No | The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it (#1354). Must be an `https://` address, or `422`; `null` or `""` clears it |
 
 Both dates are also accepted on update, are returned on every response
 (`null` when unset), and are refused with `422` unless they are a real calendar
@@ -267,6 +270,7 @@ curl -X POST "https://sparc.example.com/api/v1/authorization_boundaries" \
 ### PUT Update a Boundary
 
 Update an existing authorization boundary. Only include the fields you want to change.
+The fields are those of create, `fedramp_package_overview_uri` included. `PATCH` is the same.
 
 **Path Parameters**
 
