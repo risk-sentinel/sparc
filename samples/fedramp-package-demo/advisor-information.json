@@ -1,0 +1,23 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-advisor-information-schema-2026-06-24.json",
+  "advisorName": "Example Advisory Group",
+  "logo": "https://advisor.example.net/assets/logo.png",
+  "serviceDescription": "DEMO/SAMPLE DATA. A fictional advisory service that helps providers prepare FedRAMP packages.",
+  "contactInformation": {
+    "pointOfContactName": "Advisory Services Desk",
+    "jobTitle": "Engagement Manager",
+    "email": "hello@advisor.example.net",
+    "phone": "202-555-0120",
+    "companyWebsite": "https://advisor.example.net/"
+  },
+  "servicesOffered": [
+    {
+      "serviceName": "FedRAMP readiness",
+      "serviceDescription": "Gap analysis against the FedRAMP Consolidated Rules and a remediation plan."
+    },
+    {
+      "serviceName": "Machine-readable package preparation",
+      "serviceDescription": "Builds the provider's package JSON and validates it against FedRAMP's schemas."
+    }
+  ]
+}

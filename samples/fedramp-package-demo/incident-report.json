@@ -1,0 +1,38 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json",
+  "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json",
+  "reportType": "Final",
+  "providerTrackingId": "ECW-INC-2026-003",
+  "federalIncidentCoordinator": "Federal Incident Response Desk, incident-response@example.com, 202-555-0102",
+  "incidentDescription": "Credential-stuffing attempt against the sign-in page from a rotating set of addresses.",
+  "timeline": {
+    "startedAt": "2026-09-14T03:12:00Z",
+    "detectedAt": "2026-09-14T03:20:00Z",
+    "detectionSource": "Edge bot-detection alert",
+    "evaluationCompletedAt": "2026-09-14T05:00:00Z",
+    "milestones": [
+      {
+        "occurredAt": "2026-09-14T03:45:00Z",
+        "milestoneDescription": "Rate limit lowered and offending address ranges blocked."
+      },
+      {
+        "occurredAt": "2026-09-15T18:00:00Z",
+        "milestoneDescription": "Sign-in logs reviewed; no successful authentication from the attacking ranges."
+      }
+    ]
+  },
+  "potentialImpact": {
+    "historicalRating": [2, 1],
+    "currentRating": 0,
+    "evaluationNotes": "Rated N2 at detection (internet-reachable, likely exploitable); N0 once every attempt was confirmed failed."
+  },
+  "functionalImpact": "None: sign-in stayed available and no agency account was accessed.",
+  "recoveryPlan": "No recovery needed; rate-limit and bot rules stay in place.",
+  "affectedAgencies": ["Example Agency A (fictional)"],
+  "observedActivity": "About 40,000 sign-in attempts over 30 minutes using leaked credential lists; every attempt failed at the phishing-resistant MFA step.",
+  "indicatorsOfCompromise": ["198.51.100.0/24", "203.0.113.0/24"],
+  "relatedCveIds": [],
+  "rootCause": "Credential lists leaked from an unrelated third-party breach.",
+  "responseAndRecoveryActivities": "Blocked the ranges, lowered the rate limit, confirmed no compromise, notified the affected agency.",
+  "resolvedAt": "2026-09-15T18:00:00Z"
+}
