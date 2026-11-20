@@ -161,6 +161,10 @@ authorization date is included in the boundary's HDF system document.
 
 ![The Authorization date and Next decision date fields on the boundary Edit page](images/boundary-decision-dates.png)
 
+The **FedRAMP package overview address** is the address of this system's FedRAMP
+Certification Package Overview. FedRAMP's reports name it. It must be an
+`https://` address; leave it blank if the system has none (v1.17.11, #1354).
+
 ## How to add an environment
 
 Environments (dev, test, prod, …) are the system boundaries within an

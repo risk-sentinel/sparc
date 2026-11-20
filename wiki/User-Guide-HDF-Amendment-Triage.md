@@ -196,6 +196,52 @@ long an amendment keeps suppressing a finding.
 
 ---
 
+## FedRAMP evaluation
+
+FedRAMP asks a provider to evaluate every detected vulnerability and to report
+what it found (FedRAMP's vulnerability rules, FRR.VER; v1.17.11, #1354). Each
+failing finding of the current scan has a **FedRAMP evaluation** column. It shows
+the evaluation at a glance, and **FedRAMP** opens the form to record it.
+
+| Field | FedRAMP rule | What you record |
+|---|---|---|
+| **Internet-reachable** | VER-EVA-EIR | Providers MUST evaluate detected vulnerabilities, considering the context of the cloud service offering, to determine if they are internet-reachable vulnerabilities. |
+| **Likely exploitable** | VER-EVA-ELX | Providers MUST evaluate detected vulnerabilities, considering the context of the cloud service offering, to determine if they are likely exploitable vulnerabilities. |
+| **Potential Agency Impact (N-rating)** | VER-EVA-EPA | One of N0–N5, below |
+| **Evaluated** | VER-RPT-VDT | When the evaluation was completed. Left empty, the first save records now |
+| **Next reduction to / by** | VER-RPT-VDT | The target N-rating and estimated time of the next planned reduction. The target must be lower than the current N-rating |
+| **Supplementary information** | VER-RPT-VDT | Anything that will help federal agencies assess or mitigate the risk to their federal customer data |
+
+The N-ratings, in FedRAMP's words (VER-EVA-EPA), are shown on the form:
+
+- **N0**: Exploitation is extremely unlikely to have any adverse effects on agencies that use the cloud service offering.
+- **N1**: Exploitation could be expected to have minimal customer effects on one or more agencies that use the cloud service offering.
+- **N2**: Exploitation could be expected to have narrow customer effects on one or more agencies that use the cloud service offering.
+- **N3**: Exploitation could be expected to have a disruptive customer effect on one agency that uses the cloud service offering.
+- **N4**: Exploitation could be expected to have a debilitating customer effect on one agency that uses the cloud service offering OR a disruptive customer effect on more than one federal agency that uses the cloud service offering.
+- **N5**: Exploitation could be expected to have a debilitating customer effect on more than one agency that uses the cloud service offering.
+
+The column reads, for example, `IRV` `Not LEV` `N3`, with the date it was
+evaluated and the next planned reduction (`next: N1 by 2026-12-15`). `IRV` is an
+internet-reachable vulnerability and `LEV` a likely exploitable one.
+
+- **The evaluation follows the vulnerability, not the scan.** It is kept by the
+  finding's control id, the vulnerability's tracking identifier in FedRAMP's
+  reports, so it carries over when the next scan reports the same control.
+- **Each change of N-rating is kept,** with when it was made. A fall is a PAIN
+  reduction, which FedRAMP's Vulnerability Detail Report lists. The form shows
+  the history once the rating has changed.
+- **Only a detected vulnerability is evaluated.** SPARC refuses an evaluation for
+  a control the boundary has no failing finding for.
+- Recording one needs `evidence.write` on the boundary, the same as a
+  disposition. Each one is audited as `fedramp_evaluation_recorded`.
+
+FedRAMP's reports also name the system's **FedRAMP package overview address**,
+which you set on the boundary's **Edit** page (see
+[Authorization Boundaries](User-Guide-Authorization-Boundaries)).
+
+---
+
 ## 3. Export amendments for your pipeline
 
 Click **Download Amendments** to get an HDF Amendments JSON document containing
@@ -275,6 +321,8 @@ API token:
 | Ingest a scan (with `cdef_document_id`, `scanner_scope`) | `POST /api/v1/authorization_boundaries/:id/scan_runs` |
 | List findings (current by default; `include_history=true`, `lifecycle=…`, `cdef_document_id=…`) | `GET /api/v1/authorization_boundaries/:id/scanner_findings?status=failed` |
 | Set a disposition | `POST /api/v1/scanner_findings/:uuid/disposition` |
+| Record a finding's FedRAMP evaluation (v1.17.11) | `PUT /api/v1/authorization_boundaries/:id/fedramp_evaluations/:control_id` |
+| List the FedRAMP evaluations, or the failing findings not yet evaluated (`?unevaluated=true`) | `GET /api/v1/authorization_boundaries/:id/fedramp_evaluations` |
 | Approve / reject an amendment | `POST /api/v1/scanner_findings/:uuid/disposition/approve` · `…/reject` |
 | Aggregate into SSP/SAP/SAR/POA&M (`?async=true` to enqueue) | `POST /api/v1/authorization_boundaries/:id/aggregate` |
 | Export amendments | `GET /api/v1/authorization_boundaries/:id/hdf_amendments` |
