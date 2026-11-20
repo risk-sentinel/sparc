@@ -40,11 +40,11 @@ RSpec.describe ExchangeDelta::XccdfComparer do
     )
   end
 
-  it "auto-accepts a re-scan whose only change is a fix, ignoring its new start time" do
+  it "classes a re-scan whose only change is a fix as an improvement, ignoring its new start time; still reviewed" do
     after = results("r1" => "pass").sub("2026-09-11T00:00:00", "2026-10-11T00:00:00")
     result = compare(results("r1" => "fail"), after)
     expect(kinds(result)).to eq([ [ :improvement, "r1: fail → pass" ] ])
-    expect(result).to be_auto_acceptable
+    expect(result).not_to be_auto_acceptable
   end
 
   it "classes a new failing rule as a regression; a new passing one and a dropped one as neutral" do

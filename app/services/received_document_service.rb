@@ -10,10 +10,11 @@ require "stringio"
 #   2. store the exact bytes, once — a version whose SHA-256 its stream
 #      already holds is not stored again;
 #   3. compare it with the version in effect for its stream (ExchangeDelta);
-#   4. a valid version with no changes or improvements only is accepted
-#      automatically (owner, 2026-11-20); any other valid version waits for a
-#      reviewer; an invalid one is stored with its errors and never takes
-#      effect.
+#   4. every valid version that differs from what the stream holds waits for
+#      a reviewer, an improvement included; an invalid one is stored with its
+#      errors and never takes effect. Owner, 2026-11-20: only a byte-identical
+#      re-delivery needs no person, and step 2 already records that as
+#      unchanged, leaving the accepted version in effect.
 #
 # NIST SP 800-53: CA-3, SI-10, SI-7 and AU-10 (bytes and SHA-256 fixed at
 # receipt), AU-12, CA-7.
