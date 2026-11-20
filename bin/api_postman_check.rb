@@ -71,6 +71,7 @@ CONTROLLER_TO_FOLDER = {
   "exchange_connections"               => "Exchange Connections",
   "exchange_document_sources"          => "Exchange Connections",
   "exchange_indexes"                   => "Received Documents",
+  "fedramp_reports"                    => "FedRAMP Reports",
   "federation_peers"                   => "Federation Peers",
   "finding_dispositions"               => "Scanner Findings",
   "guides"                             => "Guides",
