@@ -199,6 +199,9 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `back_matter.bulk_import` | Bulk-import back-matter resources |
 | `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
 | `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
+| `exchange.upload` | Upload a FedRAMP, OSCAL, HDF or XCCDF document into a boundary's received documents (on that boundary). An upload never takes effect until a reviewer accepts it |
+| `exchange.review` | Accept, respond to or reject a received document version (on that boundary). The person who uploaded a version cannot decide it; an Instance Admin is exempt |
+| `connections.manage` | Register and manage connections to other systems (their addresses, credential and trust pins), pull now, discover and test. Instance-level only: a grant on one boundary does not count |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
 | `admin.administer` | **Instance-administrator authority.** Opens every administrative screen and satisfies every other permission check. Intended to be granted by an identity provider for a **bounded window** (see below) rather than held permanently |
 

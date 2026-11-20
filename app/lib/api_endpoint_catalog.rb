@@ -51,6 +51,8 @@ module ApiEndpointCatalog
     api/v1/translations#poam_from_amendments
     api/v1/translations#amendments_from_oscal_poam
     api/v1/document_validations#create
+    api/v1/exchange_connections#discover
+    api/v1/exchange_connections#test_connection
   ].freeze
 
   # Every group needs a label here. A route under a new first segment fails
@@ -74,6 +76,7 @@ module ApiEndpointCatalog
     "document_validations" => "Document validation",
     "entitlement_sync" => "Entitlement sync",
     "evidences" => "Evidence",
+    "exchange_connections" => "Exchange connections",
     "federation" => "Federation identity",
     "federation_peers" => "Federation peers",
     "guides" => "Guides",
