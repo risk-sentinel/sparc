@@ -28,6 +28,7 @@
 * [POA&M](User-Guide-POAM)
 * [Evidence & Attestations](User-Guide-Evidence-and-Attestations)
 * [HDF Amendment Triage](User-Guide-HDF-Amendment-Triage)
+* [Connections & Received Documents](User-Guide-Connections-and-Received-Documents)
 * [Compliance Library](User-Guide-Compliance-Library)
 * [Security Keys & Smart Cards](User-Guide-Security-Keys)
 * [Administration](User-Guide-Administration)
