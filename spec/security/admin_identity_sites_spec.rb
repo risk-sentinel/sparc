@@ -24,6 +24,7 @@ RSpec.describe "raw admin? call sites are a closed, decided list (#1044)" do
       # must not be able to approve what they themselves submitted.
       "app/services/document_approval_service.rb" => 1,
       "app/services/finding_disposition_service.rb" => 1,
+      "app/services/received_document_review_service.rb" => 1,
 
       # ESCALATION BOUNDARY — only the break-glass account may set the `admin`
       # COLUMN on another user. Otherwise an afternoon-long grant could mint a

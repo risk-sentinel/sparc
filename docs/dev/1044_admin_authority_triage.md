@@ -42,6 +42,7 @@ without the prefix, because the short-circuit moved to authority.
 
 - `app/services/document_approval_service.rb`
 - `app/services/finding_disposition_service.rb`
+- `app/services/received_document_review_service.rb` (#1354, owner 2026-11-20: the uploader of a received document cannot decide it; the same break-glass exemption as dispositions)
 
 > "admin is global authority and has absolute reign, break-glass type of use."
 
