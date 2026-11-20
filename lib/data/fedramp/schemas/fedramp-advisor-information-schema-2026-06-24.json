@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedramp.gov/schemas/fedramp-advisor-information-schema-2026-06-24.json",
+  "$schemaVersion": "2.0.0",
+  "type": "object",
+  "title": "FedRAMP Advisor Information (MKT-CAS-WEB)",
+  "description": "Public information an Advisory Service must supply in machine-readable format on their website per MKT-CAS-WEB.",
+  "required": [
+    "advisorName",
+    "logo",
+    "serviceDescription",
+    "contactInformation",
+    "servicesOffered"
+  ],
+  "properties": {
+    "advisorName": {
+      "type": "string",
+      "title": "Advisor Name",
+      "description": "Name of the advisory organization as it should be displayed on the FedRAMP Marketplace (MKT-CAS-WEB)."
+    },
+    "logo": {
+      "$ref": "https://fedramp.gov/schemas/fedramp-common-definitions-schema-2026-06-24.json#/$defs/logoUri",
+      "title": "Logo",
+      "description": "URL of the advisor logo displayed on the FedRAMP Marketplace (MKT-CAS-WEB)."
+    },
+    "a2laId": {
+      "type": "string",
+      "title": "A2LA ID",
+      "description": "Identifier assigned to the organization by the American Association for Laboratory Accreditation. Optional for advisors; CR26 does not require advisory services to be A2LA accredited."
+    },
+    "serviceDescription": {
+      "type": "string",
+      "title": "Service Description",
+      "description": "General description of the consulting or advisory service (MKT-CAS-WEB)."
+    },
+    "contactInformation": {
+      "$ref": "https://fedramp.gov/schemas/fedramp-common-definitions-schema-2026-06-24.json#/$defs/contactInformation",
+      "title": "Contact Information",
+      "description": "Contact information for the advisory organization (MKT-CAS-WEB)."
+    },
+    "servicesOffered": {
+      "type": "array",
+      "title": "Services Offered",
+      "description": "Types of consulting or advisory services offered (MKT-CAS-WEB).",
+      "items": {
+        "$ref": "#/$defs/serviceOffering"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "serviceOffering": {
+      "type": "object",
+      "title": "Service Offering",
+      "description": "Consulting or advisory service offered",
+      "required": ["serviceName"],
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "title": "Service Name",
+          "description": "Name of the consulting or advisory service type offered."
+        },
+        "serviceDescription": {
+          "type": "string",
+          "title": "Service Description",
+          "description": "Description of this service type and its scope."
+        }
+      }
+    }
+  }
+}
