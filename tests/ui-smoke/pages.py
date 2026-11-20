@@ -56,6 +56,7 @@ ADMIN_PAGES = [
     ("admin_data_migrations", "/admin/data_migrations"),
     ("admin_remediation_timelines", "/admin/remediation_timelines"),  # #809
     ("admin_reconciliation", "/admin/reconciliation"),  # #911 catalog lineage
+    ("admin_exchange_connections", "/admin/exchange_connections"),  # #1354 Settings → Connections
 ]
 
 # ── New / wizard forms (richest source of a11y debt + form-render bugs) ─────
@@ -77,6 +78,7 @@ FORM_PAGES = [
     ("authoritative_source_new", "/authoritative_sources/new"),
     ("admin_user_new", "/admin/users/new"),  # #877 — no password fields
     ("admin_service_account_new", "/admin/service_accounts/new"),  # #1176 — endpoint picker
+    ("admin_exchange_connection_new", "/admin/exchange_connections/new"),  # #1354
     ("profile_edit", "/profile/edit"),
     ("password_edit", "/password/edit"),
 ]
