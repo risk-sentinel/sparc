@@ -31,6 +31,15 @@
                   hint: "A FedRAMP package document, OSCAL (JSON or XML), HDF, or XCCDF results. Up to #{number_to_human_size(SparcConfig.max_upload_bytes)}." %>
           </div>
           <div class="col-md-6">
+            <% if @connections.any? %>
+              <div class="mb-3">
+                <%= label_tag :exchange_connection_id, "Provider", class: "form-label fw-semibold small" %>
+                <%= select_tag :exchange_connection_id, options_from_collection_for_select(@connections, :id, :name),
+                      include_blank: "Not from a registered provider", class: "form-select",
+                      data: { testid: "received-upload-provider" } %>
+                <div class="form-text">Pick the provider this document came from, so it is compared with that provider's earlier versions. Left blank, SPARC groups it by the package it names.</div>
+              </div>
+            <% end %>
             <div class="mb-3">
               <%= label_tag :document_format, "Format", class: "form-label fw-semibold small" %>
               <%= select_tag :document_format, options_for_select(@formats.map { |fmt| [ exchange_format_label(fmt), fmt ] }),
