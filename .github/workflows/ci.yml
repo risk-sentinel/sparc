@@ -363,7 +363,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: tmp/imported_catalogs
-          key: imported-catalogs-v1-shard${{ matrix.shard }}of${{ env.SPEC_SHARDS }}-${{ hashFiles('spec/fixtures/files/catalogs/**', 'app/models/**', 'app/services/**', 'app/lib/**', 'lib/**', 'config/**', 'db/schema.rb', 'Gemfile.lock', '.ruby-version', '.github/workflows/ci.yml', 'spec/spec_helper.rb', 'spec/rails_helper.rb', 'spec/support/**', 'spec/factories/**', 'script/ci/spec_shard.rb', 'script/ci/spec_timings.json') }}
+          key: imported-catalogs-v2-shard${{ matrix.shard }}of${{ env.SPEC_SHARDS }}-${{ hashFiles('spec/fixtures/files/catalogs/**', 'app/models/**', 'app/services/**', 'app/lib/**', 'lib/**', 'config/**', 'db/schema.rb', 'Gemfile.lock', '.ruby-version', '.github/workflows/ci.yml', 'spec/spec_helper.rb', 'spec/rails_helper.rb', 'spec/support/**', 'spec/factories/**', 'script/ci/spec_shard.rb', 'script/ci/spec_timings.json') }}
 
       - name: Run tests
         env:

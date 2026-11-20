@@ -55,4 +55,70 @@ RSpec.describe ImportedCatalogs, :imports_this_run do
     create(:control_catalog)
     expect { imported_catalog(name) }.to change { described_class.stats[:imported] }.by(1)
   end
+
+  # #1264 — the CI cache file is JSON: it reads back as plain data, never as an
+  # object of some class, and every snapshot comes back as it was kept.
+  describe "the cache file" do
+    around do |example|
+      Dir.mktmpdir("imported-catalogs-") do |dir|
+        original = ENV["IMPORTED_CATALOGS_CACHE"]
+        ENV["IMPORTED_CATALOGS_CACHE"] = dir
+        example.run
+      ensure
+        ENV["IMPORTED_CATALOGS_CACHE"] = original
+      end
+    end
+
+    let(:file) { Pathname(ENV.fetch("IMPORTED_CATALOGS_CACHE")).join(ImportedCatalogs::CACHE_FILE) }
+
+    # The snapshots a NEW run would read from the file; this run's stay as they were.
+    def reloaded
+      kept = described_class.instance_variable_get(:@snapshots)
+      described_class.instance_variable_set(:@snapshots, nil)
+      described_class.snapshots
+    ensure
+      described_class.instance_variable_set(:@snapshots, kept)
+    end
+
+    def as_utf8(tables)
+      tables.transform_values { |rows| rows.map { |row| row.dup.force_encoding(Encoding::UTF_8) } }
+    end
+
+    it "is gzipped JSON, and reads back every snapshot as it was kept" do
+      imported_catalog(name)
+      described_class.instance_variable_set(:@unsaved, true)
+      described_class.save_cache
+
+      expect(JSON.parse(Zlib.gunzip(file.binread))).to all(include("key", "snapshot"))
+      kept = described_class.snapshots
+      back = reloaded
+
+      expect(back.keys).to match_array(kept.keys)
+      kept.each do |key, snapshot|
+        expect(back.fetch(key)).to have_attributes(catalog_id: snapshot.catalog_id, counts: snapshot.counts,
+                                                   max_ids: snapshot.max_ids, from_cache: true)
+        expect(back.fetch(key).tables).to eq(as_utf8(snapshot.tables))
+      end
+    end
+
+    it "ignores a file it cannot read, so the importer runs" do
+      file.dirname.mkpath
+      file.binwrite("not a cache file")
+
+      expect { expect(reloaded).to eq({}) }.to output(/ImportedCatalogs: ignoring/).to_stderr
+    end
+
+    it "writes nothing when a captured row is not valid UTF-8" do
+      kept = described_class.instance_variable_get(:@snapshots)
+      bad = ImportedCatalogs::Snapshot.new(catalog_id: 1, counts: {}, max_ids: {}, tables: { "t" => [ "\xFF".b ] },
+                                           from_cache: false)
+      described_class.instance_variable_set(:@snapshots, { [ "bad.json", [] ] => bad })
+      described_class.instance_variable_set(:@unsaved, true)
+
+      expect { described_class.save_cache }.to output(/not valid UTF-8/).to_stderr
+      expect(file).not_to exist
+    ensure
+      described_class.instance_variable_set(:@snapshots, kept)
+    end
+  end
 end
