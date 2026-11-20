@@ -95,25 +95,6 @@
       </div>
     </div>
 
-    <%# ── Settings (#1354) ── owner: connections live in Settings; shown
-        exactly when the screen admits the user (can_manage_connections?). %>
-    <% if can_manage_connections? %>
-      <div class="sparc-sidebar-section border-top border-secondary">
-        <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarSettings" aria-expanded="false">
-          <span class="sparc-sidebar-icon">&#9881;</span> Settings
-        </button>
-        <div class="collapse" id="sidebarSettings">
-          <ul class="sparc-sidebar-leaves">
-            <li>
-              <%= link_to admin_exchange_connections_path, class: "sparc-sidebar-leaf" do %>
-                <span class="sparc-sidebar-dot sparc-accent-bg sparc-accent--ocean"></span> Connections
-              <% end %>
-            </li>
-          </ul>
-        </div>
-      </div>
-    <% end %>
-
     <div class="sparc-sidebar-section border-top border-secondary">
       <button class="sparc-sidebar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebarResources" aria-expanded="false">
         <span class="sparc-sidebar-icon">&#128279;</span> Resources

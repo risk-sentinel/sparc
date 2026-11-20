@@ -116,6 +116,8 @@ class Role < ApplicationRecord
     "converters" => "Converters",
     "back_matter" => "Back-Matter Resources",
     "amendment" => "HDF Amendments",
+    "exchange" => "Received Documents",
+    "connections" => "Connections",
     "admin" => "Instance Administration"
   }.freeze
 

@@ -110,21 +110,24 @@ def test_connections_screens_render_clean(authed_page):
 
 
 def test_connections_are_offered_in_settings(authed_page):
-    """The admin dropdown and the sidebar's Settings section both lead here."""
+    """The admin dropdown leads here, next to Roles (owner, 2026-11-20: dropdown only)."""
     page = authed_page
     record_csp(page)
     page.goto("/")
     page.wait_for_load_state("networkidle")
-    sidebar_link = page.locator("nav.sparc-sidebar a[href='/admin/exchange_connections']")
-    assert sidebar_link.count() == 1, "the sidebar's Settings → Connections link is missing"
-    page.locator("nav.sparc-sidebar [data-bs-target='#sidebarSettings']").click()
-    sidebar_link.wait_for(state="visible", timeout=5000)
-    with page.expect_navigation(wait_until="networkidle"):
-        sidebar_link.click()
-    assert page.url.rstrip("/").endswith("/admin/exchange_connections"), page.url
-    assert page.locator("nav.navbar a[href='/admin/exchange_connections']").count() == 1, (
-        "the admin dropdown's Connections item is missing"
+    link = page.locator("nav.navbar a.dropdown-item[href='/admin/exchange_connections']")
+    assert link.count() == 1, "the admin dropdown's Connections item is missing"
+    assert page.locator("nav.sparc-sidebar a[href='/admin/exchange_connections']").count() == 0, (
+        "Connections belongs in the admin dropdown only, not the sidebar"
     )
+    menu = page.locator(
+        "nav.navbar li.dropdown:has(a.dropdown-item[href='/admin/exchange_connections'])"
+    )
+    menu.locator(":scope > .dropdown-toggle").first.click()
+    link.wait_for(state="visible", timeout=5000)
+    with page.expect_navigation(wait_until="networkidle"):
+        link.click()
+    assert page.url.rstrip("/").endswith("/admin/exchange_connections"), page.url
     assert_no_csp_violations(page, during="reaching Connections from the navigation")
 
 
