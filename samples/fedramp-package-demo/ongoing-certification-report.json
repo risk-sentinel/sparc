@@ -1,0 +1,43 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-ongoing-certification-report-schema-2026-06-24.json",
+  "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json",
+  "reportPeriod": {
+    "from": "2026-08-01",
+    "to": "2026-10-31"
+  },
+  "certificationDataChanges": [
+    "Security decision record 1.2.0: RA-5 parameter updated to continuous scanning.",
+    "Added Document Vault to the certified services."
+  ],
+  "plannedCertificationDataChanges": {
+    "planningHorizonThrough": "2027-01-31",
+    "changes": [
+      "Authenticated scanning of the managed database tier (RA-5) in Q1 2027.",
+      "Sign deployment configuration files (KSI-SVC-VRI)."
+    ]
+  },
+  "acceptedVulnerabilities": "One accepted vulnerability (ECW-VULN-0007, N1): a vendor-supported library with no fix available; compensating WAF rule in place. Full record in accepted-vulnerability-info.json.",
+  "transformativeChanges": [
+    "Migration of the database tier to a new managed PostgreSQL major version (significant change notification SCN-2026-004)."
+  ],
+  "updatedRecommendations": [
+    "Agencies should enable the new per-tenant retention policy in the administrator console."
+  ],
+  "activeAgencies": [
+    "Example Agency A (fictional)",
+    "Example Agency B (fictional)"
+  ],
+  "reportableIncidents": {
+    "incidents": [
+      {
+        "summary": "Credential-stuffing attempt against the sign-in page; no account compromised.",
+        "occurredAt": "2026-09-14T03:12:00Z",
+        "resolvedAt": "2026-09-15T18:00:00Z",
+        "incidentLessonsLearned": [
+          "Rate limiting was lowered and bot detection added at the edge.",
+          "The incident runbook now names the WAF rule owner."
+        ]
+      }
+    ]
+  }
+}

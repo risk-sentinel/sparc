@@ -1,0 +1,27 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-assessor-information-schema-2026-06-24.json",
+  "assessorName": "Example Assessment Services, LLC",
+  "logo": "https://assessor.example.org/assets/logo.svg",
+  "a2laId": "0000.01",
+  "a2laAccreditationDate": "2025-03-01",
+  "serviceDescription": "DEMO/SAMPLE DATA. A fictional independent assessment service for FedRAMP 20x and Rev5 offerings.",
+  "contactInformation": {
+    "pointOfContactName": "Assessment Intake Desk",
+    "jobTitle": "Client Services",
+    "email": "intake@assessor.example.org",
+    "phone": "202-555-0110",
+    "companyWebsite": "https://assessor.example.org/"
+  },
+  "servicesOffered": [
+    {
+      "serviceName": "FedRAMP 20x verification and validation",
+      "serviceDescription": "Independent assessment of Key Security Indicators and their machine-readable evidence."
+    },
+    {
+      "serviceName": "FedRAMP Rev5 assessment",
+      "serviceDescription": "NIST SP 800-53 Rev 5 control assessment and Security Assessment Report."
+    }
+  ],
+  "foundedDate": "2015-01-15",
+  "cyberFrameworks": ["FedRAMP", "NIST SP 800-53 Rev 5", "NIST CSF 2.0"]
+}

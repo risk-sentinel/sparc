@@ -1,0 +1,66 @@
+{
+  "description": "DEMO/SAMPLE DATA. Variants of the valid sample package, each broken in ONE documented way. Each must fail SPARC's validation with exactly the error listed. An upload or pull stores each one as invalid, with this error, and it can never be accepted.",
+  "checked_by": "spec/samples/fedramp_package_demo_spec.rb",
+  "documents": [
+    {
+      "file": "vdr-blank-required-field.json",
+      "derived_from": "vulnerability-detail-report.json",
+      "defect": "A required field present but blank: vulnerabilities[0].vulnerabilityDescription is only spaces.",
+      "expected_errors": [
+        {
+          "check": "completeness",
+          "pointer": "/vulnerabilities/0/vulnerabilityDescription",
+          "message": "required field is blank"
+        }
+      ]
+    },
+    {
+      "file": "sdr-missing-required-field.json",
+      "derived_from": "security-decision-record.json",
+      "defect": "A required field missing: fedRampRequirements is removed.",
+      "expected_errors": [
+        {
+          "check": "schema",
+          "pointer": "",
+          "message": "object at root is missing required properties: fedRampRequirements"
+        }
+      ]
+    },
+    {
+      "file": "cpo-bad-enum.json",
+      "derived_from": "certification-package-overview.json",
+      "defect": "A value outside its enum: certificationType is \"Rev6\".",
+      "expected_errors": [
+        {
+          "check": "schema",
+          "pointer": "/serviceIdentification/certificationType",
+          "message": "value at `/serviceIdentification/certificationType` is not one of: [\"20x\", \"Rev5\"]"
+        }
+      ]
+    },
+    {
+      "file": "ocr-wrong-type.json",
+      "derived_from": "ongoing-certification-report.json",
+      "defect": "The wrong type: activeAgencies is a string, not an array.",
+      "expected_errors": [
+        {
+          "check": "schema",
+          "pointer": "/activeAgencies",
+          "message": "value at `/activeAgencies` is not an array"
+        }
+      ]
+    },
+    {
+      "file": "incident-bad-date-time.json",
+      "derived_from": "incident-report.json",
+      "defect": "A malformed date-time: timeline.detectedAt is \"2026-09-14 03:20\" (a space instead of T, no seconds, no time zone).",
+      "expected_errors": [
+        {
+          "check": "schema",
+          "pointer": "/timeline/detectedAt",
+          "message": "value at `/timeline/detectedAt` does not match format: date-time"
+        }
+      ]
+    }
+  ]
+}
