@@ -148,6 +148,32 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
       parsed = JSON.parse(response.body)
       expect(parsed["data"]["description"]).to eq("Updated description")
     end
+
+    # #1354 — the FedRAMP Certification Package Overview address FedRAMP's reports name.
+    it "saves the FedRAMP package overview address and reads it back" do
+      boundary = create(:authorization_boundary)
+      uri = "https://example.gov/fedramp/package-overview.json"
+
+      patch api_v1_authorization_boundary_path(boundary.slug),
+            params: { authorization_boundary: { fedramp_package_overview_uri: uri } },
+            headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "fedramp_package_overview_uri")).to eq(uri)
+      expect(boundary.reload.fedramp_package_overview_uri).to eq(uri)
+    end
+
+    it "refuses a FedRAMP package overview address that is not https" do
+      boundary = create(:authorization_boundary)
+
+      patch api_v1_authorization_boundary_path(boundary.slug),
+            params: { authorization_boundary: { fedramp_package_overview_uri: "http://example.gov/overview" } },
+            headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("must be an https:// address")
+      expect(boundary.reload.fedramp_package_overview_uri).to be_nil
+    end
   end
 
   describe "DELETE /api/v1/authorization_boundaries/:id" do

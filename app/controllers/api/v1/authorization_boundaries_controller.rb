@@ -163,7 +163,10 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
   def boundary_params
     permit_strictly(:authorization_boundary, :name, :description, :status, :authorization_boundary_description,
                     # #1154 — decision dates (YYYY-MM-DD), stored in boundary_metadata.
-                    :authorization_date, :next_decision_date)
+                    :authorization_date, :next_decision_date,
+                    # #1354 — the FedRAMP Certification Package Overview address
+                    # FedRAMP's reports name (https:// only; the model refuses others).
+                    :fedramp_package_overview_uri)
   end
 
   def serialize_boundary(ab, detailed: false)
@@ -187,6 +190,8 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       # exported on the SSP as the SPARC-namespace prop `next-decision-date`.
       authorization_date: ab.authorization_date,
       next_decision_date: ab.next_decision_date,
+      # #1354 — certificationPackageOverviewUri in FedRAMP's reports.
+      fedramp_package_overview_uri: ab.fedramp_package_overview_uri,
       created_at: ab.created_at.iso8601,
       updated_at: ab.updated_at.iso8601
     }
