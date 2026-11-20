@@ -86,6 +86,7 @@ markers = [
     "findings: tests for scanner findings and their triage dispositions (#447, #1034)",
     "health: tests for the /up and /up/ready probes (#1151)",
     "document_validations: tests for checking FedRAMP, OSCAL, HDF and XCCDF documents against SPARC's pinned schemas (#1354)",
+    "exchange: tests for exchange connections, received documents and their review, and the exchange index (#1354)",
 ]
 
 [tool.ruff]
