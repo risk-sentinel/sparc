@@ -11,6 +11,7 @@
 | `nist-traditional-demo/` | Individual OSCAL documents, JSON |
 | `fedramp-20x-demo/` | FedRAMP 20x workflow artifacts |
 | `ato-package-demo/` | **The assembled ATO package** — every document in JSON, YAML **and** XML, plus its manifest (#836) |
+| `fedramp-package-demo/` | **A FedRAMP package** for one fictional provider: one document per FedRAMP package schema SPARC vendors, each valid and complete, plus `invalid/` variants that each fail one documented way. Upload them into a boundary's Received documents (#1354). See its [README](fedramp-package-demo/README.md). |
 
 ## Overview
 

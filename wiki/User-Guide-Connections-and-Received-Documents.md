@@ -263,6 +263,38 @@ SHA-256 is shown so they can be checked.
 
 ---
 
+## Try it with the sample package
+
+SPARC ships a complete FedRAMP package for a fictional provider, in
+[`samples/fedramp-package-demo/`](https://github.com/risk-sentinel/sparc/tree/main/samples/fedramp-package-demo):
+one document for each FedRAMP package schema (package overview, security
+decision record, ongoing certification report, vulnerability detail report,
+accepted vulnerabilities, incident report, significant change notification,
+historical vulnerability activity, assessor and advisor information). Every
+report points at the package overview and shares its FedRAMP ID,
+`FR0000000001`.
+
+1. Open a boundary's **Received documents** page and drop the package's files
+   on **Upload a document**. Each one is stored as **Pending review**, and a
+   few show a warning for an optional field the sample leaves out on purpose.
+2. Drop `invalid/vdr-blank-required-field.json`. It is stored as **Invalid**,
+   and **Validation** shows the error at
+   `/vulnerabilities/0/vulnerabilityDescription`: *required field is blank*.
+   It offers no **Accept**.
+3. The other files in `invalid/` each fail one way: a required field missing,
+   a value outside its list, the wrong type, a malformed date-time. Their
+   `manifest.json` lists the exact error each one gives.
+4. Accept a valid version (as a reviewer who did not upload it), then upload
+   the same file again: SPARC reports it **Unchanged** and stores nothing.
+
+On a demo instance (`SPARC_SEED_DEMO=true`), the seed already loads the valid
+documents into the *Cloud Web Application ATO* boundary, waiting for review.
+
+The same files are what SPARC's own tests upload, so what you see is what is
+tested.
+
+---
+
 ## Over the API
 
 Everything on these screens is also in the API (see
