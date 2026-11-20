@@ -143,6 +143,19 @@ module ApiRoutePermissions
                                             "import" => [ "back_matter.federate" ] } },
     "federation_peers"      => { read: [ "back_matter.federate" ], write: [ "back_matter.federate" ] },
 
+    # ── Exchange: connections, received documents, the exchange index (#1354)
+    # Connections are instance-level: the controllers check connections.manage
+    # without a boundary, so only an instance-wide grant (or an administrator)
+    # passes. Discover and test fetch and store nothing, but still need it.
+    "exchange_connections"      => { read: [ "connections.manage" ], write: [ "connections.manage" ] },
+    "exchange_document_sources" => { read: [ "connections.manage" ], write: [ "connections.manage" ] },
+    # Received documents are checked against the boundary in the path.
+    "received_documents"        => { read: [ "evidence.read" ], write: [ "exchange.upload" ],
+                                     actions: { "accept"  => [ "exchange.review" ],
+                                                "respond" => [ "exchange.review" ],
+                                                "reject"  => [ "exchange.review" ] } },
+    "exchange_indexes"          => { read: [ "evidence.read" ] },
+
     # ── Administration ──────────────────────────────────────────────────
     "users"                  => { read: :admin, write: :admin,
                                   # A caller may read and update their own record.
