@@ -120,6 +120,32 @@ and not itemized individually in the license inventory (the relevant
 | **Used by** | `FedrampKsiImportService` — the FedRAMP 20x KSI catalog and its KSI → NIST SP 800-53 Rev 5 crosswalk |
 | **NIST control alignment** | CA-2 Control Assessments, SR-3 Supply Chain Controls (the data is validated against the vendored JSON Schema before import, and its sha256 against the sidecar in the spec suite) |
 
+### FedRAMP machine-readable package schemas (vendored schemas)
+
+| Field | Value |
+| --- | --- |
+| **Source repo** | [`FedRAMP/schemas`](https://github.com/FedRAMP/schemas) @ `8fe79fa5bb1b3ac6d5d5f636f4032cc5c56ea59c` (2026-10-27; the repository has no releases or tags) |
+| **Source files** | the 11 `fedramp-*-schema-2026-06-24.json` files (Consolidated Rules for 2026, ruleset 2026-06-24) |
+| **Copyright** | None — a work of the United States Government (FedRAMP / GSA) |
+| **License** | Not declared upstream; public domain in the United States under 17 U.S.C. 105. Vendoring decided by the owner 2026-11-20 (#1354, #1384) |
+| **License text** | n/a |
+| **Vendored as** | `lib/data/fedramp/schemas/`, byte-for-byte, with provenance (commit, each file's `$id`, `$schemaVersion`, sha256 and size) in `lib/data/fedramp/fedramp-schemas.provenance.json`. Each file is also equal, as parsed JSON, to the copy published at https://www.fedramp.gov/schemas/ |
+| **Re-vendor task** | `bin/fedramp_schemas_upstream_diff.rb` reports drift; take every file from one upstream commit and update the sidecar |
+| **Used by** | `FedrampPackageSchemas` and `DocumentValidationService` — FedRAMP package validation (rule FRC-CSO-JSN) |
+| **NIST control alignment** | SI-7, SR-4 (each file's sha256 checked before use), SI-10 |
+
+### XCCDF 1.2 schema and its imports (vendored schemas)
+
+| Field | Value |
+| --- | --- |
+| **Source** | NIST SCAP: https://scap.nist.gov/schema/xccdf/1.2/xccdf_1.2.xsd, https://scap.nist.gov/schema/cpe/2.3/cpe-language_2.3.xsd, https://scap.nist.gov/schema/cpe/2.3/cpe-naming_2.3.xsd; W3C: https://www.w3.org/2009/01/xml.xsd |
+| **Copyright** | NIST files: none — works of the United States Government. `xml.xsd`: © W3C |
+| **License** | NIST: public domain in the United States under 17 U.S.C. 105. `xml.xsd`: the W3C Document License |
+| **License text** | https://www.w3.org/copyright/document-license/ (for `xml.xsd`) |
+| **Vendored as** | `lib/data/xccdf/1.2/`, byte-for-byte, with provenance (source URL, sha256, size, and the import map) in `lib/data/xccdf/xccdf.provenance.json` |
+| **Used by** | `XccdfSchema` and `DocumentValidationService` — XCCDF 1.2 validation |
+| **NIST control alignment** | SI-7, SR-4, SI-10 |
+
 ### sparc-horizon SPARC-namespace props schema (vendored schema)
 
 | Field | Value |

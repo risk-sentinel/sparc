@@ -115,6 +115,16 @@ The **HDF ↔ OSCAL bridge** adds three stateless endpoints — `oscal/sar_from_
 `oscal/poam_from_hdf`, and `hdf/amendments_from_oscal_poam` (see
 [Core Functions §18](Core-Functions#18-hdf--oscal-translation-bridge)).
 
+**Check a document before you exchange it (v1.17.11, #1354).**
+`POST /api/v1/document_validations` checks a FedRAMP package document, an OSCAL
+document (JSON or XML), HDF (v2 or v3) or XCCDF 1.2 against the schema SPARC
+pins for that format, and checks that every field the schema requires is filled
+in. FedRAMP's own schemas accept an empty string for a required field; SPARC
+does not. It stores nothing: a document SPARC could check gets `200` with
+`valid` true or false, its errors (each with a JSON Pointer) and, for FedRAMP
+documents, a warning for each optional field left empty. Details in
+[`docs/api/endpoints/document-validations.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/document-validations.md).
+
 > **An overdue POA&M risk no longer refuses `hdf/amendments_from_oscal_poam` (v1.17.2, #1208).**
 > A risk past its `deadline` becomes an expired amendment, and `hdf amend apply`
 > refuses any document holding one. So by default SPARC **leaves overdue
