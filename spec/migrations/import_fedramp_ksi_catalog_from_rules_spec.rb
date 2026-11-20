@@ -29,7 +29,7 @@ RSpec.describe ImportFedrampKsiCatalogFromRules do
 
     migration.up
 
-    expect(catalog.reload.version).to eq("2026.09.13.02")
+    expect(catalog.reload.version).to eq("2026.11.02.01")
     expect(renamed.reload.catalog_control.control_id).to eq("ksi-iam-elp")
     expect(retired.reload.catalog_control).to be_retired
     expect([ renamed.status, retired.status ]).to eq(%w[passed partial])

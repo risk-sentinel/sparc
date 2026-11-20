@@ -232,8 +232,8 @@ RSpec.describe "Api::V1::KsiCatalog", type: :request do
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)["data"]
-      expect(data).to include("status" => "imported", "upstream_version" => "2026.09.13.02", "dry_run" => false)
-      expect(ksi_catalog.reload.version).to eq("2026.09.13.02")
+      expect(data).to include("status" => "imported", "upstream_version" => "2026.11.02.01", "dry_run" => false)
+      expect(ksi_catalog.reload.version).to eq("2026.11.02.01")
       expect(ksi_iam_02.reload.control_id).to eq("ksi-iam-elp")
     end
 
@@ -272,7 +272,7 @@ RSpec.describe "Api::V1::KsiCatalog", type: :request do
       post import_api_v1_ksi_catalog_path, headers: auth_headers
 
       expect(response).to have_http_status(:ok)
-      expect(ControlCatalog.find_by(source: "FedRAMP 20x").version).to eq("2026.09.13.02")
+      expect(ControlCatalog.find_by(source: "FedRAMP 20x").version).to eq("2026.11.02.01")
     end
 
     it "is allowed to a non-admin holding catalogs.write" do
