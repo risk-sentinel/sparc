@@ -519,7 +519,7 @@ class BaselineParameterService
   # The ids of the profile's controls, read once per service instance and
   # again after this service adds a control.
   def profile_control_ids
-    @profile_control_ids ||= profile.profile_controls.pluck(:id)
+    @profile_control_ids ||= profile.profile_controls.ids
   end
 
   # Which control a parameter is stored against.
