@@ -20,18 +20,38 @@ from playwright.sync_api import expect
 from _api_setup import create_boundary, delete_doc
 from helpers import assert_no_csp_violations, first_show_href, record_csp
 
+# #1354 — ingest validates every upload with `hdf validate`, so this is a
+# complete HDF v2 (InSpec exec-json) document: the v2 schema requires the
+# statistics, platform release, profile sha256/supports/attributes/groups,
+# control refs/tags/source_location and result code_desc/start_time.
 HDF_SAMPLE = {
-    "platform": {"name": "smoke"},
+    "platform": {"name": "smoke", "release": "1.0"},
+    "version": "5.22.3",
+    "statistics": {"duration": 0.1},
     "profiles": [
         {
             "name": "trivy",
+            "version": "1.0.0",
+            "sha256": "0" * 64,
+            "supports": [],
+            "attributes": [],
+            "groups": [],
             "controls": [
                 {
                     "id": "CVE-SMOKE-1",
                     "title": "Smoke test finding",
                     "desc": "seeded by the ui-smoke",
                     "impact": 0.8,
-                    "results": [{"status": "failed"}],
+                    "refs": [],
+                    "tags": {},
+                    "source_location": {"ref": "smoke", "line": 1},
+                    "results": [
+                        {
+                            "status": "failed",
+                            "code_desc": "smoke finding",
+                            "start_time": "2026-06-01T00:00:00Z",
+                        }
+                    ],
                 }
             ],
         }

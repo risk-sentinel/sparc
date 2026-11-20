@@ -67,7 +67,14 @@ POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 ```
 
 Multipart (`file=@scan.hdf.json`) or a raw HDF JSON body. Accepts a single HDF
-results document or a `saf convert` bundle (array of HDF docs). Findings are kept
+results document or a `saf convert` bundle (array of HDF docs), in **HDF v2**
+(InSpec exec-json, `profiles[]`) or **HDF v3** (`baselines[]`). Every document is
+validated with the `hdf` CLI first (`hdf validate --type results`, with
+`--schema-ver 2` for a v2 document), and a v2 document is converted up with
+`hdf convert --from hdf@2 --to hdf@3` before it is read, so both versions store
+the same findings. A finding's `raw_hdf` is the HDF v3 requirement (for a v2
+upload, its converted form); `raw_hdf_digest` and the stored file are the
+original upload. Findings are kept
 per-scan-run as history (`current` flag) with a re-occurrence lifecycle; a fresh
 scan supersedes the prior current findings and preserves their dispositions.
 
@@ -85,7 +92,8 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 ```
 
 Returns `201` with the run summary (`scanner`, `finding_count`, `failed_count`, …).
-`422` on malformed HDF or a document with no controls.
+`422` on malformed JSON, a document `hdf validate` rejects (the error carries
+hdf's reason), or a document with no controls.
 
 ## List runs & findings
 

@@ -1,0 +1,119 @@
+{
+  "baselines": [
+    {
+      "copyright": "",
+      "copyrightEmail": "disa.stig_spt@mail.mil",
+      "integrity": {
+        "algorithm": "sha256",
+        "checksum": "48c0692c73960103877a2b062d25aa0c9415331b7ba38f8a065a8f11928873f0"
+      },
+      "license": "",
+      "maintainer": "",
+      "name": "xccdf_org.example_benchmark_sparc-scap-sample",
+      "requirements": [
+        {
+          "code": "{\n  \"title\": \"Audit logging must be enabled\",\n  \"description\": \"The system must record auditable events.\",\n  \"ident\": {\n    \"text\": \"CCE-80001-2\",\n    \"system\": \"http://cce.mitre.org\"\n  },\n  \"check\": {\n    \"check-content-ref\": {\n      \"href\": \"oval.xml\",\n      \"name\": \"oval:org.example:def:1\"\n    },\n    \"system\": \"http://oval.mitre.org/XMLSchema/oval-definitions-5\"\n  },\n  \"id\": \"xccdf_org.example_rule_audit-enabled\",\n  \"severity\": \"medium\"\n}",
+          "descriptions": [
+            {
+              "data": "The system must record auditable events.",
+              "label": "default"
+            },
+            {
+              "data": "oval:org.example:def:1",
+              "label": "check"
+            }
+          ],
+          "effectiveChecksum": {
+            "algorithm": "sha256",
+            "value": "73908440a3b44d76de559753babfea36987a618b80ee9d26adcf29cb5c7a5217"
+          },
+          "effectiveStatus": "passed",
+          "id": "xccdf_org.example_rule_audit-enabled",
+          "impact": 0.5,
+          "results": [
+            {
+              "codeDesc": "The system must record auditable events.",
+              "startTime": "2026-09-11T00:00:30Z",
+              "status": "passed"
+            }
+          ],
+          "severity": "medium",
+          "sourceLocation": {},
+          "tags": {
+            "cci": [],
+            "check": "{\n  \"check-content-ref\": {\n    \"href\": \"oval.xml\",\n    \"name\": \"oval:org.example:def:1\"\n  },\n  \"system\": \"http://oval.mitre.org/XMLSchema/oval-definitions-5\"\n}",
+            "description": "The system must record auditable events.",
+            "fix_id": "",
+            "group_description": "",
+            "group_id": "xccdf_org.example_group_auditing",
+            "group_title": "Auditing",
+            "ident": {
+              "system": "http://cce.mitre.org",
+              "text": "CCE-80001-2"
+            },
+            "nist": [
+              "SA-11",
+              "RA-5"
+            ],
+            "profiles": [],
+            "reference": {
+              "references": ""
+            },
+            "rule_id": "xccdf_org.example_rule_audit-enabled",
+            "rule_result": {
+              "idref": "xccdf_org.example_rule_audit-enabled",
+              "result": "pass",
+              "severity": "medium",
+              "time": "2026-09-11T00:00:30"
+            },
+            "selected": "",
+            "severity": "medium",
+            "value": [],
+            "weight": ""
+          },
+          "title": "Audit logging must be enabled"
+        }
+      ],
+      "status": "loaded",
+      "summary": "Minimal SCAP client XCCDF-Results document used to prove SPARC accepts saf-converted SCAP output.",
+      "title": "SPARC SCAP acceptance sample",
+      "version": ""
+    }
+  ],
+  "components": [
+    {
+      "name": "Heimdall Tools",
+      "osName": "Heimdall Tools",
+      "osVersion": "2.13.0",
+      "type": "host"
+    }
+  ],
+  "extensions": {
+    "passthrough": {
+      "auxiliary_data": [
+        {
+          "data": {
+            "Benchmark": {
+              "status": {
+                "date": "2026-09-11",
+                "text": "accepted"
+              }
+            }
+          },
+          "name": "XCCDF"
+        }
+      ]
+    }
+  },
+  "generator": {
+    "name": "legacyhdf-to-hdf",
+    "version": "1.0.0"
+  },
+  "statistics": {},
+  "timestamp": "2026-09-11T00:00:30Z",
+  "tool": {
+    "format": "exec-json",
+    "name": "InSpec",
+    "version": "2.13.0"
+  }
+}

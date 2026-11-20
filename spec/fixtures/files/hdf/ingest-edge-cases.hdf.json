@@ -1,0 +1,414 @@
+{
+  "platform": {
+    "name": "edge-target",
+    "release": "9.9",
+    "target_id": "edge-1"
+  },
+  "version": "5.22.3",
+  "statistics": {
+    "duration": 1.5
+  },
+  "profiles": [
+    {
+      "name": "sparc-edge-profile",
+      "version": "2.1.0",
+      "title": "SPARC HDF v2 edge cases",
+      "maintainer": "SPARC",
+      "summary": "HDF v2 controls covering every branch HdfIngestService reads (#1354)",
+      "license": "Apache-2.0",
+      "copyright": "SPARC",
+      "copyright_email": "",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "supports": [],
+      "attributes": [],
+      "depends": [],
+      "groups": [],
+      "controls": [
+        {
+          "id": "EDGE-FAILED",
+          "title": "Title EDGE-FAILED",
+          "desc": "Desc EDGE-FAILED",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "AC-2",
+              "AC-3"
+            ],
+            "severity": "high"
+          },
+          "code": "control 'EDGE-FAILED'",
+          "source_location": {
+            "ref": "controls/EDGE-FAILED.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "first passes",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            },
+            {
+              "status": "failed",
+              "code_desc": "second fails",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z",
+              "message": "expected x"
+            }
+          ],
+          "impact": 0.7
+        },
+        {
+          "id": "EDGE-ERROR-AND-PASSED",
+          "title": "Title EDGE-ERROR-AND-PASSED",
+          "desc": "Desc EDGE-ERROR-AND-PASSED",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-ERROR-AND-PASSED'",
+          "source_location": {
+            "ref": "controls/EDGE-ERROR-AND-PASSED.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "ok",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            },
+            {
+              "status": "error",
+              "code_desc": "boom",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z",
+              "exception": "RuntimeError"
+            }
+          ],
+          "impact": 0.5
+        },
+        {
+          "id": "EDGE-ERROR-ONLY",
+          "title": "Title EDGE-ERROR-ONLY",
+          "desc": "Desc EDGE-ERROR-ONLY",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-ERROR-ONLY'",
+          "source_location": {
+            "ref": "controls/EDGE-ERROR-ONLY.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "error",
+              "code_desc": "boom",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.5
+        },
+        {
+          "id": "EDGE-SKIPPED-IMPACT-0",
+          "title": "Title EDGE-SKIPPED-IMPACT-0",
+          "desc": "Desc EDGE-SKIPPED-IMPACT-0",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-SKIPPED-IMPACT-0'",
+          "source_location": {
+            "ref": "controls/EDGE-SKIPPED-IMPACT-0.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "skipped",
+              "code_desc": "skipped at 0",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z",
+              "skip_message": "not applicable here"
+            }
+          ],
+          "impact": 0.0
+        },
+        {
+          "id": "EDGE-SKIPPED-IMPACT-05",
+          "title": "Title EDGE-SKIPPED-IMPACT-05",
+          "desc": "Desc EDGE-SKIPPED-IMPACT-05",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-SKIPPED-IMPACT-05'",
+          "source_location": {
+            "ref": "controls/EDGE-SKIPPED-IMPACT-05.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "skipped",
+              "code_desc": "skipped at 0.5",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z",
+              "skip_message": "manual review"
+            }
+          ],
+          "impact": 0.5
+        },
+        {
+          "id": "EDGE-PASSED-IMPACT-0",
+          "title": "Title EDGE-PASSED-IMPACT-0",
+          "desc": "Desc EDGE-PASSED-IMPACT-0",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-PASSED-IMPACT-0'",
+          "source_location": {
+            "ref": "controls/EDGE-PASSED-IMPACT-0.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "clean scan",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.0
+        },
+        {
+          "id": "EDGE-LOW-IMPACT-005",
+          "title": "Title EDGE-LOW-IMPACT-005",
+          "desc": "Desc EDGE-LOW-IMPACT-005",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-LOW-IMPACT-005'",
+          "source_location": {
+            "ref": "controls/EDGE-LOW-IMPACT-005.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "tiny",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.05
+        },
+        {
+          "id": "EDGE-CRITICAL-095",
+          "title": "Title EDGE-CRITICAL-095",
+          "desc": "Desc EDGE-CRITICAL-095",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-CRITICAL-095'",
+          "source_location": {
+            "ref": "controls/EDGE-CRITICAL-095.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "bad",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.95
+        },
+        {
+          "id": "EDGE-TAG-SEVERITY-OVERRIDES-IMPACT",
+          "title": "Title EDGE-TAG-SEVERITY-OVERRIDES-IMPACT",
+          "desc": "Desc EDGE-TAG-SEVERITY-OVERRIDES-IMPACT",
+          "refs": [],
+          "tags": {
+            "severity": "CRITICAL",
+            "nist": [
+              "RA-5"
+            ]
+          },
+          "code": "control 'EDGE-TAG-SEVERITY-OVERRIDES-IMPACT'",
+          "source_location": {
+            "ref": "controls/EDGE-TAG-SEVERITY-OVERRIDES-IMPACT.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "tagged",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.2
+        },
+        {
+          "id": "EDGE-OFF-VOCAB-SEVERITY-TAG",
+          "title": "Title EDGE-OFF-VOCAB-SEVERITY-TAG",
+          "desc": "Desc EDGE-OFF-VOCAB-SEVERITY-TAG",
+          "refs": [],
+          "tags": {
+            "severity": "CAT I"
+          },
+          "code": "control 'EDGE-OFF-VOCAB-SEVERITY-TAG'",
+          "source_location": {
+            "ref": "controls/EDGE-OFF-VOCAB-SEVERITY-TAG.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "cat",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.8
+        },
+        {
+          "id": "EDGE-PURL",
+          "title": "Title EDGE-PURL",
+          "desc": "Desc EDGE-PURL",
+          "refs": [],
+          "tags": {
+            "purl": "pkg:gem/rack@2.0.0",
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-PURL'",
+          "source_location": {
+            "ref": "controls/EDGE-PURL.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "failed",
+              "code_desc": "vuln",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.7
+        },
+        {
+          "id": "EDGE-SOURCE-REF-ONLY",
+          "title": "Title EDGE-SOURCE-REF-ONLY",
+          "desc": "Desc EDGE-SOURCE-REF-ONLY",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-SOURCE-REF-ONLY'",
+          "source_location": {
+            "ref": "only/ref.rb"
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "ref only",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.5
+        },
+        {
+          "id": "EDGE-EMPTY-TITLE-DESC",
+          "title": null,
+          "desc": null,
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-EMPTY-TITLE-DESC'",
+          "source_location": {
+            "ref": "controls/EDGE-EMPTY-TITLE-DESC.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "passed",
+              "code_desc": "untitled",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ],
+          "impact": 0.5
+        },
+        {
+          "id": "EDGE-NO-IMPACT",
+          "title": "Title EDGE-NO-IMPACT",
+          "desc": "Desc EDGE-NO-IMPACT",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-NO-IMPACT'",
+          "source_location": {
+            "ref": "controls/EDGE-NO-IMPACT.rb",
+            "line": 1
+          },
+          "results": [
+            {
+              "status": "skipped",
+              "code_desc": "no impact",
+              "run_time": 0.01,
+              "start_time": "2026-06-01T00:00:00Z"
+            }
+          ]
+        },
+        {
+          "id": "EDGE-EMPTY-RESULTS",
+          "title": "Title EDGE-EMPTY-RESULTS",
+          "desc": "Desc EDGE-EMPTY-RESULTS",
+          "refs": [],
+          "tags": {
+            "nist": [
+              "SI-2"
+            ]
+          },
+          "code": "control 'EDGE-EMPTY-RESULTS'",
+          "source_location": {
+            "ref": "controls/EDGE-EMPTY-RESULTS.rb",
+            "line": 1
+          },
+          "results": [],
+          "impact": 0.5
+        }
+      ]
+    }
+  ]
+}

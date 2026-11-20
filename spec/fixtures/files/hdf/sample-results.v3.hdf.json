@@ -1,0 +1,79 @@
+{
+  "baselines": [
+    {
+      "copyright": "SPARC",
+      "copyrightEmail": "",
+      "integrity": {
+        "algorithm": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "license": "Apache-2.0",
+      "maintainer": "SPARC",
+      "name": "sparc-sample-profile",
+      "requirements": [
+        {
+          "code": "",
+          "controlType": "technical",
+          "descriptions": [
+            {
+              "data": "The information system enforces approved authorizations for logical access.",
+              "label": "default"
+            }
+          ],
+          "effectiveChecksum": {
+            "algorithm": "sha256",
+            "value": "704f62b2d0803438ad6b7b9bab45e2c4f350b7344135a2a7f8ef986d98669021"
+          },
+          "effectiveStatus": "failed",
+          "id": "SPARC-AC-3",
+          "impact": 0.5,
+          "results": [
+            {
+              "codeDesc": "Access control policy should be enforced",
+              "message": "expected access enforcement to be enabled",
+              "runTime": 0.01,
+              "startTime": "2026-06-01T00:00:00Z",
+              "status": "failed"
+            }
+          ],
+          "severity": "medium",
+          "sourceLocation": {
+            "line": 1,
+            "ref": "sparc-sample-profile"
+          },
+          "tags": {
+            "nist": [
+              "AC-3"
+            ],
+            "severity": "medium"
+          },
+          "title": "Access enforcement is configured"
+        }
+      ],
+      "summary": "Minimal HDF results fixture for API translation tests (#413/#610)",
+      "title": "SPARC sample HDF profile",
+      "version": "1.0.0"
+    }
+  ],
+  "components": [
+    {
+      "name": "test-target",
+      "osName": "test-target",
+      "osVersion": "1.0.0",
+      "type": "host"
+    }
+  ],
+  "generator": {
+    "name": "legacyhdf-to-hdf",
+    "version": "1.0.0"
+  },
+  "statistics": {
+    "duration": 0.5
+  },
+  "timestamp": "2026-06-01T00:00:00Z",
+  "tool": {
+    "format": "exec-json",
+    "name": "InSpec",
+    "version": "5.22.3"
+  }
+}

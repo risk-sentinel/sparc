@@ -10,11 +10,8 @@ RSpec.describe "HdfTriage", type: :request do
   before { sign_in_as(user) }
 
   def hdf_upload(content = nil, name: "scan.hdf.json")
-    content ||= {
-      "profiles" => [ { "name" => "trivy",
-        "controls" => [ { "id" => "CVE-1", "title" => "t", "desc" => "d", "impact" => 0.8,
-                          "results" => [ { "status" => "failed" } ] } ] } ]
-    }.to_json
+    # #1354 — a valid HDF v2 document: ingest validates every upload with hdf.
+    content ||= hdf_v2_doc([ hdf_v2_control("CVE-1", impact: 0.8, status: "failed") ]).to_json
     file = Tempfile.new([ "scan", ".json" ])
     file.write(content)
     file.rewind
@@ -55,6 +52,20 @@ RSpec.describe "HdfTriage", type: :request do
     it "redirects with an alert on malformed HDF" do
       post triage_ingest_authorization_boundary_path(boundary), params: { file: hdf_upload("{ bad") }
       expect(flash[:error]).to match(/Ingest failed/)
+    end
+
+    # #1354 — v3 is read as it is; a document hdf rejects is refused with its reason.
+    it "ingests an uploaded HDF v3 file" do
+      v3 = Rails.root.join("spec/fixtures/files/hdf/sample-results.v3.hdf.json").read
+      post triage_ingest_authorization_boundary_path(boundary), params: { file: hdf_upload(v3) }
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(boundary.scanner_findings.pluck(:control_id)).to eq([ "SPARC-AC-3" ])
+    end
+
+    it "redirects with hdf's reason when the file is not valid HDF" do
+      post triage_ingest_authorization_boundary_path(boundary), params: { file: hdf_upload('{"not":"hdf"}') }
+      expect(flash[:error]).to match(/Ingest failed.*HDF validation failed: .*baselines is required/)
+      expect(boundary.scan_runs).to be_empty
     end
   end
 
