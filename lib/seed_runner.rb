@@ -68,6 +68,9 @@ module SeedRunner
     "demo_catalog_guidance" => "1.0.0",
     "demo_evidence"        => "1.2.0",  # #947 evidence completeness: control links, artefacts, verified attesters
     "demo_sample_artifacts" => "1.2.0",  # #832 POA&M risks carry a deadline
+    # #1354 — samples/fedramp-package-demo/ as the demo boundary's received
+    # documents. A new section, so an existing demo install runs it once.
+    "demo_fedramp_package_samples" => "1.0.0",
     # #984 — review_queue, promotion_queue, leveraged_poams and federation_peers
     # rendered nothing on a demo instance, so 12 collection-view checks skipped.
     # 1.1.0 — the #984 leveraged-authorization fixture was created without
