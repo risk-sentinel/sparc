@@ -82,6 +82,8 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings
 GET /api/v1/authorization_boundaries/:id
 GET /api/v1/authorization_boundaries/:id/exchange_index
+GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info
+GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report
 GET /api/v1/available
 GET /api/v1/back_matter_resources
 GET /api/v1/back_matter_resources/:id

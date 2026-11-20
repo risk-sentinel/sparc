@@ -63,6 +63,27 @@ RSpec.describe "API v1 exchange index", type: :request do
     expect(event.metadata).to include("authorization_boundary_id" => boundary.id, "received" => 1)
   end
 
+  # #1354 / #1384 — the FedRAMP reports, only once they can be built.
+  it "lists the FedRAMP VDR and AVI only when the boundary has a package overview address" do
+    admin = create(:user, :admin)
+    get path, headers: headers_for(admin)
+    expect(response.parsed_body.dig("data", "documents").map { |d| d["format"] }).not_to include("fedramp")
+
+    boundary.update!(fedramp_package_overview_uri: "https://provider.example/package/cpo.json")
+    get path, headers: headers_for(admin)
+    fedramp = response.parsed_body.dig("data", "documents").select { |d| d["format"] == "fedramp" }
+    expect(fedramp).to contain_exactly(
+      a_hash_including("origin" => "sparc", "document_type" => "vulnerability-detail-report", "sha256" => nil,
+                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/vulnerability_detail_report"),
+      a_hash_including("origin" => "sparc", "document_type" => "accepted-vulnerability-info", "sha256" => nil,
+                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/accepted_vulnerability_info")
+    )
+    fedramp.each do |entry|
+      get entry["download_url"], headers: headers_for(admin)
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
   it "takes the boundary's slug" do
     get "/api/v1/authorization_boundaries/#{boundary.slug}/exchange_index", headers: headers_for(create(:user, :admin))
     expect(response).to have_http_status(:ok)
