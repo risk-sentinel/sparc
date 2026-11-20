@@ -1,0 +1,297 @@
+<%# #1354 — one connection: its settings and pins (the credential only as
+    "set"/"not set"), the documents it pulls, and Pull now / Discover / Test
+    connection. Discover and Test render their answer on this page and store
+    nothing, so their forms opt out of Turbo (a 200 render, not a redirect). %>
+<% connection = @connection %>
+<div class="d-flex justify-content-between align-items-start my-4 gap-3 flex-wrap">
+  <div>
+    <h1 class="h3 fw-bold mb-1"><%= connection.name %></h1>
+    <p class="text-body-secondary mb-0 small">
+      Documents land in
+      <%= link_to connection.authorization_boundary.name, authorization_boundary_path(connection.authorization_boundary) %>
+      ·
+      <%= link_to "Received documents", authorization_boundary_received_documents_path(connection.authorization_boundary) %>
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <%= button_to "Pull now", pull_admin_exchange_connection_path(connection), method: :post,
+          class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+          data: { testid: "pull-now", turbo_confirm: "Pull every enabled document of this connection now?" } %>
+    <%= button_to "Discover", discover_admin_exchange_connection_path(connection), method: :post,
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+          form: { data: { turbo: false } }, data: { testid: "discover" } %>
+    <%= button_to "Test connection", test_connection_admin_exchange_connection_path(connection), method: :post,
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+          form: { data: { turbo: false } }, data: { testid: "test-connection" } %>
+    <%= link_to "Edit", edit_admin_exchange_connection_path(connection),
+          class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+    <%= button_to "Delete", admin_exchange_connection_path(connection), method: :delete,
+          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+          data: { turbo_confirm: "Delete this connection? Versions it already delivered stay on the boundary." } %>
+    <%= link_to "Back", admin_exchange_connections_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+  </div>
+</div>
+
+<% if @discovery || @discovery_error %>
+  <div class="card mb-4" data-testid="discover-result">
+    <div class="card-header"><h5 class="mb-0">Discovered documents</h5></div>
+    <div class="card-body">
+      <% if @discovery_error %>
+        <p class="text-danger mb-0" data-testid="discover-error"><%= @discovery_error %></p>
+      <% elsif @discovery[:candidates].empty? %>
+        <p class="text-body-secondary mb-0">No document links on <code><%= @discovery[:root_url] %></code> that SPARC may reach.</p>
+      <% else %>
+        <p class="small text-body-secondary">
+          Links on <code><%= @discovery[:root_url] %></code>. Nothing has been pulled. Add the documents this
+          connection should pull; only documents you add are pulled.
+        </p>
+        <%# One empty form per candidate, outside the table (a form cannot sit in
+            a row); each row's fields join theirs through the form attribute. %>
+        <% @discovery[:candidates].each_with_index do |candidate, i| %>
+          <% next if candidate[:registered] %>
+          <%= form_with url: admin_exchange_connection_document_sources_path(connection), local: true,
+                id: "discovered-#{i}", class: "d-none" do %><% end %>
+        <% end %>
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Address</th><th>Format</th><th>Document type</th><th>Every (hours)</th><th><span class="visually-hidden">Add</span></th></tr></thead>
+          <tbody>
+            <% @discovery[:candidates].each_with_index do |candidate, i| %>
+              <tr>
+                <% if candidate[:registered] %>
+                  <td class="text-break"><code><%= candidate[:url] %></code></td>
+                  <td colspan="4" class="text-body-secondary small">Already on this connection.</td>
+                <% else %>
+                  <td class="text-break">
+                    <code><%= candidate[:url] %></code>
+                    <%= hidden_field_tag "exchange_document_source[url]", candidate[:url], form: "discovered-#{i}", id: nil %>
+                  </td>
+                  <td>
+                    <%= select_tag "exchange_document_source[format]",
+                          options_for_select(ExchangeDocumentSource::FORMATS.map { |fmt| [ exchange_format_label(fmt), fmt ] },
+                                             candidate[:hint_format] == "json" ? "fedramp" : nil),
+                          class: "form-select form-select-sm", form: "discovered-#{i}", id: nil,
+                          aria: { label: "Format of #{candidate[:url]}" } %>
+                  </td>
+                  <td>
+                    <%= text_field_tag "exchange_document_source[document_type]", nil, class: "form-control form-control-sm",
+                          form: "discovered-#{i}", id: nil, placeholder: "detected when blank",
+                          aria: { label: "Document type of #{candidate[:url]}" } %>
+                  </td>
+                  <td>
+                    <%= number_field_tag "exchange_document_source[pull_interval_hours]", 24, min: 1, max: 744,
+                          class: "form-control form-control-sm", form: "discovered-#{i}", id: nil,
+                          aria: { label: "Pull interval of #{candidate[:url]}" } %>
+                  </td>
+                  <td class="text-end">
+                    <%= button_tag "Add", type: "submit", form: "discovered-#{i}",
+                          class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
+                          data: { testid: "add-discovered" } %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% if @test_result || @test_error %>
+  <div class="card mb-4" data-testid="test-result">
+    <div class="card-header"><h5 class="mb-0">Connection test</h5></div>
+    <div class="card-body">
+      <p class="small text-body-secondary">Each document was fetched and checked as a pull would. Nothing was stored.</p>
+      <% if @test_error %>
+        <p class="text-danger mb-0" data-testid="test-error"><%= @test_error %></p>
+      <% else %>
+        <% rows = [] %>
+        <% rows << [ "Root trust-center address", @test_result[:root] ] if @test_result[:root] %>
+        <% @test_result[:sources].each { |s| rows << [ "Document", s ] } %>
+        <% if rows.empty? %>
+          <p class="text-body-secondary mb-0">Nothing to test: no root address and no documents.</p>
+        <% else %>
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>What</th><th>Address</th><th>Reached</th><th>Validation</th></tr></thead>
+            <tbody>
+              <% rows.each do |label, row| %>
+                <tr data-testid="test-row">
+                  <td><%= label %></td>
+                  <td class="text-break"><code><%= row[:url] %></code></td>
+                  <td>
+                    <% if row[:reachable] %>
+                      <span class="sparc-status sparc-status--success">Reached</span>
+                      <small class="text-body-secondary d-block">HTTP <%= row[:status] %> · <%= number_to_human_size(row[:bytes]) %></small>
+                    <% else %>
+                      <span class="sparc-status sparc-status--danger">Not reached</span>
+                      <small class="text-danger d-block"><%= row[:error] %></small>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% validation = row[:validation] %>
+                    <% if label != "Document" || validation.nil? %>
+                      <span class="text-body-secondary">—</span>
+                    <% elsif validation[:valid] %>
+                      <span class="sparc-status sparc-status--success">Valid</span>
+                      <small class="text-body-secondary d-block"><%= exchange_format_label(validation[:format]) %> <%= validation[:document_type] %></small>
+                    <% else %>
+                      <span class="sparc-status sparc-status--danger">Invalid</span>
+                      <% if validation[:error] %>
+                        <small class="text-danger d-block"><%= validation[:error] %></small>
+                      <% else %>
+                        <small class="text-danger d-block"><%= pluralize(validation[:error_count], "error") %></small>
+                        <% Array(validation[:errors]).first(5).each do |err| %>
+                          <small class="d-block"><code><%= err[:pointer].presence || err["pointer"].presence || "/" %></code> <%= err[:message] || err["message"] %></small>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Settings</h5></div>
+      <div class="card-body">
+        <table class="table table-sm mb-0" data-testid="connection-settings">
+          <tr><th>Status</th><td>
+            <% if connection.enabled? %>
+              <span class="sparc-status sparc-status--success">Enabled</span>
+            <% else %>
+              <span class="sparc-status sparc-status--neutral">Disabled</span>
+            <% end %>
+          </td></tr>
+          <tr><th>FedRAMP ID</th><td><%= connection.fedramp_id.present? ? tag.code(connection.fedramp_id) : "—" %></td></tr>
+          <tr><th>Certification</th><td><%= [ connection.certification_class.presence && "Class #{connection.certification_class}", connection.certification_type.presence ].compact.join(" · ").presence || "—" %></td></tr>
+          <tr><th>Root address</th><td class="text-break"><%= connection.root_url.present? ? tag.code(connection.root_url) : "—" %></td></tr>
+          <tr><th>Authentication</th><td>
+            <%= ExchangeHelper::AUTH_SCHEME_LABELS.fetch(connection.auth_scheme, connection.auth_scheme) %>
+            <% if connection.auth_scheme == "header" %>(<code><%= connection.auth_header_name %></code>)<% end %>
+          </td></tr>
+          <tr><th>Credential</th><td data-testid="credential-state"><%= connection.credential? ? "Set" : "Not set" %></td></tr>
+          <tr><th>Pinned hosts</th><td><%= connection.pinned_hosts.map { |h| tag.code(h) }.then { |c| c.any? ? safe_join(c, ", ") : "—" } %></td></tr>
+          <tr><th>TLS key pins</th><td>
+            <% if connection.spki_sha256.any? %>
+              <% connection.spki_sha256.each do |pin| %><code class="d-block text-break"><%= pin %></code><% end %>
+            <% else %>
+              <span class="text-body-secondary">None — the certificate authority alone</span>
+            <% end %>
+          </td></tr>
+          <tr><th>IP ranges</th><td><%= connection.allowed_cidrs.any? ? safe_join(connection.allowed_cidrs.map { |c| tag.code(c) }, ", ") : "Any public address" %></td></tr>
+          <tr><th>Last pull</th><td>
+            <%= pull_status_badge(connection.last_pull_status) %>
+            <% if connection.last_pulled_at %><small class="text-body-secondary ms-1"><%= exchange_time(connection.last_pulled_at) %></small><% end %>
+            <% if connection.last_error.present? %>
+              <small class="text-danger d-block" data-testid="connection-last-error"><%= connection.last_error %></small>
+            <% end %>
+          </td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Received</h5>
+        <span class="badge text-bg-secondary"><%= pluralize(@document_count, "version") %></span>
+      </div>
+      <div class="card-body">
+        <% if @recent_documents.any? %>
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Received</th><th>Type</th><th>State</th></tr></thead>
+            <tbody>
+              <% @recent_documents.each do |doc| %>
+                <tr>
+                  <td><%= link_to exchange_time(doc.received_at),
+                        authorization_boundary_received_document_path(doc.authorization_boundary_id, doc) %></td>
+                  <td><%= exchange_format_label(doc.format) %> <%= doc.document_type %></td>
+                  <td><%= received_state_badge(doc.state) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="text-body-secondary mb-0">Nothing received yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4" data-testid="document-sources">
+  <div class="card-header"><h5 class="mb-0">Documents pulled</h5></div>
+  <div class="card-body">
+    <p class="small text-body-secondary">Only these documents are pulled. Each is fetched on its own schedule, or with Pull now.</p>
+    <% if @sources.any? %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr><th>Address</th><th>Format / type</th><th>Every</th><th>Last pull</th><th>Last SHA-256</th><th><span class="visually-hidden">Actions</span></th></tr>
+          </thead>
+          <tbody>
+            <% @sources.each do |source| %>
+              <tr data-document-source-id="<%= source.id %>">
+                <td class="text-break">
+                  <code><%= source.url %></code>
+                  <% unless source.enabled? %><span class="sparc-status sparc-status--neutral ms-1">Disabled</span><% end %>
+                </td>
+                <td><%= exchange_format_label(source.format) %> <%= source.document_type %></td>
+                <td><%= pluralize(source.pull_interval_hours, "hour") %></td>
+                <td>
+                  <%= pull_status_badge(source.last_status) %>
+                  <% if source.last_pulled_at %><small class="text-body-secondary d-block"><%= exchange_time(source.last_pulled_at) %></small><% end %>
+                  <% if source.last_error.present? %><small class="text-danger d-block" data-testid="source-last-error"><%= source.last_error %></small><% end %>
+                </td>
+                <td><%= source.last_sha256.present? ? tag.code(source.last_sha256.first(16) + "…", title: source.last_sha256) : "—" %></td>
+                <td class="text-end text-nowrap">
+                  <%= link_to "Edit", edit_admin_exchange_connection_document_source_path(connection, source),
+                        class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+                  <%= button_to "Remove", admin_exchange_connection_document_source_path(connection, source), method: :delete,
+                        form_class: "d-inline", class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+                        data: { turbo_confirm: "Stop pulling this document? Versions already received stay on the boundary." } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-body-secondary">No documents yet. Add one below, or use Discover to list the documents on the root address.</p>
+    <% end %>
+
+    <h6 class="fw-semibold mt-3">Add a document</h6>
+    <%= form_with model: @new_source, url: admin_exchange_connection_document_sources_path(connection),
+          scope: :exchange_document_source, local: true, data: { testid: "add-source-form" } do |f| %>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+          <%= f.label :url, "Address", class: "form-label small fw-semibold" %>
+          <%= f.url_field :url, class: "form-control form-control-sm", required: true, placeholder: "https://trust.example.com/package/vdr.json" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :format, class: "form-label small fw-semibold" %>
+          <%= f.select :format, ExchangeDocumentSource::FORMATS.map { |fmt| [ exchange_format_label(fmt), fmt ] }, {}, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :document_type, "Document type", class: "form-label small fw-semibold" %>
+          <%= f.text_field :document_type, class: "form-control form-control-sm", placeholder: "detected when blank" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :pull_interval_hours, "Every (hours)", class: "form-label small fw-semibold" %>
+          <%= f.number_field :pull_interval_hours, class: "form-control form-control-sm", min: 1, max: 744 %>
+        </div>
+        <div class="col-md-1">
+          <%= f.submit "Add", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm", data: { testid: "add-source" } %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

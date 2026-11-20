@@ -1,0 +1,44 @@
+<%# #1354 — change one document a connection pulls. %>
+<div class="row justify-content-center my-4">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 fw-bold mb-0">Edit document · <%= @connection.name %></h1>
+      <%= link_to "Cancel", admin_exchange_connection_path(@connection), class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        <%= form_with model: @source, url: admin_exchange_connection_document_source_path(@connection, @source),
+              scope: :exchange_document_source, method: :patch, local: true do |f| %>
+          <div class="mb-3">
+            <%= f.label :url, "Address", class: "form-label fw-semibold small" %>
+            <%= f.url_field :url, class: "form-control", required: true %>
+            <div class="form-text">HTTPS only, on a host of this connection.</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <%= f.label :format, class: "form-label fw-semibold small" %>
+              <%= f.select :format, ExchangeDocumentSource::FORMATS.map { |fmt| [ exchange_format_label(fmt), fmt ] }, {}, class: "form-select" %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :document_type, "Document type", class: "form-label fw-semibold small" %>
+              <%= f.text_field :document_type, class: "form-control", placeholder: "detected when blank" %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :pull_interval_hours, "Pull every (hours)", class: "form-label fw-semibold small" %>
+              <%= f.number_field :pull_interval_hours, class: "form-control", min: 1, max: 744 %>
+            </div>
+          </div>
+          <div class="form-check form-switch mb-4">
+            <%= f.check_box :enabled, class: "form-check-input", role: "switch" %>
+            <%= f.label :enabled, "Enabled", class: "form-check-label" %>
+          </div>
+          <div class="d-flex gap-2">
+            <%= f.submit "Save Document", class: "sparc-action sparc-action--primary sparc-action--solid" %>
+            <%= link_to "Cancel", admin_exchange_connection_path(@connection), class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,106 @@
+<%# #1354 — a connection's settings. The credential is write-only (IA-5):
+    the field is always empty, and the form says only whether one is set. %>
+<%= form_with model: [:admin, connection], scope: :exchange_connection, local: true,
+      data: { testid: "connection-form" } do |f| %>
+  <h5 class="fw-semibold mb-3">Who</h5>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :name, class: "form-label fw-semibold small" %>
+      <%= f.text_field :name, class: "form-control", required: true, placeholder: "e.g. Acme Cloud trust center" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :fedramp_id, "FedRAMP ID", class: "form-label fw-semibold small" %>
+      <%= f.text_field :fedramp_id, class: "form-control", placeholder: "e.g. FR2401234567" %>
+      <div class="form-text">The provider's FedRAMP Marketplace ID: F or FR and ten digits. Optional.</div>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :certification_class, "Certification class", class: "form-label fw-semibold small" %>
+      <%= f.select :certification_class, ExchangeConnection::CERTIFICATION_CLASSES.map { |c| [ "Class #{c}", c ] },
+            { include_blank: "Not set" }, class: "form-select" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :certification_type, "Certification type", class: "form-label fw-semibold small" %>
+      <%= f.select :certification_type, ExchangeConnection::CERTIFICATION_TYPES, { include_blank: "Not set" }, class: "form-select" %>
+    </div>
+  </div>
+
+  <hr>
+  <h5 class="fw-semibold mb-3">Where</h5>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :authorization_boundary_id, "Boundary", class: "form-label fw-semibold small" %>
+      <%= f.select :authorization_boundary_id, @boundaries.map { |b| [ b.name, b.id ] },
+            { include_blank: "Choose the boundary its documents land in" }, class: "form-select", required: true %>
+      <div class="form-text">Every document this connection delivers is received into this boundary, and reviewed there.</div>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :root_url, "Root trust-center address", class: "form-label fw-semibold small" %>
+      <%= f.url_field :root_url, class: "form-control", placeholder: "https://trust.example.com/" %>
+      <div class="form-text">HTTPS only. Discover lists the documents linked from it; only documents you add are pulled.</div>
+    </div>
+  </div>
+
+  <hr>
+  <h5 class="fw-semibold mb-3">How SPARC signs in there</h5>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <%= f.label :auth_scheme, "Authentication", class: "form-label fw-semibold small" %>
+      <%= f.select :auth_scheme, ExchangeConnection::AUTH_SCHEMES.map { |s| [ ExchangeHelper::AUTH_SCHEME_LABELS.fetch(s, s), s ] },
+            {}, class: "form-select" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :auth_header_name, "Header name", class: "form-label fw-semibold small" %>
+      <%= f.text_field :auth_header_name, class: "form-control", placeholder: "e.g. X-Api-Key" %>
+      <div class="form-text">Only for a named header.</div>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :credential, "Token", class: "form-label fw-semibold small" %>
+      <%= f.password_field :credential, value: nil, class: "form-control", autocomplete: "new-password",
+            placeholder: connection.credential? ? "Set — type to replace" : "Not set" %>
+      <div class="form-text" data-testid="credential-state">
+        Credential: <strong><%= connection.credential? ? "set" : "not set" %></strong>. Stored encrypted and never shown again.
+      </div>
+      <% if connection.credential? %>
+        <div class="form-check mt-1">
+          <%= check_box_tag "exchange_connection[clear_credential]", "1", false, class: "form-check-input",
+                id: "exchange_connection_clear_credential" %>
+          <%= label_tag "exchange_connection_clear_credential", "Remove the stored credential", class: "form-check-label small" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <hr>
+  <h5 class="fw-semibold mb-3">Trust pins</h5>
+  <p class="small text-body-secondary">
+    SPARC reaches only the hosts of the addresses registered on this connection, never one a document mentions.
+  </p>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :spki_sha256, "TLS public-key SHA-256", class: "form-label fw-semibold small" %>
+      <%= f.text_area :spki_sha256, value: connection.spki_sha256.join("\n"), rows: 2, class: "form-control font-monospace",
+            placeholder: "64 hex characters, one per line" %>
+      <div class="form-text">Up to <%= ExchangeConnection::MAX_SPKI_PINS %>: the current key and the next, so the provider can rotate. Blank trusts the certificate authority alone.</div>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :allowed_cidrs, "IP ranges", class: "form-label fw-semibold small" %>
+      <%= f.text_area :allowed_cidrs, value: connection.allowed_cidrs.join("\n"), rows: 2, class: "form-control font-monospace",
+            placeholder: "e.g. 203.0.113.0/24, one per line" %>
+      <div class="form-text">Optional. When set, the host must resolve inside one of them.</div>
+    </div>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <%= f.check_box :enabled, class: "form-check-input", role: "switch" %>
+    <%= f.label :enabled, "Enabled — pulled on schedule and by Pull now", class: "form-check-label" %>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit connection.persisted? ? "Save Connection" : "Create Connection",
+          class: "sparc-action sparc-action--primary sparc-action--solid", data: { testid: "save-connection" } %>
+    <%= link_to "Cancel", connection.persisted? ? admin_exchange_connection_path(connection) : admin_exchange_connections_path,
+          class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
+  </div>
+<% end %>
