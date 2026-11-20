@@ -103,6 +103,7 @@ flowchart LR
 | [POA&M](User-Guide-POAM) | Track findings, risks, remediations, milestones |
 | [Evidence & Attestations](User-Guide-Evidence-and-Attestations) | Upload evidence, record attestations with no file, link controls |
 | [HDF Amendment Triage](User-Guide-HDF-Amendment-Triage) | Ingest scanner findings, triage into dispositions, export HDF Amendments for CI |
+| [Connections & Received Documents](User-Guide-Connections-and-Received-Documents) | Register connections to other systems, pull or upload FedRAMP, OSCAL, HDF and XCCDF documents, review each version |
 
 ### Trust store & administration
 
