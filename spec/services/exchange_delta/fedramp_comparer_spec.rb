@@ -74,10 +74,10 @@ RSpec.describe ExchangeDelta::FedrampComparer do
                                                [ :improvement, "A: likely exploitable true → false" ])
     end
 
-    it "auto-accepts a report whose only change is a remediation, and ignores reordering" do
+    it "classes a report whose only change is a remediation as an improvement, ignores reordering, and still reviews it" do
       result = compare(vdr(vuln("A"), vuln("B")), vdr(vuln("B"), vuln("A", finalDisposition: "Remediated")), type)
       expect(result.counts).to eq(regression: 0, improvement: 1, neutral: 0)
-      expect(result).to be_auto_acceptable
+      expect(result).not_to be_auto_acceptable
     end
 
     it "reports a new report period and other field changes as neutral" do

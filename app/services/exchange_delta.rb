@@ -44,17 +44,20 @@ class ExchangeDelta
 
   Change = Data.define(:kind, :key, :summary, :before, :after)
 
-  Result = Data.define(:changes, :counts, :first_version, :truncated) do
+  Result = Data.define(:changes, :counts, :first_version, :truncated, :identical) do
     def first_version? = first_version
     def truncated? = truncated
+    def identical? = identical
     def total = counts.values.sum
 
-    # Owner decision (#1354, 2026-11-20): no changes, or improvements only.
-    # A first version always gets a person's look.
-    def auto_acceptable? = !first_version && counts[:regression].zero? && counts[:neutral].zero?
+    # Owner decision (#1354, 2026-11-20, refined the same day): only a
+    # byte-identical re-delivery is accepted without a person. Any other
+    # change, an improvement included, is reviewed. A first version always
+    # gets a person's look.
+    def auto_acceptable? = identical && !first_version
 
     def as_json(*)
-      { first_version: first_version, auto_acceptable: auto_acceptable?, truncated: truncated,
+      { first_version: first_version, identical: identical, auto_acceptable: auto_acceptable?, truncated: truncated,
         counts: counts, changes: changes.map { |c| c.to_h.merge(kind: c.kind.to_s) } }
     end
   end
@@ -81,10 +84,10 @@ class ExchangeDelta
     def improvement(key, summary, **values) = add(:improvement, key, summary, **values)
     def neutral(key, summary, **values) = add(:neutral, key, summary, **values)
 
-    def to_result(first_version: false)
+    def to_result(first_version: false, identical: false)
       kept = KINDS.flat_map { |k| @kept[k] }.first(@limit)
       Result.new(changes: kept, counts: @counts.dup, first_version: first_version,
-                 truncated: @counts.values.sum > kept.size)
+                 truncated: @counts.values.sum > kept.size, identical: identical)
     end
   end
 
@@ -99,7 +102,7 @@ class ExchangeDelta
 
     changes = Changes.new
     return changes.to_result(first_version: true) if before.nil?
-    return changes.to_result if before.to_s.b == after.to_s.b
+    return changes.to_result(identical: true) if before.to_s.b == after.to_s.b
 
     begin
       comparer(format.to_s, document_type.to_s, hdf_runner).compare(before.to_s, after.to_s, changes)
