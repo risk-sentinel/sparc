@@ -1,0 +1,152 @@
+{
+  "description": "DEMO/SAMPLE DATA. A complete, fictional FedRAMP package: one document for each FedRAMP package schema SPARC vendors (lib/data/fedramp/schemas, ruleset 2026-06-24). Every document passes SPARC's two checks (schema and completeness) with zero errors. No real organization, person or address is represented.",
+  "provider": {
+    "providerName": "Example Cloud Works, Inc.",
+    "serviceName": "Example Case Manager",
+    "fedRampPackageId": "FR0000000001",
+    "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json"
+  },
+  "schema_ruleset": "2026-06-24",
+  "checked_by": "spec/samples/fedramp_package_demo_spec.rb",
+  "documents": [
+    {
+      "file": "certification-package-overview.json",
+      "document_type": "certification-package-overview",
+      "fedramp_rule": "FRC-CSO-PKG",
+      "schema": "https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json",
+      "purpose": "The package overview every other document points at. Carries the FedRAMP ID.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": [
+          {
+            "pointer": "/serviceIdentification/ueiNumber",
+            "message": "optional field is not filled in",
+            "why": "Left out on purpose: SAM.gov assigns a UEI, and an invented one could be a real entity's. The schema says to leave it blank when there is none."
+          }
+        ]
+      }
+    },
+    {
+      "file": "security-decision-record.json",
+      "document_type": "security-decision-record",
+      "fedramp_rule": "SDR-CSO-FRR",
+      "schema": "https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json",
+      "purpose": "NIST SP 800-53 controls with parameter values, FedRAMP requirements, and three Key Security Indicators with tests and evidence.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "ongoing-certification-report.json",
+      "document_type": "ongoing-certification-report",
+      "fedramp_rule": "CCM-OCR-AVL",
+      "schema": "https://fedramp.gov/schemas/fedramp-ongoing-certification-report-schema-2026-06-24.json",
+      "purpose": "The quarterly Ongoing Certification Report for August through October 2026.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "vulnerability-detail-report.json",
+      "document_type": "vulnerability-detail-report",
+      "fedramp_rule": "VER-RPT-VDT",
+      "schema": "https://fedramp.gov/schemas/fedramp-vulnerability-detail-report-schema-2026-06-24.json",
+      "purpose": "Two non-accepted vulnerabilities with N-ratings and PAIN reduction history.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": [
+          {
+            "pointer": "/vulnerabilities/0/projectedNextReduction",
+            "message": "optional field is not filled in",
+            "why": "Left out on purpose: the schema says to omit it once a vulnerability is fully remediated."
+          }
+        ]
+      }
+    },
+    {
+      "file": "accepted-vulnerability-info.json",
+      "document_type": "accepted-vulnerability-info",
+      "fedramp_rule": "VER-RPT-AVI",
+      "schema": "https://fedramp.gov/schemas/fedramp-accepted-vulnerability-info-schema-2026-06-24.json",
+      "purpose": "One accepted vulnerability and why it was accepted.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "incident-report.json",
+      "document_type": "incident-report",
+      "fedramp_rule": "IEC-CSO-FIR",
+      "schema": "https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json",
+      "purpose": "A Final incident report (it carries resolvedAt, which a Final report requires).",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "significant-change-notifications.json",
+      "document_type": "significant-change-notifications",
+      "fedramp_rule": "SCN-CSO-INF",
+      "schema": "https://fedramp.gov/schemas/fedramp-significant-change-notifications-schema-2026-06-24.json",
+      "purpose": "A Transformative significant change with its plan, milestones and impacted controls.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "historical-ver-activity.json",
+      "document_type": "historical-ver-activity",
+      "fedramp_rule": "VER-TFR-MRH",
+      "schema": "https://fedramp.gov/schemas/fedramp-historical-ver-activity-schema-2026-06-24.json",
+      "purpose": "A snapshot of every active and accepted vulnerability.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "assessor-information.json",
+      "document_type": "assessor-information",
+      "fedramp_rule": "MKT-IAS-WEB",
+      "schema": "https://fedramp.gov/schemas/fedramp-assessor-information-schema-2026-06-24.json",
+      "purpose": "The fictional independent assessor's marketplace information.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": []
+      }
+    },
+    {
+      "file": "advisor-information.json",
+      "document_type": "advisor-information",
+      "fedramp_rule": "MKT-CAS-WEB",
+      "schema": "https://fedramp.gov/schemas/fedramp-advisor-information-schema-2026-06-24.json",
+      "purpose": "The fictional advisor's marketplace information.",
+      "expected": {
+        "valid": true,
+        "errors": 0,
+        "warnings": [
+          {
+            "pointer": "/a2laId",
+            "message": "optional field is not filled in",
+            "why": "Left out on purpose: the schema says advisors need not be A2LA accredited."
+          }
+        ]
+      }
+    }
+  ],
+  "invalid": "invalid/manifest.json"
+}
