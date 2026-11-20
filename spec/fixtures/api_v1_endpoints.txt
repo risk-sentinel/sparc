@@ -23,6 +23,8 @@ DELETE /api/v1/converters/:id
 DELETE /api/v1/evidences/:evidence_id/attestations/:id
 DELETE /api/v1/evidences/:evidence_id/control_links/:id
 DELETE /api/v1/evidences/:id
+DELETE /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id
+DELETE /api/v1/exchange_connections/:id
 DELETE /api/v1/federation_peers/:id
 DELETE /api/v1/organizations/:id/members/:membership_id
 DELETE /api/v1/poam_documents/:id
@@ -72,10 +74,14 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/roles
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/readiness
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/file
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings
 GET /api/v1/authorization_boundaries/:id
+GET /api/v1/authorization_boundaries/:id/exchange_index
 GET /api/v1/available
 GET /api/v1/back_matter_resources
 GET /api/v1/back_matter_resources/:id
@@ -110,6 +116,9 @@ GET /api/v1/evidences/:evidence_id/attestations/:id
 GET /api/v1/evidences/:evidence_id/attestations/export
 GET /api/v1/evidences/:evidence_id/control_links
 GET /api/v1/evidences/:id
+GET /api/v1/exchange_connections
+GET /api/v1/exchange_connections/:exchange_connection_id/document_sources
+GET /api/v1/exchange_connections/:id
 GET /api/v1/federation/identity
 GET /api/v1/federation_peers
 GET /api/v1/federation_peers/:id
@@ -188,6 +197,8 @@ PATCH /api/v1/control_mappings/:control_mapping_id/entries/:id
 PATCH /api/v1/control_mappings/:id
 PATCH /api/v1/converters/:id
 PATCH /api/v1/evidences/:id
+PATCH /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id
+PATCH /api/v1/exchange_connections/:id
 PATCH /api/v1/federation_peers/:id
 PATCH /api/v1/organizations/:id
 PATCH /api/v1/poam_documents/:id
@@ -223,6 +234,10 @@ POST /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/leveraged_authorizations/:id/populate
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/memberships
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/accept
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/reject
+POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/respond
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 POST /api/v1/back_matter_resources
 POST /api/v1/back_matter_resources/:id/approve_promotion
@@ -262,6 +277,11 @@ POST /api/v1/entitlement_sync/preview
 POST /api/v1/evidences
 POST /api/v1/evidences/:evidence_id/attestations
 POST /api/v1/evidences/:evidence_id/control_links
+POST /api/v1/exchange_connections
+POST /api/v1/exchange_connections/:exchange_connection_id/document_sources
+POST /api/v1/exchange_connections/:id/discover
+POST /api/v1/exchange_connections/:id/pull
+POST /api/v1/exchange_connections/:id/test_connection
 POST /api/v1/federation_peers
 POST /api/v1/federation_peers/:id/sync
 POST /api/v1/hdf/amendments_from_oscal_poam
@@ -343,6 +363,8 @@ PUT /api/v1/control_mappings/:control_mapping_id/entries/:id
 PUT /api/v1/control_mappings/:id
 PUT /api/v1/converters/:id
 PUT /api/v1/evidences/:id
+PUT /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id
+PUT /api/v1/exchange_connections/:id
 PUT /api/v1/federation_peers/:id
 PUT /api/v1/organizations/:id
 PUT /api/v1/poam_documents/:id
