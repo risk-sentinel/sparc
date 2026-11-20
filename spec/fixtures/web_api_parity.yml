@@ -675,6 +675,16 @@ controllers:
     ui_only:
       - reason: "HTML form page with a candidate-boundary picker; the API takes the same fields"
         actions: [new]
+  # #1354 — the boundary's received documents and their review.
+  received_documents:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents"]
+      show: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id"]
+      create: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents"]
+      file: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/file"]
+      accept: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/accept"]
+      respond: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/respond"]
+      reject: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/reject"]
   back_matter_resources:
     mapped:
       create: ["POST /api/v1/back_matter_resources", "POST /api/v1/back_matter_resources/:id/link"]
@@ -863,6 +873,30 @@ controllers:
     ui_only:
       - reason: "HTML form pages; the API takes the same fields as a JSON body"
         actions: [new, edit]
+
+  # #1354 — connections to other systems, in Settings; thin client over the API.
+  admin/exchange_connections:
+    mapped:
+      index: ["GET /api/v1/exchange_connections"]
+      show: ["GET /api/v1/exchange_connections/:id"]
+      create: ["POST /api/v1/exchange_connections"]
+      update: ["PATCH /api/v1/exchange_connections/:id"]
+      destroy: ["DELETE /api/v1/exchange_connections/:id"]
+      pull: ["POST /api/v1/exchange_connections/:id/pull"]
+      discover: ["POST /api/v1/exchange_connections/:id/discover"]
+      test_connection: ["POST /api/v1/exchange_connections/:id/test_connection"]
+    ui_only:
+      - reason: "HTML form pages; the API takes the same fields as a JSON body (the credential write-only)"
+        actions: [new, edit]
+
+  admin/exchange_document_sources:
+    mapped:
+      create: ["POST /api/v1/exchange_connections/:exchange_connection_id/document_sources"]
+      update: ["PATCH /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id"]
+      destroy: ["DELETE /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id"]
+    ui_only:
+      - reason: "HTML form page; the API takes the same fields as a JSON body"
+        actions: [edit]
 
   admin/users:
     mapped:

@@ -304,6 +304,12 @@ class AuditEvent < ApplicationRecord
     exchange_pull_completed
     exchange_pull_failed
     exchange_index_served
+    exchange_connection_discovered
+    exchange_connection_tested
+    exchange_document_source_created
+    exchange_document_source_updated
+    exchange_document_source_deleted
+    received_document_downloaded
     converter_refresh_started
     api_user_created
     api_user_updated
@@ -576,7 +582,10 @@ class AuditEvent < ApplicationRecord
     "Exchange" => %w[received_document_stored received_document_accepted received_document_auto_accepted
                      received_document_responded received_document_rejected
                      exchange_connection_created exchange_connection_updated exchange_connection_deleted
-                     exchange_pull_completed exchange_pull_failed exchange_index_served],
+                     exchange_pull_completed exchange_pull_failed exchange_index_served
+                     exchange_connection_discovered exchange_connection_tested
+                     exchange_document_source_created exchange_document_source_updated
+                     exchange_document_source_deleted received_document_downloaded],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments
