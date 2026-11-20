@@ -55,6 +55,20 @@ class HdfIngestService
     end
   end
 
+  # A v3 requirement's status as ingest stores it (see #status_for, which
+  # explains the order). Shared with ExchangeDelta, so a delta classes a
+  # requirement exactly as ingest stores it (#1354).
+  def self.requirement_status(req)
+    statuses = Array(req["results"]).filter_map { |r| r["status"].to_s.presence if r.is_a?(Hash) }
+    return "failed" if statuses.include?("failed")
+    return "passed" if statuses.include?("passed")
+    return "error" if statuses.include?("error")
+    return "notApplicable" if statuses.include?("notApplicable")
+    return "skipped" if statuses.any?
+
+    "notApplicable"
+  end
+
   # @param runner [HdfRunner, nil] injected for specs; defaults to the pinned
   #   CLI with a timeout.
   def initialize(authorization_boundary, runner: nil)
@@ -249,16 +263,7 @@ class HdfIngestService
   # v2's skipped converts to `notReviewed`, which SPARC stores as "skipped".
   # The order (failed, passed, error, notApplicable, notReviewed) is SPARC's
   # historical one, so a v2 file stores what it stored before #1354.
-  def status_for(req)
-    statuses = Array(req["results"]).filter_map { |r| r["status"].to_s.presence if r.is_a?(Hash) }
-    return "failed" if statuses.include?("failed")
-    return "passed" if statuses.include?("passed")
-    return "error" if statuses.include?("error")
-    return "notApplicable" if statuses.include?("notApplicable")
-    return "skipped" if statuses.any?
-
-    "notApplicable"
-  end
+  def status_for(req) = self.class.requirement_status(req)
 
   # #811 — record a per-scan_run finding, demoting the prior current finding to
   # history and computing the re-occurrence lifecycle vs the prior state + its
