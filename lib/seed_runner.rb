@@ -33,7 +33,13 @@ module SeedRunner
     # #1115 — built from the vendored FedRAMP/rules snapshot by
     # FedrampKsiImportService instead of the hand-written seed; re-keys an
     # existing catalog in place.
-    "fedramp_20x_ksi"      => "2.0.0",
+    # #1354 — 2.1.0: the snapshot is re-vendored at FedRAMP 2026.11.02.01, which
+    # changes the NIST controls[] of 40 indicators (six links removed). Nothing
+    # else re-runs the import on a deployment already at 2.0.0: re-run it so the
+    # crosswalk follows. The section body is the importer, whose only guard is the
+    # snapshot digest, so the bump is not inert, and it is a no-op where the new
+    # snapshot is already imported.
+    "fedramp_20x_ksi"      => "2.1.0",
     "nist_rev4_rev5_mapping" => "1.0.0",
     "remediation_timelines"  => "1.0.0",
     "converters"           => "1.4.0",

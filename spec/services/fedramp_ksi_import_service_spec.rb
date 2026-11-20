@@ -50,7 +50,7 @@ RSpec.describe FedrampKsiImportService do
       result = described_class.new.call
 
       expect(result).to be_imported
-      expect(ksi_catalog.version).to eq("2026.09.13.02")
+      expect(ksi_catalog.version).to eq("2026.11.02.01")
       expect(ksi_catalog.control_families.not_retired.pluck(:code)).to match_array(%w[CED CMT CNA IAM INR MLA PIY RPL SCR SVC])
       current = CatalogControl.joins(:control_family).where(control_families: { control_catalog_id: ksi_catalog.id }).not_retired
       expect(current.count).to eq(46)
@@ -136,7 +136,7 @@ RSpec.describe FedrampKsiImportService do
       dir = data_dir_with do |d|
         rules = JSON.parse(d.join("fedramp-consolidated-rules.json").read)
         rules["KSI"]["IAM"]["indicators"].delete("KSI-IAM-JIT")
-        rules["info"]["version"] = "2026.10.01.01"
+        rules["info"]["version"] = "2026.12.01.01"
         d.join("fedramp-consolidated-rules.json").write(JSON.pretty_generate(rules))
       end
 
@@ -147,7 +147,7 @@ RSpec.describe FedrampKsiImportService do
       expect(jit).to be_retired
       expect(jit.superseded_by).to eq([])
       expect(validation.reload.status).to eq("passed")
-      expect(ksi_catalog.reload.version).to eq("2026.10.01.01")
+      expect(ksi_catalog.reload.version).to eq("2026.12.01.01")
     ensure
       FileUtils.rm_rf(dir) if dir
     end
@@ -172,6 +172,33 @@ RSpec.describe FedrampKsiImportService do
 
       expect(described_class.new.call).to be_imported
       expect(ControlMapping.find_by(name: described_class::MAPPING_NAME).control_mapping_entries).to exist
+    end
+
+    # #1354 — a re-vendored snapshot changes the controls[] of indicators that
+    # already exist (2026.11.02.01 changed 40 and removed six links). A deployment
+    # already on the previous snapshot must lose the dropped links and gain the
+    # new ones, on the same indicator rows, so validations stay attached.
+    it "follows a later release that removes one link and adds another, keeping the indicator row" do
+      rev5_catalog!
+      described_class.new.call
+      validation = validate!("ksi-iam-aam", "passed")
+      dir = data_dir_with do |d|
+        rules = JSON.parse(d.join("fedramp-consolidated-rules.json").read)
+        aam = rules["KSI"]["IAM"]["indicators"]["KSI-IAM-AAM"]
+        aam["controls"] = aam["controls"] - [ "ia-12" ] + [ "ac-2" ]
+        rules["info"]["version"] = "2026.12.01.01"
+        d.join("fedramp-consolidated-rules.json").write(JSON.pretty_generate(rules))
+      end
+
+      expect(described_class.new(data_dir: dir).call).to be_imported
+
+      targets = ControlMapping.find_by(name: described_class::MAPPING_NAME)
+                              .control_mapping_entries.where(source_control_id: "ksi-iam-aam").pluck(:target_control_id)
+      expect(targets).to contain_exactly("ac-2", "ac-2.2")
+      expect(validation.reload.catalog_control_id).to eq(control("ksi-iam-aam").id)
+      expect(validation.status).to eq("passed")
+    ensure
+      FileUtils.rm_rf(dir) if dir
     end
 
     it "is skipped, and says so, when no Rev 5 catalog is loaded" do

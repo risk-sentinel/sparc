@@ -28,7 +28,7 @@ RSpec.describe "bin/ksi_upstream_diff.rb" do
 
   it "exits 1 and names each change when upstream has moved on" do
     upstream = vendored.dup
-    upstream["info"] = vendored["info"].merge("version" => "2026.10.01.01")
+    upstream["info"] = vendored["info"].merge("version" => "2026.12.01.01")
     iam = upstream["KSI"]["IAM"]["indicators"]
     iam.delete("KSI-IAM-JIT")
     iam["KSI-IAM-NEW"] = iam["KSI-IAM-ELP"].merge("name" => "A New One")
@@ -37,7 +37,7 @@ RSpec.describe "bin/ksi_upstream_diff.rb" do
     out, status = run_against(upstream)
 
     expect(status.exitstatus).to eq(1), out
-    expect(out).to include("version: 2026.09.13.02 -> 2026.10.01.01")
+    expect(out).to include("version: 2026.11.02.01 -> 2026.12.01.01")
     expect(out).to include("indicator removed: KSI-IAM-JIT")
     expect(out).to include("indicator added:   KSI-IAM-NEW A New One")
     expect(out).to match(/indicator changed: KSI-IAM-ELP — controls \+zz-99; controls -ac-6/)
