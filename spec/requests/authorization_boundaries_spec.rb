@@ -272,4 +272,30 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
       expect(AuthorizationBoundary.exists?(boundary.id)).to be(true)
     end
   end
+
+  # #1354 — the FedRAMP Certification Package Overview address, on the edit form.
+  describe "FedRAMP package overview address" do
+    before { sign_in_as(user) }
+
+    it "is on the edit form with its field help" do
+      get edit_authorization_boundary_path(ab)
+      html = Nokogiri::HTML(response.body)
+      expect(html.at_css("input[name='authorization_boundary[fedramp_package_overview_uri]']")).to be_present
+      expect(html.css("button.sparc-field-help").map { |b| b["data-bs-title"] })
+        .to include("The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it.")
+    end
+
+    it "is saved from the form" do
+      patch authorization_boundary_path(ab),
+            params: { authorization_boundary: { fedramp_package_overview_uri: "https://example.gov/overview" } }
+      expect(ab.reload.fedramp_package_overview_uri).to eq("https://example.gov/overview")
+    end
+
+    it "is refused when it is not https" do
+      patch authorization_boundary_path(ab),
+            params: { authorization_boundary: { fedramp_package_overview_uri: "ftp://example.gov/overview" } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(ab.reload.fedramp_package_overview_uri).to be_nil
+    end
+  end
 end
