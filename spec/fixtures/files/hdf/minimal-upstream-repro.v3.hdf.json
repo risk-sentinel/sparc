@@ -1,0 +1,65 @@
+{
+  "baselines": [
+    {
+      "integrity": {
+        "algorithm": "sha256",
+        "checksum": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "name": "minimal-profile",
+      "requirements": [
+        {
+          "code": "",
+          "controlType": "technical",
+          "descriptions": [
+            {
+              "data": "A description",
+              "label": "default"
+            }
+          ],
+          "effectiveChecksum": {
+            "algorithm": "sha256",
+            "value": "704f62b2d0803438ad6b7b9bab45e2c4f350b7344135a2a7f8ef986d98669021"
+          },
+          "effectiveStatus": "failed",
+          "id": "min-1",
+          "impact": 0.5,
+          "results": [
+            {
+              "codeDesc": "expected something",
+              "message": "it was not so",
+              "startTime": "2026-06-01T00:00:00Z",
+              "status": "failed"
+            }
+          ],
+          "severity": "medium",
+          "sourceLocation": {},
+          "tags": {
+            "nist": [
+              "AC-3"
+            ]
+          },
+          "title": "A control"
+        }
+      ],
+      "title": "Minimal profile",
+      "version": "1.0.0"
+    }
+  ],
+  "components": [
+    {
+      "name": "minimal",
+      "osName": "minimal",
+      "osVersion": "1.0.0",
+      "type": "host"
+    }
+  ],
+  "generator": {
+    "name": "legacyhdf-to-hdf",
+    "version": "1.0.0"
+  },
+  "statistics": {},
+  "timestamp": "2026-06-01T00:00:00Z",
+  "tool": {
+    "name": "Heimdall Data Format v1"
+  }
+}

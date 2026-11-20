@@ -41,8 +41,15 @@ separate permission — see [Approval and validity](#approval-and-validity-809).
 ## 1. Ingest a scan
 
 1. Produce an HDF results file. Most scanners aren't HDF natively — convert with
-   the SAF CLI, e.g. `saf convert trivy2hdf -i trivy.json -o scan.hdf.json`. A
+   the SAF CLI, e.g. `saf convert trivy2hdf -i trivy.json -o scan.hdf.json`, or
+   with the `hdf` CLI, e.g. `hdf convert trivy.json -o scan.hdf.json`. A
    multi-scan bundle (a JSON array of HDF docs) is accepted too.
+
+   Both **HDF v2** (InSpec exec-json, what `saf convert` writes) and **HDF v3**
+   (what `hdf convert` writes) are accepted, and the same scan stores the same
+   findings in either version. SPARC checks every file with `hdf validate`
+   before reading it and refuses one that is not valid HDF, showing the reason
+   `hdf` gives; a v2 file is converted to v3 with `hdf convert` on the way in.
 2. On the triage page, under **Ingest scanner output (HDF)**, choose the file.
    Set **Target / CDEF** and **Scope**, then click **Upload & Ingest**.
 
