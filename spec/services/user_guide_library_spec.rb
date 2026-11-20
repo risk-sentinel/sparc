@@ -70,6 +70,15 @@ RSpec.describe UserGuideLibrary do
       end
     end
 
+    # #1354 — a wide table scrolls inside its wrapper; the region must be
+    # reachable from the keyboard (axe scrollable-region-focusable).
+    it "makes each table's scroll region focusable and labelled" do
+      html = described_class.find("hdf-amendment-triage").html
+      wrappers = Nokogiri::HTML.fragment(html).css("div.table-responsive")
+      expect(wrappers).not_to be_empty
+      expect(wrappers).to all(satisfy { |w| w["tabindex"] == "0" && w["role"] == "region" && w["aria-label"].to_s.start_with?("Table: ") })
+    end
+
     it "opens external links in a new tab safely" do
       html = described_class.all.map { |g| described_class.find(g.slug).html }.join
       if html =~ /href="https?:/

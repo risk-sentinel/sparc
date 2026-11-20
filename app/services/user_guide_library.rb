@@ -169,8 +169,10 @@ class UserGuideLibrary
     # `rel` would leave them open to reverse tabnabbing — the sanitiser would
     # have introduced the very class of bug it exists to prevent. Caught by
     # user_guide_library_spec's "opens external links in a new tab safely".
+    # tabindex, role and aria-label make a wide table's scroll region reachable
+    # from the keyboard (#1354, see style_tables). None of them can run script.
     GUIDE_ATTRIBUTES = %w[
-      href src alt title class id colspan rowspan align loading target rel
+      href src alt title class id colspan rowspan align loading target rel tabindex role aria-label
     ].freeze
 
     def markdown_to_html(md)
@@ -259,7 +261,12 @@ class UserGuideLibrary
     def style_tables(frag)
       frag.css("table").each do |t|
         t["class"] = "#{t['class']} table table-sm table-striped table-bordered align-middle".strip
-        wrapper = t.document.create_element("div", class: "table-responsive")
+        # A wide table scrolls inside its wrapper, and a scrolling region must be
+        # reachable from the keyboard (WCAG 2.1.1; axe scrollable-region-focusable).
+        # The region is labelled by the table's first header cell.
+        label = t.at_css("th")&.text.to_s.squish.presence || "Table"
+        wrapper = t.document.create_element("div", class: "table-responsive", tabindex: "0", role: "region",
+                                                   "aria-label": "Table: #{label}")
         t.replace(wrapper)
         wrapper.add_child(t)
       end
