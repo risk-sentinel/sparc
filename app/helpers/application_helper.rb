@@ -76,6 +76,7 @@ module ApplicationHelper
   # Guide pages more than one screen points at.
   GUIDE_CATALOGS_AND_BASELINES = "control-catalogs-and-baselines".freeze
   GUIDE_TRUST_STORE = "trust-store".freeze
+  GUIDE_CONNECTIONS = "connections-and-received-documents".freeze
 
   CONTEXTUAL_GUIDE = {
     "home"                     => "getting-oriented",
@@ -98,7 +99,11 @@ module ApplicationHelper
     "admin/users"              => "administration",
     "admin/roles"              => "administration",
     "admin/service_accounts"   => "administration",
-    "admin/organizations"      => "administration"
+    "admin/organizations"      => "administration",
+    # #1354 — the connector: Settings → Connections and a boundary's received documents.
+    "admin/exchange_connections"      => GUIDE_CONNECTIONS,
+    "admin/exchange_document_sources" => GUIDE_CONNECTIONS,
+    "received_documents"              => GUIDE_CONNECTIONS
   }.freeze
 
   # Slug of the guide most relevant to the current screen, or nil.

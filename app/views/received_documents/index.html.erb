@@ -1,0 +1,112 @@
+<%# #1354 — a boundary's received documents, in its evidence area (owner,
+    2026-11-20). Every version pulled or uploaded, grouped by stream, newest
+    first. A version takes effect only once the boundary accepts it. %>
+<% content_for :title, "Received documents — #{@boundary.name}" %>
+
+<div class="d-flex justify-content-between align-items-center my-4 gap-3 flex-wrap">
+  <div>
+    <h1 class="h3 fw-bold mb-0">Received documents</h1>
+    <p class="text-body-secondary mb-0 small">
+      <%= link_to @boundary.name, authorization_boundary_path(@boundary) %> ·
+      FedRAMP, OSCAL, HDF and XCCDF documents pulled from a connection or uploaded. Each version is
+      checked against its schema and for completeness, and waits for review. Only a byte-identical
+      re-delivery of the version in effect needs no review, and it is not stored again.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to "Back to Boundary", authorization_boundary_path(@boundary),
+          class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+  </div>
+</div>
+
+<% if @can_upload %>
+  <div class="card mb-4" data-testid="received-upload">
+    <div class="card-header"><h5 class="mb-0">Upload a document</h5></div>
+    <div class="card-body">
+      <%= form_with url: authorization_boundary_received_documents_path(@boundary), method: :post,
+            multipart: true, data: { turbo: false, testid: "received-upload-form" } do |f| %>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <%= render "shared/dropzone", form: f, field: :file, accept: ".json,.xml,application/json,application/xml",
+                  hint: "A FedRAMP package document, OSCAL (JSON or XML), HDF, or XCCDF results. Up to #{number_to_human_size(SparcConfig.max_upload_bytes)}." %>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <%= label_tag :document_format, "Format", class: "form-label fw-semibold small" %>
+              <%= select_tag :document_format, options_for_select(@formats.map { |fmt| [ exchange_format_label(fmt), fmt ] }),
+                    include_blank: "Detect from the document", class: "form-select" %>
+            </div>
+            <div class="mb-3">
+              <%= label_tag :document_type, "FedRAMP document type", class: "form-label fw-semibold small" %>
+              <%= select_tag :document_type, options_for_select(@fedramp_document_types),
+                    include_blank: "Detect from the document", class: "form-select" %>
+              <div class="form-text">Only needed for a FedRAMP document without a <code>$schema</code> SPARC can read it from.</div>
+            </div>
+            <%= f.submit "Upload", class: "sparc-action sparc-action--positive sparc-action--solid",
+                  data: { testid: "received-upload-submit" } %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% if @streams.empty? %>
+  <div class="card">
+    <div class="card-body">
+      <p class="text-body-secondary text-center mb-0" data-testid="received-empty">
+        Nothing received yet. Upload a document above, or register a connection in Settings → Connections.
+      </p>
+    </div>
+  </div>
+<% end %>
+
+<% @streams.each do |versions| %>
+  <% latest = versions.first %>
+  <div class="card mb-3" data-testid="received-stream">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><%= received_stream_label(latest) %></h5>
+      <span class="badge text-bg-secondary"><%= pluralize(versions.size, "version") %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>Received</th>
+            <th>State</th>
+            <th>Format / type</th>
+            <th>Source</th>
+            <th>Received by</th>
+            <th>Changes</th>
+            <th><span class="visually-hidden">Open</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% versions.each do |doc| %>
+            <tr data-received-document-id="<%= doc.id %>">
+              <td><%= exchange_time(doc.received_at) %></td>
+              <td><%= received_state_badge(doc.state) %></td>
+              <td><%= exchange_format_label(doc.format) %> <span class="text-body-secondary"><%= doc.document_type %></span></td>
+              <td><%= received_source_label(doc) %></td>
+              <td><%= doc.received_by&.display_label || "—" %></td>
+              <td class="text-nowrap">
+                <% if doc.valid_document? %>
+                  <span class="text-danger" title="Regressions"><%= doc.regression_count %> regressions</span> ·
+                  <span class="text-success" title="Improvements"><%= doc.improvement_count %> improvements</span> ·
+                  <span class="text-body-secondary" title="Neutral"><%= doc.neutral_count %> neutral</span>
+                <% else %>
+                  <span class="text-danger"><%= pluralize(doc.validation_errors.size, "validation error") %></span>
+                <% end %>
+              </td>
+              <td class="text-end">
+                <%= link_to "View", authorization_boundary_received_document_path(@boundary, doc),
+                      class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm",
+                      data: { testid: "view-received" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

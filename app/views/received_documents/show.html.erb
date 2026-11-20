@@ -1,0 +1,266 @@
+<%# #1354 — one received version: what it is, whether it passed validation
+    (errors and warnings shown: owner, 2026-11-20), what changed against the
+    version in effect, and its review. The review controls are offered only to
+    an exchange.review holder who may decide it: never to the person who
+    uploaded it, unless they are the break-glass administrator (AC-5, mirroring
+    ReceivedDocumentReviewService.may_decide?). %>
+<% doc = @document %>
+<% content_for :title, "Received document — #{@boundary.name}" %>
+<% delta = doc.delta.is_a?(Hash) ? doc.delta : {} %>
+<% kind_order = { "regression" => 0, "improvement" => 1, "neutral" => 2 } %>
+<% changes = doc.delta_changes.select { |c| c.is_a?(Hash) }.sort_by.with_index { |c, i| [ kind_order.fetch(c["kind"].to_s, 3), i ] } %>
+
+<div class="d-flex justify-content-between align-items-start my-4 gap-3 flex-wrap">
+  <div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <h1 class="h3 fw-bold mb-0"><%= exchange_format_label(doc.format) %> <%= doc.document_type %></h1>
+      <%= received_state_badge(doc.state) %>
+    </div>
+    <p class="text-body-secondary mb-0 small">
+      <%= link_to @boundary.name, authorization_boundary_path(@boundary) %> ·
+      <%= received_stream_label(doc) %>
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to "Download", file_authorization_boundary_received_document_path(@boundary, doc),
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+          data: { turbo: false, testid: "received-download" } %>
+    <%= link_to "Back to Received documents", authorization_boundary_received_documents_path(@boundary),
+          class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Version</h5></div>
+      <div class="card-body">
+        <table class="table table-sm mb-0" data-testid="received-metadata">
+          <tr><th>State</th><td><%= received_state_badge(doc.state) %></td></tr>
+          <tr><th>Source</th><td><%= received_source_label(doc) %></td></tr>
+          <% if doc.exchange_document_source %>
+            <tr><th>Address</th><td class="text-break"><code><%= doc.exchange_document_source.url %></code></td></tr>
+          <% end %>
+          <% if doc.fedramp_id.present? %>
+            <tr><th>FedRAMP ID</th><td><code><%= doc.fedramp_id %></code></td></tr>
+          <% end %>
+          <tr><th>Received</th><td><%= exchange_time(doc.received_at) %><% if doc.received_by %> by <%= doc.received_by.display_label %><% end %></td></tr>
+          <tr><th>File</th><td><%= doc.filename.presence || "—" %> · <%= number_to_human_size(doc.byte_size) %> (<%= number_with_delimiter(doc.byte_size) %> bytes)</td></tr>
+          <tr><th>SHA-256</th><td><code class="text-break" data-testid="received-sha256"><%= doc.sha256 %></code></td></tr>
+          <tr><th>In effect for this stream</th><td>
+            <% if doc.in_effect? %>
+              This version
+            <% elsif @in_effect %>
+              <%= link_to "Version received #{exchange_time(@in_effect.received_at)}", authorization_boundary_received_document_path(@boundary, @in_effect) %>
+            <% else %>
+              <span class="text-body-secondary">None yet</span>
+            <% end %>
+          </td></tr>
+          <% if doc.scan_run_id %>
+            <tr><th>Findings</th><td><%= link_to "Added to the boundary's findings", triage_authorization_boundary_path(@boundary) %></td></tr>
+          <% end %>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100" data-testid="received-review">
+      <div class="card-header"><h5 class="mb-0">Review</h5></div>
+      <div class="card-body">
+        <% if doc.review_action.present? %>
+          <p class="mb-2">
+            <strong><%= doc.review_action == "auto_accept" ? "Accepted without review" : doc.review_action.humanize %></strong>
+            <%= exchange_time(doc.reviewed_at) %>
+            <% if doc.reviewed_by %>by <%= doc.reviewed_by.display_label %><% end %>
+          </p>
+          <% if doc.review_note.present? %>
+            <p class="small mb-3" data-testid="review-note"><%= doc.review_note %></p>
+          <% end %>
+        <% end %>
+
+        <% if doc.state == "invalid" %>
+          <p class="text-danger mb-0" data-testid="review-invalid">
+            This version failed validation and cannot be accepted. A valid version has to replace it.
+          </p>
+        <% elsif !doc.open? %>
+          <p class="text-body-secondary mb-0">This version has been decided.</p>
+        <% elsif @uploader_blocked %>
+          <p class="text-body-secondary mb-0" data-testid="review-sod">
+            You uploaded this version, so someone else has to review it (separation of duties).
+          </p>
+        <% elsif @may_decide %>
+          <p class="small text-body-secondary">
+            Accept puts this version in effect and supersedes the one before it. Respond asks the provider for
+            information and leaves it pending. Reject keeps it on record and it never takes effect.
+            <% if doc.format == "hdf" %>Accepting an HDF document also adds its results to the boundary's findings.<% end %>
+          </p>
+          <%= form_with url: accept_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+                local: true, class: "mb-3", data: { testid: "accept-form" } do |f| %>
+            <%= f.label :note, "Note (optional)", class: "form-label small fw-semibold", for: "accept-note" %>
+            <%= f.text_area :note, rows: 2, class: "form-control form-control-sm mb-2", id: "accept-note" %>
+            <%= f.submit "Accept", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
+                  data: { testid: "review-accept", turbo_confirm: "Accept this version? It takes effect for the boundary." } %>
+          <% end %>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= form_with url: respond_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+                    local: true, data: { testid: "respond-form" } do |f| %>
+                <%= f.label :note, "What you need from the provider", class: "form-label small fw-semibold", for: "respond-note" %>
+                <%= f.text_area :note, rows: 2, class: "form-control form-control-sm mb-2", id: "respond-note", required: true %>
+                <%= f.submit "Respond", class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                      data: { testid: "review-respond" } %>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= form_with url: reject_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+                    local: true, data: { testid: "reject-form" } do |f| %>
+                <%= f.label :note, "Why it is rejected", class: "form-label small fw-semibold", for: "reject-note" %>
+                <%= f.text_area :note, rows: 2, class: "form-control form-control-sm mb-2", id: "reject-note", required: true %>
+                <%= f.submit "Reject", class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+                      data: { testid: "review-reject" } %>
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <p class="text-body-secondary mb-0">Waiting for a reviewer of this boundary.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4" data-testid="received-validation">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Validation</h5>
+    <% if doc.valid_document? %>
+      <span class="sparc-status sparc-status--success">Valid</span>
+    <% else %>
+      <span class="sparc-status sparc-status--danger">Invalid</span>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% schema = doc.validation["schema"] %>
+    <% if schema.is_a?(Hash) && schema["name"].present? %>
+      <p class="small text-body-secondary">
+        Checked against <code><%= schema["name"] %></code><% if schema["version"].present? %> (<%= schema["version"] %>)<% end %>,
+        and for every required field being filled in.
+      </p>
+    <% end %>
+    <% errors = doc.validation_errors.select { |e| e.is_a?(Hash) } %>
+    <% warnings = doc.validation_warnings.select { |w| w.is_a?(Hash) } %>
+    <% if errors.any? %>
+      <h6 class="fw-semibold text-danger"><%= pluralize(errors.size, "error") %></h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" data-testid="validation-errors">
+          <thead><tr><th>Check</th><th>Where</th><th>Message</th></tr></thead>
+          <tbody>
+            <% errors.each do |err| %>
+              <tr>
+                <td><%= err["check"].to_s.humanize %></td>
+                <td class="text-break"><code><%= err["pointer"].presence || "/" %></code></td>
+                <td><%= err["message"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="mb-2">No errors.</p>
+    <% end %>
+    <% if warnings.any? %>
+      <% total = doc.validation["warnings_total"].to_i %>
+      <h6 class="fw-semibold mt-3">
+        <%= pluralize([ total, warnings.size ].max, "warning") %>
+        <small class="text-body-secondary fw-normal">— optional fields left empty; they never block acceptance</small>
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0" data-testid="validation-warnings">
+          <thead><tr><th>Check</th><th>Where</th><th>Message</th></tr></thead>
+          <tbody>
+            <% warnings.each do |warning| %>
+              <tr>
+                <td><%= warning["check"].to_s.humanize %></td>
+                <td class="text-break"><code><%= warning["pointer"].presence || "/" %></code></td>
+                <td><%= warning["message"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if total > warnings.size %>
+        <p class="small text-body-secondary mt-2 mb-0">Showing the first <%= warnings.size %>.</p>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card mt-4" data-testid="received-delta">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">What changed</h5>
+    <span class="small">
+      <span class="text-danger"><%= doc.regression_count %> regressions</span> ·
+      <span class="text-success"><%= doc.improvement_count %> improvements</span> ·
+      <span class="text-body-secondary"><%= doc.neutral_count %> neutral</span>
+    </span>
+  </div>
+  <div class="card-body">
+    <% if !doc.valid_document? %>
+      <p class="text-body-secondary mb-0">Not compared: a version that failed validation is not compared.</p>
+    <% elsif delta.blank? %>
+      <p class="text-body-secondary mb-0">No comparison recorded.</p>
+    <% else %>
+      <% if delta["first_version"] %>
+        <p class="small text-body-secondary">The first version of this stream: there is nothing to compare it with, so every item is new.</p>
+      <% else %>
+        <p class="small text-body-secondary">Compared with the version in effect when this one arrived.</p>
+      <% end %>
+      <% if changes.any? %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0" data-testid="delta-changes">
+            <thead><tr><th>Kind</th><th>Item</th><th>Change</th><th>Before</th><th>After</th></tr></thead>
+            <tbody>
+              <% changes.each do |change| %>
+                <tr data-change-kind="<%= change["kind"] %>">
+                  <td><%= change_kind_badge(change["kind"]) %></td>
+                  <td class="text-break"><code><%= change["key"] %></code></td>
+                  <td><%= change["summary"] %></td>
+                  <td class="text-break small"><%= delta_value(change["before"]) %></td>
+                  <td class="text-break small"><%= delta_value(change["after"]) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if delta["truncated"] %>
+          <p class="small text-body-secondary mt-2 mb-0">The list is shortened; the counts above cover every change, regressions listed first.</p>
+        <% end %>
+      <% else %>
+        <p class="mb-0">No changes.</p>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card mt-4" data-testid="received-history">
+  <div class="card-header"><h5 class="mb-0">History</h5></div>
+  <div class="card-body">
+    <% if @history.any? %>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>When</th><th>What</th><th>Who</th><th>Note</th></tr></thead>
+        <tbody>
+          <% @history.each do |event| %>
+            <tr>
+              <td><%= exchange_time(event.created_at) %></td>
+              <td><%= event.action.delete_prefix("received_document_").humanize %></td>
+              <td><%= event.user&.display_label || "SPARC" %></td>
+              <td class="small"><%= event.metadata.is_a?(Hash) ? event.metadata["note"] : nil %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-body-secondary mb-0">No history recorded.</p>
+    <% end %>
+  </div>
+</div>
