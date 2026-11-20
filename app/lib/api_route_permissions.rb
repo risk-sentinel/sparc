@@ -159,6 +159,8 @@ module ApiRoutePermissions
                                                 "respond" => EXCHANGE_REVIEW,
                                                 "reject"  => EXCHANGE_REVIEW } },
     "exchange_indexes"          => { read: [ "evidence.read" ] },
+    # FedRAMP's vulnerability reports for the boundary in the path (VER-RPT-VDT / -AVI).
+    "fedramp_reports"           => { read: [ "evidence.read" ] },
 
     # ── Administration ──────────────────────────────────────────────────
     "users"                  => { read: :admin, write: :admin,

@@ -1,0 +1,39 @@
+<%# #1354 / #1384 — download the boundary's FedRAMP Vulnerability Detail Report
+    (VER-RPT-VDT) and Accepted Vulnerability Info (VER-RPT-AVI) for a period.
+    FedrampReportsController; the same service as the API. %>
+<div class="card mb-4" data-testid="triage-fedramp-reports">
+  <div class="card-header">FedRAMP vulnerability reports</div>
+  <div class="card-body">
+    <% if boundary.fedramp_package_overview_uri.blank? %>
+      <p class="text-muted small mb-0" data-testid="triage-fedramp-reports-unavailable">
+        These reports name the boundary's FedRAMP Certification Package Overview address,
+        and this boundary has none yet. Set it on the boundary to produce them.
+      </p>
+    <% else %>
+      <%= form_with url: triage_fedramp_vulnerability_detail_report_authorization_boundary_path(boundary),
+            method: :get, local: true, data: { turbo: false },
+            class: "row g-2 align-items-end" do %>
+        <div class="col-auto">
+          <%= label_tag :fedramp_report_from, "From", class: "form-label small mb-0" %>
+          <%= date_field_tag :from, (Date.current - 30), id: "fedramp_report_from", class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-auto">
+          <%= label_tag :fedramp_report_to, "To", class: "form-label small mb-0" %>
+          <%= date_field_tag :to, Date.current, id: "fedramp_report_to", class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-auto d-flex gap-2">
+          <%= button_tag "Download Vulnerability Detail Report", type: "submit", name: nil,
+                class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                data: { testid: "triage-download-fedramp-vdr" } %>
+          <%= button_tag "Download Accepted Vulnerability Info", type: "submit", name: nil,
+                formaction: triage_fedramp_accepted_vulnerability_info_authorization_boundary_path(boundary),
+                class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                data: { testid: "triage-download-fedramp-avi" } %>
+        </div>
+        <div class="col-12 text-muted small">
+          Dates are UTC, inclusive. Accepted vulnerabilities are listed only in the Accepted Vulnerability Info.
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

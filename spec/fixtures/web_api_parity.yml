@@ -760,6 +760,11 @@ controllers:
       package: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package"]
       amendments: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments?verify=false"]
       poam: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam"]
+  # #1354 / #1384 — the triage page's FedRAMP report downloads.
+  fedramp_reports:
+    mapped:
+      vulnerability_detail_report: ["GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report"]
+      accepted_vulnerability_info: ["GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

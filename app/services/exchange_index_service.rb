@@ -9,6 +9,10 @@
 #     the boundary as an HDF system document. These are built on request, so
 #     the index cannot give their SHA-256 without building every export each
 #     time it is read; `sha256` is null for them;
+#   - its FedRAMP Vulnerability Detail Report (VER-RPT-VDT) and Accepted
+#     Vulnerability Info (VER-RPT-AVI), also built on request (sha256 null),
+#     listed only when the boundary has a FedRAMP Certification Package
+#     Overview address, which both reports require;
 #   - every received document the boundary has ACCEPTED, with its SHA-256.
 #
 # The downloads are the existing authenticated endpoints: a caller needs a
@@ -35,7 +39,7 @@ class ExchangeIndexService
     {
       authorization_boundary: { id: @boundary.id, name: @boundary.name },
       generated_at: Time.current.utc.iso8601,
-      documents: sparc_documents + hdf_system + received
+      documents: sparc_documents + hdf_system + fedramp_reports + received
     }
   end
 
@@ -58,6 +62,22 @@ class ExchangeIndexService
     [ { origin: "sparc", format: "hdf", document_type: "system", id: @boundary.id,
         name: @boundary.name, updated_at: @boundary.updated_at&.utc&.iso8601, sha256: nil,
         download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/hdf_system" } ]
+  end
+
+  # Built on request; listed only when they can be built (#1354, #1384).
+  FEDRAMP_REPORTS = {
+    FedrampVulnerabilityReportService::VDR => [ "vulnerability_detail_report", "Vulnerability Detail Report" ],
+    FedrampVulnerabilityReportService::AVI => [ "accepted_vulnerability_info", "Accepted Vulnerability Info" ]
+  }.freeze
+
+  def fedramp_reports
+    return [] if @boundary.fedramp_package_overview_uri.blank?
+
+    FEDRAMP_REPORTS.map do |document_type, (path, title)|
+      { origin: "sparc", format: "fedramp", document_type: document_type, id: @boundary.id,
+        name: "#{@boundary.name} FedRAMP #{title}", updated_at: Time.current.utc.iso8601, sha256: nil,
+        download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/fedramp/#{path}" }
+    end
   end
 
   def received
