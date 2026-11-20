@@ -61,6 +61,8 @@ GET /api/v1/authoritative_sources/export
 GET /api/v1/authorization_boundaries
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluations
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluations/:control_id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_system
@@ -353,6 +355,7 @@ POST /api/v1/users/:user_id/api_tokens/:id/renew
 PUT /api/v1/admin/remediation_timelines
 PUT /api/v1/authoritative_sources/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/back_matter_resources/:id
+PUT /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluations/:control_id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id

@@ -760,6 +760,8 @@ controllers:
       package: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_package"]
       amendments: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/hdf_amendments?verify=false"]
       poam: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam"]
+      # #1354 / #1384 — the same FedrampEvaluationService upsert.
+      fedramp_evaluation: ["PUT /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluations/:control_id"]
   # #1354 / #1384 — the triage page's FedRAMP report downloads.
   fedramp_reports:
     mapped:

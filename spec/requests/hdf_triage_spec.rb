@@ -336,6 +336,99 @@ RSpec.describe "HdfTriage", type: :request do
     end
   end
 
+  # #1354 / #1384 — the FedRAMP evaluation of each failing finding, through the
+  # same FedrampEvaluationService as PUT /api/v1/.../fedramp_evaluations/:control_id.
+  describe "FedRAMP evaluation" do
+    let!(:finding) do
+      create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
+    end
+    let(:fields) do
+      { control_id: "CVE-1", internet_reachable: "true", likely_exploitable: "false", pain_rating: "3",
+        evaluated_at: "", next_reduction_rating: "1", next_reduction_at: "2026-12-15",
+        supplementary_info: "Behind the WAF" }
+    end
+
+    it "offers the evaluation form on a failing finding, with FedRAMP's N-rating wording" do
+      create(:scanner_finding, :passed, scan_run: scan_run, authorization_boundary: boundary, control_id: "PASS-1")
+      get triage_authorization_boundary_path(boundary)
+      html = Nokogiri::HTML(response.body)
+
+      forms = html.css("details[data-testid='fedramp-evaluation']")
+      expect(forms.map { |d| d["data-fedramp-control"] }).to eq([ "CVE-1" ])
+      expect(forms.first.css("select[name='pain_rating'] option").map { |o| o["value"] }.reject(&:blank?))
+        .to eq(%w[0 1 2 3 4 5])
+      definitions = html.at_css("[data-testid='fedramp-pain-definitions']").text
+      expect(definitions).to include("Exploitation is extremely unlikely to have any adverse effects")
+      expect(definitions).to include("debilitating customer effect on more than one agency")
+      expect(html.css("button.sparc-field-help").map { |b| b["data-bs-title"] })
+        .to include(a_string_including("to determine if they are internet-reachable vulnerabilities"))
+      expect(html.at_css("[data-fedramp-control='CVE-1'][data-testid='fedramp-summary']").text).to include("Not evaluated")
+    end
+
+    it "records the evaluation and shows it" do
+      post triage_fedramp_evaluation_authorization_boundary_path(boundary), params: fields
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:success]).to match(/FedRAMP evaluation saved for CVE-1/)
+
+      evaluation = boundary.fedramp_vulnerability_evaluations.sole
+      expect(evaluation).to have_attributes(internet_reachable: true, likely_exploitable: false, pain_rating: 3,
+                                            next_reduction_rating: 1, supplementary_info: "Behind the WAF",
+                                            evaluated_by: user)
+      expect(evaluation.evaluated_at).to be_present
+      expect(AuditEvent.where(action: "fedramp_evaluation_recorded").count).to eq(1)
+
+      get triage_authorization_boundary_path(boundary)
+      summary = Nokogiri::HTML(response.body).at_css("[data-testid='fedramp-summary']").text
+      expect(summary).to include("IRV", "Not LEV", "N3", "next: N1 by 2026-12-15")
+    end
+
+    it "keeps each N-rating in the history when it changes" do
+      post triage_fedramp_evaluation_authorization_boundary_path(boundary), params: fields
+      post triage_fedramp_evaluation_authorization_boundary_path(boundary),
+           params: fields.merge(pain_rating: "2", next_reduction_rating: "")
+      evaluation = boundary.fedramp_vulnerability_evaluations.sole
+      expect(evaluation.pain_history.map { |h| h["rating"] }).to eq([ 3, 2 ])
+      expect(evaluation.next_reduction_rating).to be_nil
+    end
+
+    it "refuses a next reduction that is not lower, saying why" do
+      post triage_fedramp_evaluation_authorization_boundary_path(boundary),
+           params: fields.merge(next_reduction_rating: "4")
+      expect(flash[:error]).to match(/lower than the current N-rating/)
+      expect(boundary.fedramp_vulnerability_evaluations).to be_empty
+    end
+
+    it "refuses a control the boundary has no failing finding for" do
+      post triage_fedramp_evaluation_authorization_boundary_path(boundary), params: fields.merge(control_id: "CVE-NONE")
+      expect(flash[:error]).to match(/no failing finding for CVE-NONE/)
+      expect(FedrampVulnerabilityEvaluation.count).to eq(0)
+    end
+
+    context "when auth is enabled" do
+      before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
+      it "refuses a reader without evidence.write" do
+        reader = create(:user)
+        grant_permission(reader, "evidence.read", authorization_boundary: boundary)
+        sign_in_as(reader)
+
+        post triage_fedramp_evaluation_authorization_boundary_path(boundary), params: fields
+        expect(response).not_to redirect_to(triage_authorization_boundary_path(boundary))
+        expect(FedrampVulnerabilityEvaluation.count).to eq(0)
+      end
+
+      it "allows a triager holding evidence.write on the boundary" do
+        writer = create(:user)
+        grant_permission(writer, "evidence.write", authorization_boundary: boundary)
+        sign_in_as(writer)
+
+        post triage_fedramp_evaluation_authorization_boundary_path(boundary), params: fields
+        expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+        expect(boundary.fedramp_vulnerability_evaluations.sole.evaluated_by).to eq(writer)
+      end
+    end
+  end
+
   describe "authorization" do
     it "redirects a user without permission when auth is enabled" do
       allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
