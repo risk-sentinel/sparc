@@ -351,9 +351,22 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - Only a byte-identical re-delivery needs no review; it's recorded as unchanged.
   - The person who uploaded a document can't decide it.
   - An accepted HDF document also goes into the boundary's findings.
-- **Out:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists the boundary's documents for another system to pull: its OSCAL SSP, SAP, SAR, POA&M and CDEFs, its HDF system document, and the documents it has accepted, each with its download address. Accepted documents carry their SHA-256. SPARC's own exports are built on request, so the index gives no SHA-256 for them. Each read of the index is recorded in the audit log.
+- **Out:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists the boundary's documents for another system to pull: its OSCAL SSP, SAP, SAR, POA&M and CDEFs, its HDF system document, its FedRAMP vulnerability reports (once it has a package overview address, see FedRAMP reports below), and the documents it has accepted, each with its download address. Accepted documents carry their SHA-256. SPARC's own exports are built on request, so the index gives no SHA-256 for them. Each read of the index is recorded in the audit log.
 
 The API is in [API Reference](API-Reference). Permissions: `connections.manage`, `exchange.upload` and `exchange.review` ([RBAC](RBAC)).
+
+### FedRAMP reports (v1.17.11)
+
+SPARC writes a boundary's FedRAMP **Vulnerability Detail Report** (rule VER-RPT-VDT) and **Accepted Vulnerability Info** (VER-RPT-AVI), from its scanner findings, its finding dispositions and the provider's FedRAMP evaluation of each vulnerability. Download them from the boundary's triage page, for a chosen period, or over the API ([API Reference](API-Reference)). Both are listed in the boundary's exchange index.
+
+- **Before you start:** both reports name the boundary's FedRAMP Certification Package Overview address. A boundary without one gets no report, and the triage page says so.
+- **Period:** each report covers a period, by default the 30 days ending now. It lists every vulnerability active at any time in the period, or resolved within it, in its state at the end of the period.
+- **A vulnerability** is a control whose scan results ever failed. Its tracking identifier is the control id, which stays the same across scans. It was detected at its first failing result.
+- **Accepted vulnerabilities** appear only in the Accepted Vulnerability Info, never in the Vulnerability Detail Report. A vulnerability is accepted when an approved disposition accepts the risk (a waiver, an operational requirement, or a NIST risk marked `accepted`), or when it isn't remediated within 192 days of its evaluation (VER-TFR-MAV).
+- **Final disposition:** an approved false positive is `False Positive`; a control whose newest result passes is `Remediated`; an approved risk adjustment that is still detected is `Partially Mitigated`. Otherwise the vulnerability is still active.
+- **Overdue:** a vulnerability is marked overdue 192 days after its evaluation, or when it has gone more than 14 days without one (VER-TFR-EVU's longest time frame).
+- **Validation:** SPARC checks every report against FedRAMP's pinned schema, and for completeness, before it hands it over. Any field SPARC doesn't know is left out, not sent empty. If SPARC ever built a report that failed its own check, it refuses to send it and shows the errors.
+- Each download is recorded in the audit log.
 
 ### sparc-horizon and sparc-validate
 

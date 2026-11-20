@@ -154,6 +154,26 @@ Details in
 and
 [`exchange-index.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-index.md).
 
+**FedRAMP vulnerability reports (v1.17.11, #1354, #1384).** A boundary's
+Vulnerability Detail Report (FedRAMP rule VER-RPT-VDT) and Accepted Vulnerability
+Info (VER-RPT-AVI) for a report period, written from its findings, dispositions
+and FedRAMP evaluations.
+
+| Endpoints | What they do | Permission |
+|---|---|---|
+| `/api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report` | The Vulnerability Detail Report, `?from=&to=` (ISO 8601; default the 30 days ending now) | `evidence.read` |
+| `/api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info` | The Accepted Vulnerability Info, same period parameters | `evidence.read` |
+
+- The body is the FedRAMP document itself, validated against FedRAMP's pinned
+  schema and for completeness before it is returned.
+- `422` when the boundary has no FedRAMP Certification Package Overview address,
+  or the period cannot be read. `502` with the errors, never the document, if
+  SPARC built a report that fails its own validation.
+- Each download is audited.
+
+Details in
+[`fedramp-reports.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-reports.md).
+
 > **An overdue POA&M risk no longer refuses `hdf/amendments_from_oscal_poam` (v1.17.2, #1208).**
 > A risk past its `deadline` becomes an expired amendment, and `hdf amend apply`
 > refuses any document holding one. So by default SPARC **leaves overdue
