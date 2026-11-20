@@ -49,6 +49,14 @@ module AuthorizationHelper
     !SparcConfig.any_auth_enabled? || current_user&.has_permission?("back_matter.federate") || false
   end
 
+  # #1354 — the Connections screens (Admin::ExchangeConnectionsController#
+  # authorize_connections!): an instance administrator, or a holder of the
+  # instance-wide `connections.manage`. An administrator holds every key.
+  # NIST SP 800-53: AC-3, CA-3.
+  def can_manage_connections?
+    !SparcConfig.any_auth_enabled? || current_user&.has_permission?("connections.manage") || false
+  end
+
   # #629 — bulk delete is instance-admin-only; mirror authorize_admin! so the
   # UI only renders the controls when the action would actually be allowed.
   def can_bulk_delete? = admin_access?

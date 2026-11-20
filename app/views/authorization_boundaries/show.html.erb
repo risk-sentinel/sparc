@@ -242,11 +242,23 @@
 <%# #770 bug 5 — evidence tied to this boundary; it flows into OSCAL back-matter
     (evidence -> back_matter_resource). #1251 — called "Evidence", as the
     Completeness checklist calls it; "Artifacts" read as the same thing as the
-    Artifact Summary above. %>
+    Artifact Summary above.
+    #1354 — owner: received documents and their reviews live in the boundary's
+    evidence area, so the section links to the boundary's Received documents
+    page (read with evidence.read, as the page itself requires). %>
+<% evidence_actions = [] %>
+<% if boundary_permission?("evidence.read", boundary) %>
+  <% evidence_actions << link_to("Received documents", authorization_boundary_received_documents_path(boundary),
+                                 class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm",
+                                 data: { boundary_action: "received_documents" }) %>
+<% end %>
+<% if boundary_permission?("evidence.write", boundary) %>
+  <% evidence_actions << link_to("Add Evidence", new_evidence_path(authorization_boundary_id: boundary.id),
+                                 class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm") %>
+<% end %>
 <%= render layout: "shared/collapsible_section",
            locals: { id: "boundary-evidence", title: "Evidence", count: @evidences.size,
-                     actions: (link_to("Add Evidence", new_evidence_path(authorization_boundary_id: boundary.id),
-                                       class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm") if boundary_permission?("evidence.write", boundary)) } do %>
+                     actions: (safe_join(evidence_actions, " ") if evidence_actions.any?) } do %>
   <% if @evidences.any? %>
     <table class="table table-hover mb-0">
       <thead>
