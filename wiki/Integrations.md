@@ -320,6 +320,22 @@ container image published by this repo's CI:
 | HDF `hdf-system` (v3.8.0) | Vendored hdf-libs schema, in process | `GET /api/v1/authorization_boundaries/:id/hdf_system` — the boundary as an HDF system document |
 | JSON | N/A | Simplified internal format |
 
+### Document validation (v1.17.11)
+
+Every document SPARC exchanges with another system can be checked against the
+schema SPARC pins for its format, and for completeness: every field the schema
+requires must be filled in, not just present.
+
+| Format | Checked against |
+|--------|-----------------|
+| FedRAMP package JSON (Consolidated Rules for 2026) | FedRAMP's 11 package schemas from [FedRAMP/schemas](https://github.com/FedRAMP/schemas), vendored and pinned by SHA-256 |
+| OSCAL JSON / XML | NIST's OSCAL schemas, as above |
+| HDF v2 / v3 | `hdf validate`, the pinned hdf-libs CLI |
+| XCCDF 1.2 | NIST's XCCDF 1.2 schema, vendored and pinned |
+
+No schema is fetched at validation time. Over the API:
+`POST /api/v1/document_validations` ([API Reference](API-Reference)).
+
 ### sparc-horizon and sparc-validate
 
 - **SPARC-namespace props.** SSP, SAR and POA&M exports carry the nine props
