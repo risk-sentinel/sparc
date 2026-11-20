@@ -1167,6 +1167,10 @@ Rails.application.routes.draw do
         post :amendments_from_oscal_poam, to: "translations#amendments_from_oscal_poam"
       end
 
+      # #1354 — check a FedRAMP, OSCAL, HDF or XCCDF document against SPARC's
+      # pinned schemas and for completeness. Stateless, like the translations.
+      resources :document_validations, only: [ :create ]
+
       # Admin credential rotation (#403) — receives a new admin password
       # from the sparc-iac rotation Lambda. See sparc-iac#197.
       namespace :admin do
