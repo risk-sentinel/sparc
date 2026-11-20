@@ -90,6 +90,8 @@
     "dark:color-contrast::tr:nth-child(8) > td:nth-child(3) > .bg-success.badge",
     "dark:color-contrast::tr:nth-child(9) > td:nth-child(3) > .bg-success.badge"
   ],
+  "admin_exchange_connection_new": [],
+  "admin_exchange_connections": [],
   "admin_idp_grants": [],
   "admin_organizations": [],
   "admin_reconciliation": [
@@ -162,6 +164,7 @@
   "help_cdef-coverage": [],
   "help_compliance-library": [],
   "help_component-definitions": [],
+  "help_connections-and-received-documents": [],
   "help_control-catalogs-and-baselines": [],
   "help_converters-and-imports": [],
   "help_drawer_open": [],
