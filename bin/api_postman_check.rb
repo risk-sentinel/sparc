@@ -43,6 +43,7 @@ JSON_CONTENT_TYPE   = "application/json"
 # against the route list.
 POSTMAN_VARIABLE = /\{\{[^}]+\}\}/
 
+SCANNER_FINDINGS = "Scanner Findings"
 CONTROLLER_TO_FOLDER = {
   "admin/credentials"                  => "Admin Credentials",
   "admin/reconciliation"               => "Admin Reconciliation",
@@ -73,8 +74,8 @@ CONTROLLER_TO_FOLDER = {
   "exchange_indexes"                   => "Received Documents",
   "fedramp_reports"                    => "FedRAMP Reports",
   "federation_peers"                   => "Federation Peers",
-  "fedramp_evaluations"                => "Scanner Findings", # #1354 / #1384
-  "finding_dispositions"               => "Scanner Findings",
+  "fedramp_evaluations"                => SCANNER_FINDINGS, # #1354 / #1384
+  "finding_dispositions"               => SCANNER_FINDINGS,
   "guides"                             => "Guides",
   "hdf_amendments"                     => TRANSLATIONS_FOLDER,
   "hdf_packages"                       => TRANSLATIONS_FOLDER,
@@ -88,7 +89,7 @@ CONTROLLER_TO_FOLDER = {
   "sap_documents"                      => "SAP Documents",
   "sar_documents"                      => "SAR Documents",
   "scan_runs"                          => "Scan Runs",
-  "scanner_findings"                   => "Scanner Findings",
+  "scanner_findings"                   => SCANNER_FINDINGS,
   "sessions"                           => "Sessions",
   "ssp_components"                     => "SSP Components",
   "ssp_documents"                      => "SSP Documents",

@@ -25,7 +25,7 @@ if fedramp_boundary
   invalid = outcomes.count { |o| o.document.state == "invalid" }
   puts "  FedRAMP sample package: #{stored} stored, #{outcomes.size - stored} already held " \
        "(#{fedramp_boundary.name}, Received documents)"
-  raise "FedRAMP sample package: #{invalid} document(s) failed validation" if invalid.positive?
+  raise ReceivedDocumentService::Error, "FedRAMP sample package: #{invalid} document(s) failed validation" if invalid.positive?
 else
   puts "  Skipped the FedRAMP sample package: no demo boundary (set SPARC_SEED_DEMO=true)."
 end
