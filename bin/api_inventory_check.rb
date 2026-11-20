@@ -71,7 +71,11 @@ TEST_MODULE_EXCEPTIONS = {
   # #1010/#1011 — one module per SHAPE rather than per controller. The six
   # POA&M sub-objects are one contract, and converter entries are tested
   # alongside the converter they belong to.
-  "converter_entries"                  => "test_converters.py"
+  "converter_entries"                  => "test_converters.py",
+  # #1354 — a connection's document sources are tested with the connection,
+  # and the exchange index with the received documents it lists.
+  "exchange_document_sources"          => "test_exchange_connections.py",
+  "exchange_indexes"                   => "test_received_documents.py"
 }.merge(
   # All six POA&M sub-objects map to the one module. Named once so adding a
   # seventh is a single edit rather than another copy of the same string.
