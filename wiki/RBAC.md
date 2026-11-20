@@ -164,7 +164,7 @@ A custom role configured through `SPARC_AUTH_BOUNDARY_ROLES` that matches no can
 
 ## Permission Keys
 
-SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
+SPARC defines **36 permission keys** across 16 resource areas (`Role::PERMISSION_KEYS` in `app/models/role.rb`). Each key is a `resource.action` string and controls a specific operation on a resource type. Permissions are stored as a JSONB `"resource.action" => boolean` hash on each `Role`.
 
 | Key | Description |
 |-----|-------------|
@@ -200,7 +200,7 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 | `back_matter.federate` | Federate back-matter resources across authorization boundaries / peers |
 | `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
 | `exchange.upload` | Upload a FedRAMP, OSCAL, HDF or XCCDF document into a boundary's received documents (on that boundary). An upload never takes effect until a reviewer accepts it |
-| `exchange.review` | Accept, respond to or reject a received document version (on that boundary). The person who uploaded a version cannot decide it; an Instance Admin is exempt |
+| `exchange.review` | Accept, respond to or reject a received document version (on that boundary). The person who uploaded a version cannot decide it; the break-glass administrator is exempt |
 | `connections.manage` | Register and manage connections to other systems (their addresses, credential and trust pins), pull now, discover and test. Instance-level only: a grant on one boundary does not count |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
 | `admin.administer` | **Instance-administrator authority.** Opens every administrative screen and satisfies every other permission check. Intended to be granted by an identity provider for a **bounded window** (see below) rather than held permanently |
@@ -210,6 +210,24 @@ SPARC defines **33 permission keys** across 14 resource areas (`Role::PERMISSION
 ### `amendment.approve` (#809)
 
 Triaging a scanner finding (`evidence.write`) and *approving* the resulting amendment are deliberately separate acts — the approval is what makes a disposition suppress its finding during aggregation and export, for the length of its validity window. `amendment.approve` is granted by default to the **Authorizing Official**, **Agency Authorizing Official**, and **ISSM** role seeds (the roles that accept residual risk), and Instance Admins bypass it. Any other role can be granted the key from **Admin → Roles**. See [User Guide: HDF Amendment Triage](User-Guide-HDF-Amendment-Triage).
+
+### Connections and received documents (v1.17.11, #1354)
+
+Three keys cover documents SPARC receives from other systems:
+
+- `connections.manage` is **instance-wide**: it opens **Settings →
+  Connections**, where connections, their documents and their trust pins are
+  registered. Instance Admins hold it implicitly.
+- `exchange.upload` (per boundary) uploads a document into the boundary's
+  **Received documents**. The seeds grant it to every role that holds
+  `evidence.write`.
+- `exchange.review` (per boundary) accepts, responds to or rejects a received
+  version. The seeds grant it to every role that holds `amendment.approve`.
+
+Reading received documents uses `evidence.read`. **Separation of duties:** the
+person who uploaded a version cannot decide it, even when they hold
+`exchange.review`; Instance Admins are exempt (break-glass). See
+[User Guide: Connections & Received Documents](User-Guide-Connections-and-Received-Documents).
 
 ### Who may attest to evidence
 
