@@ -124,7 +124,8 @@ RUN git clone --depth 1 --branch "v${HDF_LIBS_VERSION}" \
         https://github.com/mitre/hdf-libs.git /src \
     && actual="$(git -C /src rev-parse HEAD)" \
     && { [ "$actual" = "$HDF_LIBS_COMMIT" ] \
-         || { echo "FAIL: hdf-libs v${HDF_LIBS_VERSION} is ${actual}, not the pinned ${HDF_LIBS_COMMIT}" >&2; exit 1; }; }
+         || { echo "FAIL: hdf-libs v${HDF_LIBS_VERSION} is ${actual}," \
+                   "not the pinned ${HDF_LIBS_COMMIT}" >&2; exit 1; }; }
 WORKDIR /src/hdf-cli
 
 # golang.org/x/text MINIMUM, not a forced version. hdf-libs v3.5.1 pinned
