@@ -383,6 +383,27 @@ stops: 5a (#1307, #1297, the command-center home), 5b (#1306, #1308), 5c (#1309)
 
 ---
 
+### Patch: `v1.17.11` — connect to any system that speaks FedRAMP, OSCAL, HDF or XCCDF (#1354, #1384)
+
+Owner, 2026-11-20: SPARC must connect, for automation, to any system using the FedRAMP, OSCAL,
+HDF or XCCDF schemas, ready by 2026-11-22. A patch release from `main`, then carried onto
+`release-1.18.0-rf`. Decisions are on #1354 (two comments of 2026-11-20). Three PRs, each through
+the full gate:
+
+1. **Schemas and HDF v3** (`feature/1354_fedramp_schemas_hdf_v3`): FedRAMP rules re-vendored at
+   release 2026.11.02.01; FedRAMP's 11 package schemas and the XCCDF 1.2 schema vendored and
+   pinned; one validator for all four formats (schema and completeness),
+   `POST /api/v1/document_validations`; HDF ingest reads v2 and v3.
+2. **The connector core:** connections in Settings (root trust-center address, each document's
+   location, pins), a version store that is never overwritten, pull, drag-and-drop upload into a
+   boundary, deltas per format, accept / respond / reject with separation of duties, and an
+   exchange index serving SPARC's documents back out.
+3. **Push, Class A upload, and the FedRAMP packages SPARC writes** (vulnerability detail and
+   accepted-vulnerability reports first: VDR and VER take effect 2026-12-07). The stretch goal;
+   it ships only gated. The version bump and Changelog ride the last PR.
+
+---
+
 ### Hotfix: `v1.17.9` — a baseline control's priority is optional
 
 Plan approved by the owner on 2026-11-10; one branch (`bug/1357_profile_priority_optional`) from
