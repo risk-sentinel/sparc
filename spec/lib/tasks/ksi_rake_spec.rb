@@ -13,9 +13,9 @@ RSpec.describe "lib/tasks/ksi.rake", type: :task do
   def ksi_catalog = ControlCatalog.find_by(source: "FedRAMP 20x")
 
   it "imports the vendored snapshot" do
-    expect { task.invoke }.to output(/imported FedRAMP 2026\.09\.13\.02/).to_stdout
+    expect { task.invoke }.to output(/imported FedRAMP 2026\.11\.02\.01/).to_stdout
 
-    expect(ksi_catalog.version).to eq("2026.09.13.02")
+    expect(ksi_catalog.version).to eq("2026.11.02.01")
   end
 
   it "[true] is a dry run — it reports, and writes nothing" do
