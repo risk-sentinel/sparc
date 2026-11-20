@@ -41,6 +41,8 @@ class ExchangeDelta
   KINDS = %i[regression improvement neutral].freeze
   MAX_CHANGES = 2_000
   MAX_VALUE_CHARS = 500
+  # How a summary shows a value that is not there.
+  NONE = "(none)"
 
   Change = Data.define(:kind, :key, :summary, :before, :after)
 
@@ -135,7 +137,7 @@ class ExchangeDelta
   # A value as a reviewer reads it in a one-line summary.
   def self.brief(value)
     case value
-    when nil then "(none)"
+    when nil then NONE
     when String then value.strip.empty? ? "(blank)" : value.squish.truncate(80)
     when Hash then "(object)"
     when Array then "(#{value.size} #{value.size == 1 ? 'item' : 'items'})"

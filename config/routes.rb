@@ -120,10 +120,10 @@ Rails.application.routes.draw do
     # each reviewed by the receiving boundary.
     resources :received_documents, only: [ :index, :show, :create ] do
       member do
-        get  :file
-        post :accept
-        post :respond
-        post :reject
+        get  :file,    to: "received_documents#file"
+        post :accept,  to: "received_documents#accept"
+        post :respond, to: "received_documents#respond"
+        post :reject,  to: "received_documents#reject"
       end
     end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
@@ -572,9 +572,9 @@ Rails.application.routes.draw do
     # #1354 — connections to other systems that speak FedRAMP, OSCAL, HDF or XCCDF.
     resources :exchange_connections do
       member do
-        post :pull
-        post :discover
-        post :test_connection
+        post :pull,            to: "exchange_connections#pull"
+        post :discover,        to: "exchange_connections#discover"
+        post :test_connection, to: "exchange_connections#test_connection"
       end
       resources :document_sources, controller: "exchange_document_sources", only: [ :create, :edit, :update, :destroy ]
     end
@@ -1105,10 +1105,10 @@ Rails.application.routes.draw do
         # boundary's exchange index (what it serves back out).
         resources :received_documents, only: [ :index, :show, :create ] do
           member do
-            get  :file
-            post :accept
-            post :respond
-            post :reject
+            get  :file,    to: "received_documents#file"
+            post :accept,  to: "received_documents#accept"
+            post :respond, to: "received_documents#respond"
+            post :reject,  to: "received_documents#reject"
           end
         end
         member do
@@ -1205,9 +1205,9 @@ Rails.application.routes.draw do
       resources :document_validations, only: [ :create ]
       resources :exchange_connections, only: [ :index, :show, :create, :update, :destroy ] do
         member do
-          post :pull
-          post :discover
-          post :test_connection
+          post :pull,            to: "exchange_connections#pull"
+          post :discover,        to: "exchange_connections#discover"
+          post :test_connection, to: "exchange_connections#test_connection"
         end
         resources :document_sources, controller: "exchange_document_sources", only: [ :index, :create, :update, :destroy ]
       end

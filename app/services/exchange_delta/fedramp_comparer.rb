@@ -67,6 +67,7 @@ class ExchangeDelta
       when VDR then collection("/vulnerabilities") { |key, b, a| vulnerability(key, b, a, "") }
       when AVI then collection("/acceptedVulnerabilities") { |key, b, a| accepted(key, b, a) }
       when SDR then SDR_COLLECTIONS.each { |field, (status)| collection("/#{field}") { |key, b, a| sdr_entry(field, status, key, b, a) } }
+      else nil # other types are compared field by field below
       end
       @type == CPO ? cpo_fields : rest
     end
@@ -154,7 +155,7 @@ class ExchangeDelta
     def rating(key, entry, was, now)
       return if was == now
 
-      summary = "#{key}: rating #{was.nil? ? '(none)' : "N#{was}"} → #{now.nil? ? '(none)' : "N#{now}"}"
+      summary = "#{key}: rating #{was.nil? ? ExchangeDelta::NONE : "N#{was}"} → #{now.nil? ? ExchangeDelta::NONE : "N#{now}"}"
       ptr = "#{entry}/currentRating"
       if was.is_a?(Integer) && now.is_a?(Integer)
         now > was ? @changes.regression(ptr, summary, before: was, after: now) : @changes.improvement(ptr, summary, before: was, after: now)
@@ -233,7 +234,7 @@ class ExchangeDelta
     def implementation_status(key, ptr, was, now)
       return if was == now
 
-      summary = "#{key}: #{was || '(none)'} → #{now || '(none)'}"
+      summary = "#{key}: #{was || ExchangeDelta::NONE} → #{now || ExchangeDelta::NONE}"
       from = STATUS_RANK[was]
       to = STATUS_RANK[now]
       if from && to && to < from then @changes.regression(ptr, summary, before: was, after: now)
