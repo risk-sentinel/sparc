@@ -43,6 +43,10 @@ namespace :sparc do
       result.rotated.each do |entry|
         puts "    - #{entry[:name]} (id #{entry[:peer_id]}): #{entry[:fields].join(', ')}"
       end
+      puts "  Connections rotated: #{result.rotated_connections.size}, skipped: #{result.skipped_connections.size}"
+      result.rotated_connections.each do |entry|
+        puts "    - #{entry[:name]} (connection id #{entry[:connection_id]}): credential"
+      end
       puts "=" * 60
       puts ""
     end

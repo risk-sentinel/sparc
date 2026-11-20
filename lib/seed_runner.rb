@@ -28,7 +28,9 @@ module SeedRunner
     # #1257 — 1.5.0: Policy Manager gains cdef.write. Since #1259 a bump applies
     # shipped defaults only to values no administrator has set
     # (BuiltInRoleSeeder), so it no longer discards local role amendments.
-    "roles"                => "1.5.0",
+    # #1354 — 1.6.0: exchange.upload (roles holding evidence.write) and
+    # exchange.review (roles holding amendment.approve) for received documents.
+    "roles"                => "1.6.0",
     "admin_user"           => "1.1.0",
     # #1115 — built from the vendored FedRAMP/rules snapshot by
     # FedrampKsiImportService instead of the hand-written seed; re-keys an
