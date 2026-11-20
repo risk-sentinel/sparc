@@ -21,6 +21,7 @@
           class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
 </div>
+<%= render "hdf_triage/fedramp_reports", boundary: @boundary %>
 
 <% if @re_failed_count.positive? %>
   <div class="alert alert-danger py-2" role="alert" id="re-failed-alert">

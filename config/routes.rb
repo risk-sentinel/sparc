@@ -103,6 +103,12 @@ Rails.application.routes.draw do
       # existing boundary-less document, or upload one with this boundary
       # pre-selected.
       get  :attach_document
+      # #1354 / #1384 — the boundary's FedRAMP vulnerability reports (VER-RPT-VDT,
+      # VER-RPT-AVI), downloaded from the triage page.
+      get "triage/fedramp/vulnerability_detail_report", to: "fedramp_reports#vulnerability_detail_report",
+                                                        as: :triage_fedramp_vulnerability_detail_report
+      get "triage/fedramp/accepted_vulnerability_info", to: "fedramp_reports#accepted_vulnerability_info",
+                                                        as: :triage_fedramp_accepted_vulnerability_info
       # #447 — HDF Amendment triage UI (thin client over the triage services).
       get    :triage,              to: "hdf_triage#show"
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
@@ -1103,6 +1109,10 @@ Rails.application.routes.draw do
         end
         member do
           get "exchange_index", to: "exchange_indexes#show"
+          # #1354 / #1384 — FedRAMP's Vulnerability Detail Report (VER-RPT-VDT) and
+          # Accepted Vulnerability Info (VER-RPT-AVI) for the boundary.
+          get "fedramp/vulnerability_detail_report", to: "fedramp_reports#vulnerability_detail_report"
+          get "fedramp/accepted_vulnerability_info", to: "fedramp_reports#accepted_vulnerability_info"
         end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was
