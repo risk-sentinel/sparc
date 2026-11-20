@@ -144,6 +144,20 @@ RSpec.describe HdfRunner do
         stub_open3(stdout: "", stderr: "schema mismatch", success: false, exit_code: 1)
         expect { runner.validate(scan_path) }.to raise_error(HdfRunner::Error, /schema mismatch/)
       end
+
+      # #1354 — the type can come from an API caller; it must never reach the
+      # CLI as anything but one of the CLI's own types.
+      it "refuses a --type the CLI does not define, without running it" do
+        stub_open3(stdout: "")
+        expect { runner.validate(scan_path, type: "--output=/tmp/x") }.to raise_error(ArgumentError, /must be one of/)
+        expect { runner.validate(scan_path, schema_ver: "9; rm") }.to raise_error(ArgumentError, /2 or 3/)
+        expect(Open3).not_to have_received(:capture3)
+      end
+
+      it "checks against exactly the types it lists" do
+        literal = File.read(Rails.root.join("app/services/hdf_runner.rb"))[/unless %w\[([^\]]+)\]\.include\?\(type\)/, 1]
+        expect(literal.split).to eq(HdfRunner::VALIDATE_TYPES)
+      end
     end
 
     describe "#info / #stats" do

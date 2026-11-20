@@ -71,6 +71,7 @@ class SchemaCompleteness
     case node
     when Hash then walk_object(node, schema, base, pointer, depth)
     when Array then walk_array(node, schema, base, pointer, depth)
+    else nil # a scalar has no fields of its own to check
     end
   end
 
@@ -183,6 +184,7 @@ class SchemaCompleteness
       case node
       when Hash then node[key]
       when Array then node[key.to_i]
+      else nil # the pointer runs past a scalar: nothing there
       end
     end
   end
@@ -202,6 +204,7 @@ class SchemaCompleteness
           node.each_value { |v| collect.call(v) }
         when Array
           node.each { |v| collect.call(v) }
+        else nil # a scalar holds no definitions
         end
       end
       collect.call(doc)
