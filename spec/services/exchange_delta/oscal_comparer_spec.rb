@@ -71,10 +71,11 @@ RSpec.describe ExchangeDelta::OscalComparer do
       expect(kinds(result)).to eq([ [ :neutral, "/system-security-plan/metadata/title: System → Renamed" ] ])
     end
 
-    it "auto-accepts an SSP whose only change is a status improvement" do
+    it "reviews an SSP whose only change is a status improvement (only identical bytes are auto-accepted)" do
       result = compare(ssp(requirement("ac-2", status: "planned")), ssp(requirement("ac-2"),
                                                                         modified: "2026-12-01T00:00:00Z"))
-      expect(result).to be_auto_acceptable
+      expect(result.counts).to include(regression: 0, improvement: 1)
+      expect(result).not_to be_auto_acceptable
     end
 
     it "reports two different models as not compared" do
