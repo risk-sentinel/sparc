@@ -386,6 +386,7 @@ class AuditEvent < ApplicationRecord
     finding_disposition_cleared
     finding_disposition_approved
     finding_disposition_rejected
+    fedramp_evaluation_recorded
     scan_run_ingested
     hdf_aggregation_enqueued
     hdf_aggregation_run
@@ -611,6 +612,7 @@ class AuditEvent < ApplicationRecord
                        federation_peer_deleted federation_peer_synced],
     "Findings & Scanning" => %w[finding_disposition_set finding_disposition_cleared
                                 finding_disposition_approved finding_disposition_rejected
+                                fedramp_evaluation_recorded
                                 scan_run_ingested
                                 hdf_aggregation_enqueued hdf_aggregation_run
                                 hdf_amendments_exported hdf_package_exported

@@ -121,6 +121,8 @@ Rails.application.routes.draw do
       get    "triage/amendments",  to: "hdf_triage#amendments",        as: :triage_amendments
       get    "triage/poam",        to: "hdf_triage#poam",              as: :triage_poam
       get    "triage/package",     to: "hdf_triage#package",           as: :triage_package
+      # #1354 / #1384 — record a finding's FedRAMP evaluation (IRV, LEV, N-rating).
+      post   "triage/fedramp_evaluation", to: "hdf_triage#fedramp_evaluation", as: :triage_fedramp_evaluation
     end
     # #1354 — documents this boundary received from other systems or by upload,
     # each reviewed by the receiving boundary.
@@ -1184,6 +1186,15 @@ Rails.application.routes.draw do
         # #1179 — the boundary as an HDF `hdf-system` document (schema v3.7.0),
         # the document HDF results and amendments point at through systemRef.
         resource :hdf_system, only: [ :show ], controller: "hdf_systems"
+        # #1354 / #1384 — the provider's FedRAMP evaluation of each vulnerability,
+        # keyed by the finding's control_id. The constraint takes the whole
+        # segment: control ids hold dots (XCCDF rule ids), and a slash arrives
+        # percent-encoded.
+        get "fedramp_evaluations", to: "fedramp_evaluations#index", as: :fedramp_evaluations
+        get "fedramp_evaluations/:control_id", to: "fedramp_evaluations#show", as: :fedramp_evaluation,
+                                                constraints: { control_id: %r{[^/]+} }, format: false
+        put "fedramp_evaluations/:control_id", to: "fedramp_evaluations#update",
+                                                constraints: { control_id: %r{[^/]+} }, format: false
       end
 
       # HDF Amendment triage (#447) — flat show of a single finding by uuid,
