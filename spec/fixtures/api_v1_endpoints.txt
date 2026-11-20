@@ -257,6 +257,7 @@ POST /api/v1/control_mappings/:control_mapping_id/entries
 POST /api/v1/converters
 POST /api/v1/converters/:converter_id/entries
 POST /api/v1/converters/:id/refresh
+POST /api/v1/document_validations
 POST /api/v1/entitlement_sync/preview
 POST /api/v1/evidences
 POST /api/v1/evidences/:evidence_id/attestations

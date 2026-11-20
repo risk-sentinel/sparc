@@ -50,6 +50,7 @@ module ApiEndpointCatalog
     api/v1/translations#poam_from_hdf
     api/v1/translations#poam_from_amendments
     api/v1/translations#amendments_from_oscal_poam
+    api/v1/document_validations#create
   ].freeze
 
   # Every group needs a label here. A route under a new first segment fails
@@ -70,6 +71,7 @@ module ApiEndpointCatalog
     "control_mappings" => "Control mappings",
     "controls" => "Control lookup",
     "converters" => "Converters",
+    "document_validations" => "Document validation",
     "entitlement_sync" => "Entitlement sync",
     "evidences" => "Evidence",
     "federation" => "Federation identity",
