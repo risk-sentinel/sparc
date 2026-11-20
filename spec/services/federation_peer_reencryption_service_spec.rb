@@ -117,4 +117,74 @@ RSpec.describe FederationPeerReencryptionService do
       expect(result.new_fingerprint.length).to eq(16)
     end
   end
+
+  # #1354 — the same master protects each ExchangeConnection's credential.
+  describe "exchange connection credentials" do
+    let(:old_credential_enc) do
+      FederationPeer.build_encryptor_with_master(old_master, ExchangeConnection::CREDENTIAL_KEY_PURPOSE)
+    end
+
+    def connection_encrypted_with_old(name:, credential:)
+      connection = create(:exchange_connection, name: name)
+      connection.update_column(:encrypted_credential, old_credential_enc.encrypt_and_sign(credential))
+      connection
+    end
+
+    it "re-encrypts a credential stored under the old master under the current one" do
+      connection = connection_encrypted_with_old(name: "Provider Old", credential: "cred-old")
+      expect(connection.reload.credential).to be_nil # unreadable under the current master
+
+      result = described_class.call(old_master: old_master)
+
+      expect(result).to be_success
+      expect(result.rotated_connections).to eq([ { connection_id: connection.id, name: "Provider Old", fields: [ :credential ] } ])
+      expect(connection.reload.credential).to eq("cred-old")
+      expect { old_credential_enc.decrypt_and_verify(connection.encrypted_credential) }.to raise_error(StandardError)
+    end
+
+    it "skips a credential already under the current master, and a connection with none" do
+      current = create(:exchange_connection, name: "Provider Current", credential: "cred-current")
+      none = create(:exchange_connection, name: "Provider None")
+      before = current.encrypted_credential
+
+      result = described_class.call(old_master: old_master)
+
+      expect(result).to be_success
+      expect(result.rotated_connections).to be_empty
+      expect(result.skipped_connections.map { |c| c[:connection_id] }).to contain_exactly(current.id, none.id)
+      expect(current.reload.encrypted_credential).to eq(before)
+      expect(current.credential).to eq("cred-current")
+    end
+
+    it "is idempotent" do
+      connection_encrypted_with_old(name: "Provider Twice", credential: "cred")
+
+      expect(described_class.call(old_master: old_master).rotated_connections.size).to eq(1)
+      second = described_class.call(old_master: old_master)
+      expect(second.rotated_connections).to be_empty
+      expect(second.skipped_connections.size).to eq(1)
+    end
+
+    it "rotates a connection whose stored settings would no longer validate" do
+      connection = connection_encrypted_with_old(name: "Provider Legacy", credential: "cred-legacy")
+      connection.update_column(:root_url, "http://not-https.example/")
+
+      expect(described_class.call(old_master: old_master)).to be_success
+      expect(connection.reload.credential).to eq("cred-legacy")
+    end
+
+    it "aborts everything, peers included, when a credential decrypts under neither master" do
+      peer = peer_encrypted_with_old(name: "Peer Kept", token: "tok", signing_secret: "sig")
+      bad = create(:exchange_connection, name: "Provider Bad")
+      bad.update_column(:encrypted_credential, "garbage-not-a-real-ciphertext")
+
+      result = described_class.call(old_master: old_master)
+
+      expect(result).not_to be_success
+      expect(result.error).to match(/Connection "Provider Bad" field encrypted_credential decrypts under neither/)
+      expect(result.error_peer_id).to eq(bad.id)
+      old_token_enc = FederationPeer.build_encryptor_with_master(old_master, FederationPeer::TOKEN_KEY_PURPOSE)
+      expect(old_token_enc.decrypt_and_verify(peer.reload.encrypted_service_token)).to eq("tok")
+    end
+  end
 end
