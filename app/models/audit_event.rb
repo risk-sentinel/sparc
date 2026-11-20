@@ -294,6 +294,17 @@ class AuditEvent < ApplicationRecord
     translation_hdf_amendments_to_oscal_poam
     translation_oscal_poam_to_hdf_amendments
     document_validated
+    received_document_stored
+    received_document_accepted
+    received_document_auto_accepted
+    received_document_responded
+    received_document_rejected
+    exchange_connection_created
+    exchange_connection_updated
+    exchange_connection_deleted
+    exchange_pull_completed
+    exchange_pull_failed
+    exchange_index_served
     converter_refresh_started
     api_user_created
     api_user_updated
@@ -564,6 +575,10 @@ class AuditEvent < ApplicationRecord
     "Service Accounts" => %w[service_account_created service_account_updated service_account_disabled
                              service_account_enabled service_account_deleted
                              service_account_token_regenerated service_account_auto_disabled],
+    "Exchange" => %w[received_document_stored received_document_accepted received_document_auto_accepted
+                     received_document_responded received_document_rejected
+                     exchange_connection_created exchange_connection_updated exchange_connection_deleted
+                     exchange_pull_completed exchange_pull_failed exchange_index_served],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
                          translation_oscal_poam_to_hdf_amendments

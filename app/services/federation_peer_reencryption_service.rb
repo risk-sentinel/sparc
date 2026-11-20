@@ -1,5 +1,5 @@
-# Re-encrypts FederationPeer credentials after a SPARC_HASH rotation
-# (#419). The currently configured master (read by SparcKeyDerivation
+# Re-encrypts FederationPeer credentials, and since #1354 each
+# ExchangeConnection's credential, after a SPARC_HASH rotation (#419). The currently configured master (read by SparcKeyDerivation
 # from the SPARC_HASH env var) is treated as the *new* master; the
 # explicit `old_master` argument is used to decrypt rows that have not
 # yet been rotated.
@@ -23,6 +23,7 @@
 class FederationPeerReencryptionService
   Result = Struct.new(:success, :rotated, :skipped, :error, :error_peer_id,
                       :old_fingerprint, :new_fingerprint,
+                      :rotated_connections, :skipped_connections,
                       keyword_init: true) do
     def success? = success
   end
@@ -43,6 +44,8 @@ class FederationPeerReencryptionService
     @old_master      = old_master.to_s
     @rotated_peers   = []
     @skipped_peers   = []
+    @rotated_connections = []
+    @skipped_connections = []
     @old_encryptors  = {}
     @cur_encryptors  = {}
   end
@@ -60,6 +63,12 @@ class FederationPeerReencryptionService
       FederationPeer.find_each do |peer|
         process_peer(peer)
       end
+      # #1354 — the same master protects a connection's credential.
+      ExchangeConnection.find_each do |connection|
+        break if @abort_reason
+
+        process_connection(connection)
+      end
     end
 
     # ActiveRecord::Rollback is swallowed by the transaction block, so
@@ -71,11 +80,22 @@ class FederationPeerReencryptionService
 
     Result.new(success: true,
                rotated: @rotated_peers, skipped: @skipped_peers,
+               rotated_connections: @rotated_connections, skipped_connections: @skipped_connections,
                old_fingerprint: self.class.fingerprint(@old_master),
                new_fingerprint: self.class.fingerprint(SparcKeyDerivation.send(:master_secret)))
   end
 
   private
+
+  def process_connection(connection)
+    if try_rotate_field(connection, :encrypted_credential, :credential=,
+                        ExchangeConnection::CREDENTIAL_KEY_PURPOSE)
+      connection.save!(validate: false)
+      @rotated_connections << { connection_id: connection.id, name: connection.name, fields: [ :credential ] }
+    else
+      @skipped_connections << { connection_id: connection.id, name: connection.name }
+    end
+  end
 
   def process_peer(peer)
     rotated_fields = []
@@ -126,7 +146,8 @@ class FederationPeerReencryptionService
   def decrypt_with_old(ciphertext, purpose, peer:, attr:)
     old_encryptor(purpose).decrypt_and_verify(ciphertext)
   rescue StandardError => e
-    @abort_reason = "Peer #{peer.name.inspect} field #{attr} decrypts under neither old nor current master: #{e.class}"
+    kind = peer.is_a?(ExchangeConnection) ? "Connection" : "Peer"
+    @abort_reason = "#{kind} #{peer.name.inspect} field #{attr} decrypts under neither old nor current master: #{e.class}"
     @abort_peer_id = peer.id
     raise ActiveRecord::Rollback
   end
