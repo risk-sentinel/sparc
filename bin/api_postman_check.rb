@@ -73,6 +73,7 @@ CONTROLLER_TO_FOLDER = {
   "exchange_indexes"                   => "Received Documents",
   "fedramp_reports"                    => "FedRAMP Reports",
   "federation_peers"                   => "Federation Peers",
+  "fedramp_evaluations"                => "Scanner Findings", # #1354 / #1384
   "finding_dispositions"               => "Scanner Findings",
   "guides"                             => "Guides",
   "hdf_amendments"                     => TRANSLATIONS_FOLDER,
