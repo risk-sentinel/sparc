@@ -173,7 +173,7 @@ RSpec.describe "Seeded permission grants (#919)" do
   it "requires a seed version that reflects the seeded grants" do
     # 1.4.0 -> 1.5.0 for #1257 (Policy Manager gains cdef.write). Since #1259 a
     # bump no longer overwrites what an administrator set on a built-in role.
-    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.5.0"),
+    expect(SeedRunner::CURRENT_VERSIONS["roles"]).to eq("1.6.0"),
       "The roles seed version must be bumped whenever these grants change, or " \
       "SeedRunner skips the section on every existing database. If you changed the " \
       "grants above, bump the version AND update this expectation."
