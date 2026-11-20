@@ -37,7 +37,12 @@ module AdminSettingsHelper
                  description: "Every boundary, its organization and members"),
         Item.new(key: :remediation_timelines, label: "Remediation timelines", path: admin_remediation_timelines_path,
                  icon: "clipboard-list", controller: "admin/remediation_timelines",
-                 description: "Days to remediate, by baseline and criticality")
+                 description: "Days to remediate, by baseline and criticality"),
+        # #1354 — guarded by authorize_connections! (an administrator, or
+        # connections.manage); this menu is shown to administrators only.
+        Item.new(key: :exchange_connections, label: "Connections", path: admin_exchange_connections_path,
+                 icon: "link", controller: "admin/exchange_connections",
+                 description: "Other systems SPARC pulls documents from, and what it serves them")
       ]),
       Section.new(title: "Records", color: ApplicationHelper::COLOR_CARROT, items: [
         Item.new(key: :audit_logs, label: "Audit log", path: admin_audit_logs_path, icon: "file-text",

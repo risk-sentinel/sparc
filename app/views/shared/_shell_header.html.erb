@@ -161,12 +161,20 @@
                 <li><h6 class="dropdown-header">Administration</h6></li>
                 <li><%= link_to "Users", admin_users_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Roles", admin_roles_path, class: "dropdown-item" %></li>
+                <%# #1354 — owner: connections live in Settings, next to Roles. %>
+                <li><%= link_to "Connections", admin_exchange_connections_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Service Accounts", admin_service_accounts_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Auth Boundaries", admin_authorization_boundaries_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Organizations", admin_organizations_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Remediation Timelines", admin_remediation_timelines_path, class: "dropdown-item" %></li>
                 <li><%= link_to "IdP Grants", admin_idp_grants_path, class: "dropdown-item" %></li>
                 <li><%= link_to "Audit Log", admin_audit_logs_path, class: "dropdown-item" %></li>
+                <li><hr class="dropdown-divider"></li>
+              <% elsif can_manage_connections? %>
+                <%# #1354 — a holder of connections.manage who is not an
+                    administrator sees only the screen it admits them to. %>
+                <li><h6 class="dropdown-header">Administration</h6></li>
+                <li><%= link_to "Connections", admin_exchange_connections_path, class: "dropdown-item" %></li>
                 <li><hr class="dropdown-divider"></li>
               <% end %>
               <li><%= link_to "Profile", edit_profile_path, class: "dropdown-item" %></li>

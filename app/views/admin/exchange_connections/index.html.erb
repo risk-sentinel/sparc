@@ -1,0 +1,69 @@
+<%# #1354 — Settings → Connections. Same frame as Admin → Roles. %>
+<div class="d-flex justify-content-between align-items-center my-4">
+  <div>
+    <h1 class="h3 fw-bold mb-0">Connections</h1>
+    <p class="text-body-secondary mb-0 small">
+      Other systems SPARC pulls FedRAMP, OSCAL, HDF and XCCDF documents from. Each document lands in
+      its boundary's Received documents, where it waits for review.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <span class="badge text-bg-secondary align-self-center"><%= pluralize(@connections.size, "connection") %></span>
+    <%= link_to "New Connection", new_admin_exchange_connection_path,
+          class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
+          data: { testid: "new-connection" } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle" data-testid="connections-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Boundary</th>
+          <th>FedRAMP ID</th>
+          <th>Class / type</th>
+          <th>Enabled</th>
+          <th>Last pull</th>
+          <th>Documents</th>
+          <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @connections.each do |connection| %>
+          <tr data-connection-id="<%= connection.id %>">
+            <td><%= link_to connection.name, admin_exchange_connection_path(connection) %></td>
+            <td><%= connection.authorization_boundary&.name || "—" %></td>
+            <td><%= connection.fedramp_id.present? ? tag.code(connection.fedramp_id) : "—" %></td>
+            <td><%= [ connection.certification_class.presence && "Class #{connection.certification_class}", connection.certification_type.presence ].compact.join(" · ").presence || "—" %></td>
+            <td>
+              <% if connection.enabled? %>
+                <span class="sparc-status sparc-status--success">Enabled</span>
+              <% else %>
+                <span class="sparc-status sparc-status--neutral">Disabled</span>
+              <% end %>
+            </td>
+            <td>
+              <%= pull_status_badge(connection.last_pull_status) %>
+              <% if connection.last_pulled_at %>
+                <br><small class="text-body-secondary"><%= exchange_time(connection.last_pulled_at) %></small>
+              <% end %>
+              <% if connection.last_error.present? %>
+                <br><small class="text-danger" data-testid="connection-last-error"><%= connection.last_error.truncate(120) %></small>
+              <% end %>
+            </td>
+            <td><%= @document_counts.fetch(connection.id, 0) %></td>
+            <td class="text-end text-nowrap">
+              <%= link_to "View", admin_exchange_connection_path(connection), class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+              <%= link_to "Edit", edit_admin_exchange_connection_path(connection), class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @connections.empty? %>
+          <tr><td colspan="8" class="text-center text-body-secondary py-4">No connections yet. Add one to start receiving documents from another system.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
