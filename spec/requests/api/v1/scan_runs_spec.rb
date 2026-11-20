@@ -15,17 +15,12 @@ RSpec.describe "Api::V1::ScanRuns", type: :request do
 
   before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
 
+  # #1354 — a valid HDF v2 document (spec/support/hdf_document_helpers.rb):
+  # ingest validates every upload with the hdf CLI.
   def hdf_payload
-    {
-      "platform" => { "name" => "test" },
-      "profiles" => [ {
-        "name" => "trivy", "version" => "1.0",
-        "controls" => [
-          { "id" => "CVE-1", "title" => "t", "desc" => "d", "impact" => 0.8, "results" => [ { "status" => "failed" } ] },
-          { "id" => "CVE-2", "title" => "t", "desc" => "d", "impact" => 0.5, "results" => [ { "status" => "passed" } ] }
-        ]
-      } ]
-    }.to_json
+    hdf_v2_doc([ hdf_v2_control("CVE-1", impact: 0.8, status: "failed"),
+                 hdf_v2_control("CVE-2", impact: 0.5, status: "passed") ],
+               scanner: "trivy", version: "1.0", platform: "test").to_json
   end
 
   # Multipart upload — the primary ingest path (a scanner's HDF output file).
@@ -73,9 +68,28 @@ RSpec.describe "Api::V1::ScanRuns", type: :request do
 
     it "returns 422 when the JSON carries no controls" do
       post api_v1_authorization_boundary_scan_runs_path(boundary),
-           params: { file: hdf_upload("{}") }, headers: admin_headers
+           params: { file: hdf_upload('{"baselines":[]}') }, headers: admin_headers
       expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)["error"]).to match(/No HDF controls/)
+    end
+
+    # #1354 — the hdf CLI validates every upload before SPARC reads it.
+    it "returns 422 with hdf's reason when the JSON is not HDF" do
+      post api_v1_authorization_boundary_scan_runs_path(boundary),
+           params: { file: hdf_upload("{}") }, headers: admin_headers
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(JSON.parse(response.body)["error"]).to match(/HDF validation failed: .*baselines is required/)
+      expect(boundary.scan_runs).to be_empty
+    end
+
+    it "ingests an HDF v3 document" do
+      v3 = Rails.root.join("spec/fixtures/files/hdf/sample-results.v3.hdf.json").read
+      post api_v1_authorization_boundary_scan_runs_path(boundary),
+           params: { file: hdf_upload(v3) }, headers: admin_headers
+      expect(response).to have_http_status(:created)
+      data = JSON.parse(response.body)["data"]
+      expect(data.slice("scanner", "finding_count", "failed_count"))
+        .to eq("scanner" => "sparc-sample-profile", "finding_count" => 1, "failed_count" => 1)
     end
 
     it "forbids a member without evidence.write" do

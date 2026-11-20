@@ -60,8 +60,12 @@ class HdfRunner
     end
   end
 
-  def initialize(binary: ENV.fetch("HDF_BIN", DEFAULT_BINARY))
+  # @param timeout [Numeric, nil] seconds an invocation may run before it is
+  #   killed and raises (#1354). nil keeps the historical behaviour (no limit)
+  #   for callers that have not opted in.
+  def initialize(binary: ENV.fetch("HDF_BIN", DEFAULT_BINARY), timeout: nil)
     @binary = binary
+    @timeout = timeout
   end
 
   # Convert scanner output (or OSCAL document) to HDF JSON.
@@ -89,7 +93,9 @@ class HdfRunner
   # field — re-verified on 3.5.1 and again on 3.7.0 — while the oscal-sar
   # converter does not. The validator and the converter still disagree
   # upstream. Don't reach for this as a pre-flight check on scanner HDF; it
-  # will reject input that converts fine.
+  # will reject input that converts fine. (HdfIngestService, #1354, does
+  # pre-flight with it — but asks for `schema_ver: 2` on a v2 document, and
+  # reads only what validated.)
   #
   # SCHEMA VERSION. hdf validate defaults to the CURRENT (v3) schemas. A legacy
   # HDF v2 document — InSpec exec-json, which is what most scanners still emit
@@ -109,6 +115,40 @@ class HdfRunner
     flags += [ "--schema-ver", schema_ver.to_s ] unless schema_ver.nil?
     invoke("validate", flags, input: input)
     true
+  end
+
+  # #1354 — upgrade a legacy HDF v2 (InSpec exec-json) results document to the
+  # current v3 shape: `hdf convert --from hdf@2 --to hdf@3`.
+  #
+  # The output goes to a tempfile (`-o`), not stdout, so its size is checked
+  # before it is read: a converter output larger than max_output_bytes raises
+  # rather than being parsed. hdf validates its own converter output before it
+  # writes, so a zero exit is a schema-valid v3 document.
+  #
+  # NIST 800-53: SI-10 (input validation — bounded output, fixed argv).
+  #
+  # @param input [String, IO] file path or IO-like holding the v2 document
+  # @param max_output_bytes [Integer] refuse a converted document larger than this
+  # @return [Hash] the parsed v3 results document
+  def convert_legacy_hdf(input, max_output_bytes:)
+    ensure_allowed_version!
+    with_input_path(input) do |path|
+      Tempfile.create([ "hdf-v3-", ".json" ]) do |out|
+        cmd = build_cmd("convert", [ "--from", "hdf@2", "--to", "hdf@3", path, "-o", out.path ])
+        run(cmd)
+        size = File.size(out.path)
+        if size > max_output_bytes
+          raise Error.new("hdf convert output is #{size} bytes, over the #{max_output_bytes}-byte limit",
+                          command: cmd.join(" "), exit_code: 0, stderr: "")
+        end
+        begin
+          JSON.parse(File.read(out.path))
+        rescue JSON::ParserError => e
+          raise Error.new("hdf convert returned non-JSON output: #{e.message}",
+                          command: cmd.join(" "), exit_code: 0, stderr: "")
+        end
+      end
+    end
   end
 
   # Display assessment metadata (generator tool, profile, target, timestamp).
@@ -227,7 +267,7 @@ class HdfRunner
   end
 
   def run(cmd)
-    stdout, stderr, status = Open3.capture3(*cmd)
+    stdout, stderr, status = @timeout ? capture_with_timeout(cmd) : Open3.capture3(*cmd)
     return stdout if status.success?
 
     raise Error.new(
@@ -236,6 +276,32 @@ class HdfRunner
       exit_code: status.exitstatus,
       stderr: stderr.to_s
     )
+  end
+
+  # #1354 — Open3.capture3 with a deadline. Same fixed argv and no shell. The
+  # child runs in its own process group so that on expiry the whole group is
+  # killed (nothing it started keeps the pipes open), reaped, and Error is
+  # raised with exit_code nil.
+  def capture_with_timeout(cmd)
+    Open3.popen3(*cmd, pgroup: true) do |stdin, stdout, stderr, wait|
+      stdin.close
+      out_reader = Thread.new { stdout.read }
+      err_reader = Thread.new { stderr.read }
+      unless wait.join(@timeout)
+        kill_process_group(wait.pid)
+        wait.join
+        [ out_reader, err_reader ].each { |t| t.join(1) || t.kill }
+        raise Error.new("hdf #{cmd[1]} timed out after #{@timeout}s",
+                        command: cmd.join(" "), exit_code: nil, stderr: "")
+      end
+      [ out_reader.value, err_reader.value, wait.value ]
+    end
+  end
+
+  def kill_process_group(pid)
+    Process.kill("KILL", -pid)
+  rescue Errno::ESRCH, Errno::EPERM
+    nil # the group exited between the deadline and the kill
   end
 
   def build_cmd(subcommand, args)
