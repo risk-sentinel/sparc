@@ -285,6 +285,7 @@ class AuthorizationBoundariesController < ApplicationController
     params.require(:authorization_boundary).permit(
       :name, :description, :status, :authorization_boundary_description,
       :profile_document_id,                                       # #395 P3
+      :fedramp_package_overview_uri,                              # #1354
       # #1154 — top-level, NOT inside boundary_metadata: assigning that hash
       # replaces it whole, so a form posting two dates would erase the rest.
       # The accessors merge one key at a time.
