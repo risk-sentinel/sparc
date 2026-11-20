@@ -88,10 +88,18 @@ RSpec.describe "Received documents (web)", type: :request do
       expect(Digest::SHA256.hexdigest(response.body)).to eq(doc.sha256)
     end
 
-    it "links to the page from the boundary's evidence section" do
+    it "links to the page from the boundary's evidence section, only for an evidence.read holder" do
+      grant(reader, "authorization_boundaries.read", boundary: boundary)
       sign_in_as(reader)
       get authorization_boundary_path(boundary)
+      expect(response).to have_http_status(:ok)
       expect(response.body).to include(index_path)
+
+      viewer = create(:user).tap { |u| grant(u, "authorization_boundaries.read", boundary: boundary) }
+      sign_in_as(viewer)
+      get authorization_boundary_path(boundary)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(index_path)
     end
   end
 
