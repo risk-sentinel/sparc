@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import uuid
 
 import pytest
 from playwright.sync_api import expect
@@ -379,3 +380,59 @@ def test_fedramp_report_downloads(authed_page, base_url):
             doc = json.load(f)
         assert doc["$schema"].startswith("https://fedramp.gov/schemas/fedramp-"), doc.get("$schema")
         assert_no_csp_violations(page, during=f"HDF triage FedRAMP download {testid}")
+
+
+def test_fedramp_evaluation_recorded_and_shown(authed_page, base_url):
+    """#1354 / #1384 — a failing finding's FedRAMP evaluation (internet-reachable,
+    likely exploitable, N-rating, next reduction) is recorded from the triage
+    page and shown in its row, with no CSP violation on the interaction."""
+    page = authed_page
+    record_csp(page)
+
+    if not _open_triage(page, base_url):
+        pytest.skip("no authorization boundary available to triage")
+
+    # This test supplies its own failing finding, so a missing form after the
+    # ingest is a broken screen, not thin data.
+    if "CVE-SMOKE-1" not in page.content():
+        with tempfile.NamedTemporaryFile("w", suffix=".hdf.json", delete=False) as f:
+            json.dump(HDF_SAMPLE, f)
+            sample_path = f.name
+        page.locator("input[type='file']").first.set_input_files(sample_path)
+        page.get_by_role("button", name="Upload & Ingest").click()
+        page.wait_for_load_state("networkidle")
+
+    selector = "details[data-testid='fedramp-evaluation'][data-fedramp-control='CVE-SMOKE-1']"
+    details = page.locator(selector)
+    assert details.count() == 1, (
+        f"no FedRAMP evaluation form for the ingested failing finding CVE-SMOKE-1 on {page.url}"
+    )
+
+    details.locator("summary").click()
+    definitions = details.locator("[data-testid='fedramp-pain-definitions']")
+    assert "Exploitation is extremely unlikely" in definitions.inner_text(), (
+        "FedRAMP's N-rating definitions are not shown"
+    )
+
+    note = f"ui-smoke {uuid.uuid4().hex[:8]}"
+    details.locator("select[name='internet_reachable']").select_option("true")
+    details.locator("select[name='likely_exploitable']").select_option("false")
+    details.locator("select[name='pain_rating']").select_option("3")
+    details.locator("select[name='next_reduction_rating']").select_option("1")
+    details.locator("input[name='next_reduction_at']").fill("2026-12-15")
+    details.locator("textarea[name='supplementary_info']").fill(note)
+    details.get_by_role("button", name="Save FedRAMP evaluation").click()
+
+    # A full-page form post that redirects back to the triage page.
+    page.get_by_text("FedRAMP evaluation saved for CVE-SMOKE-1").wait_for(timeout=10000)
+    page.wait_for_url("**/triage", timeout=10000)
+
+    summary = page.locator(
+        "[data-testid='fedramp-summary'][data-fedramp-control='CVE-SMOKE-1']"
+    ).inner_text()
+    for shown in ("IRV", "Not LEV", "N3", "next: N1 by 2026-12-15"):
+        assert shown in summary, f"{shown!r} not shown after saving: {summary!r}"
+    saved = page.locator(selector).locator("textarea[name='supplementary_info']").input_value()
+    assert saved == note, f"the saved supplementary information did not read back: {saved!r}"
+
+    assert_no_csp_violations(page, during="HDF triage FedRAMP evaluation")
