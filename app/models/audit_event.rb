@@ -293,6 +293,7 @@ class AuditEvent < ApplicationRecord
     translation_hdf_to_oscal_poam
     translation_hdf_amendments_to_oscal_poam
     translation_oscal_poam_to_hdf_amendments
+    document_validated
     converter_refresh_started
     api_user_created
     api_user_updated
@@ -565,7 +566,8 @@ class AuditEvent < ApplicationRecord
                              service_account_token_regenerated service_account_auto_disabled],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
                          translation_hdf_amendments_to_oscal_poam
-                         translation_oscal_poam_to_hdf_amendments],
+                         translation_oscal_poam_to_hdf_amendments
+                         document_validated],
     "API Tokens" => %w[api_token_created api_token_revoked api_token_renewed api_token_reissued api_token_limits_changed],
     "Back Matter" => %w[back_matter_resource_created back_matter_resource_updated
                         back_matter_resource_deleted back_matter_resource_linked

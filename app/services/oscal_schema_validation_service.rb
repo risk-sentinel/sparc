@@ -210,6 +210,14 @@ class OscalSchemaValidationService
     Result.new(valid?: false, errors: [ "Schema validation error: #{e.message}" ], schema_version: @version)
   end
 
+  # The schema `validate` checks against, as a Hash. SchemaCompleteness reads
+  # the same document, so the two checks can never disagree about the schema
+  # (#1354).
+  def schema_document = load_schema
+
+  # The release that schema_document belongs to, after any fallback.
+  attr_reader :version
+
   private
 
   # Load schema with fallback chain:
