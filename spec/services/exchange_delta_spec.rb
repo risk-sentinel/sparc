@@ -27,6 +27,7 @@ RSpec.describe ExchangeDelta do
       expect(result.changes).to be_empty
       expect(result.counts).to eq(regression: 0, improvement: 0, neutral: 0)
       expect(result).not_to be_first_version
+      expect(result).to be_identical
       expect(result).to be_auto_acceptable
     end
 
@@ -35,10 +36,12 @@ RSpec.describe ExchangeDelta do
         .to raise_error(ArgumentError)
     end
 
-    it "auto-accepts improvements only, and nothing with a regression or a neutral change" do
+    # Owner, 2026-11-20: only a byte-identical re-delivery is accepted without
+    # a person; an improvement is still a change, and is reviewed.
+    it "auto-accepts nothing that changed, improvements included" do
       changes = ExchangeDelta::Changes.new
       changes.improvement("k", "better")
-      expect(changes.to_result).to be_auto_acceptable
+      expect(changes.to_result).not_to be_auto_acceptable
 
       changes.neutral("n", "something else changed")
       expect(changes.to_result).not_to be_auto_acceptable

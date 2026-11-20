@@ -37,14 +37,14 @@ RSpec.describe ExchangeDelta::HdfComparer do
     expect(result).not_to be_auto_acceptable
   end
 
-  it "auto-accepts a re-scan whose only change is a fix, ignoring per-run timestamps" do
+  it "classes a re-scan whose only change is a fix as one improvement, ignoring per-run timestamps; still reviewed" do
     before = v3([ "AC-3", "failed", 0.5 ])
     after = v3([ "AC-3", "passed", 0.5 ])
     after["timestamp"] = "2027-01-01T00:00:00Z"
     after["baselines"][0]["requirements"][0]["results"][0]["startTime"] = "2027-01-01T00:00:00Z"
     result = compare(before, after)
     expect(result.counts).to eq(regression: 0, improvement: 1, neutral: 0)
-    expect(result).to be_auto_acceptable
+    expect(result).not_to be_auto_acceptable
   end
 
   it "classes notApplicable or skipped → failed as a regression" do
@@ -106,7 +106,8 @@ RSpec.describe ExchangeDelta::HdfComparer do
     it "finds no change between a v2 document and its own v3 conversion" do
       result = compare(fixture("ingest-edge-cases.hdf.json"), fixture("ingest-edge-cases.v3.hdf.json"))
       expect(result.changes).to be_empty
-      expect(result).to be_auto_acceptable
+      expect(result).not_to be_identical
+      expect(result).not_to be_auto_acceptable # different bytes: a person looks
     end
 
     it "classes a v2 control going from passed to failed as a regression" do
