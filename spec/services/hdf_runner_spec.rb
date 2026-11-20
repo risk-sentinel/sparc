@@ -206,6 +206,54 @@ RSpec.describe HdfRunner do
       end
     end
 
+    # #1354 — v2 → v3 for HdfIngestService.
+    describe "#convert_legacy_hdf" do
+      def stub_convert_writing(output)
+        status = instance_double(Process::Status, success?: true, exitstatus: 0)
+        allow(Open3).to receive(:capture3) do |*args|
+          File.write(args[args.index("-o") + 1], output)
+          [ "", "", status ]
+        end
+      end
+
+      it "runs a fixed argv and parses the -o file" do
+        stub_convert_writing('{"baselines":[]}')
+        expect(runner.convert_legacy_hdf(scan_path, max_output_bytes: 100)).to eq(baselines_key => [])
+        expect(Open3).to have_received(:capture3) do |*args|
+          expect(args[0..6]).to eq([ fake_binary, "convert", "--from", "hdf@2", "--to", "hdf@3", scan_path ])
+          expect(args[7]).to eq("-o")
+        end
+      end
+
+      it "refuses output over max_output_bytes without parsing it" do
+        stub_convert_writing("x" * 101)
+        expect { runner.convert_legacy_hdf(scan_path, max_output_bytes: 100) }
+          .to raise_error(HdfRunner::Error, /101 bytes, over the 100-byte limit/)
+      end
+
+      it "raises when the output is not JSON" do
+        stub_convert_writing("not json")
+        expect { runner.convert_legacy_hdf(scan_path, max_output_bytes: 100) }
+          .to raise_error(HdfRunner::Error, /returned non-JSON/)
+      end
+    end
+
+    # #1354 — a runner built with a timeout kills an invocation that overruns.
+    describe "timeout" do
+      it "raises with exit_code nil when the binary overruns" do
+        runner = described_class.new(binary: "sleep", timeout: 0.2)
+        expect { runner.send(:run, [ "sleep", "5" ]) }.to raise_error(HdfRunner::Error) { |e|
+          expect(e.message).to eq("hdf 5 timed out after 0.2s")
+          expect(e.exit_code).to be_nil
+        }
+      end
+
+      it "returns stdout from a run that finishes in time" do
+        runner = described_class.new(timeout: 5)
+        expect(runner.send(:run, [ "echo", "done" ])).to eq("done\n")
+      end
+    end
+
     describe "#version" do
       it "memoizes the parsed JSON" do
         stub_open3(stdout: version_json)
@@ -254,6 +302,13 @@ RSpec.describe HdfRunner do
     # telling the versions apart and this suite is back to proving nothing.
     it "validates a known-good HDF v2 results fixture when asked for v2" do
       expect(runner.validate(hdf_results_fixture, type: "results", schema_ver: 2)).to be true
+    end
+
+    # #1354 — the conversion HdfIngestService reads v2 through.
+    it "converts the v2 fixture up to a v3 document that validates" do
+      v3 = runner.convert_legacy_hdf(hdf_results_fixture, max_output_bytes: 1.megabyte)
+      expect(v3.dig("baselines", 0, "requirements", 0, "id")).to eq("SPARC-AC-3")
+      expect(runner.validate(StringIO.new(v3.to_json), type: "results")).to be true
     end
 
     it "refuses that same v2 fixture against the current (v3) schemas" do
