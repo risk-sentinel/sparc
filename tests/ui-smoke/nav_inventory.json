@@ -423,6 +423,11 @@
       },
       {
         "menu": "Account",
+        "label": "Connections",
+        "path": "/admin/exchange_connections"
+      },
+      {
+        "menu": "Account",
         "label": "IdP Grants",
         "path": "/admin/idp_grants"
       },
@@ -719,6 +724,11 @@
         "label": "OSCAL Tutorials",
         "path": "https://pages.nist.gov/OSCAL/learn/tutorials/",
         "when": "resources"
+      },
+      {
+        "menu": "Settings",
+        "label": "Connections",
+        "path": "/admin/exchange_connections"
       }
     ]
   }
