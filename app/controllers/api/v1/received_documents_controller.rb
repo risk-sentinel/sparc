@@ -96,8 +96,18 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
                     status: :unprocessable_content)
     end
 
+    connection = nil
+    if params[:exchange_connection_id].present?
+      connection = @boundary.exchange_connections.find_by(id: params[:exchange_connection_id])
+      unless connection
+        return render(json: { error: "exchange_connection_id is not a connection of this boundary" },
+                      status: :unprocessable_content)
+      end
+    end
+
     outcome = ReceivedDocumentService.call(boundary: @boundary, bytes: raw, source: "upload", filename: filename,
                                            content_type: content_type, received_by: current_user,
+                                           connection: connection,
                                            format: declared, document_type: params[:document_type].presence)
     render json: { status: outcome.status.to_s, data: serialize(outcome.document, detailed: true) },
            status: outcome.stored? ? :created : :ok

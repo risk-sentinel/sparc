@@ -104,6 +104,24 @@ RSpec.describe "Received documents (web)", type: :request do
   end
 
   describe "uploading" do
+    it "offers this boundary's connections as the provider, and joins the one picked" do
+      connection = create(:exchange_connection, authorization_boundary: boundary, name: "Acme trust center")
+      sign_in_as(uploader)
+      get index_path
+      expect(response.body).to include("received-upload-provider", "Acme trust center")
+
+      post index_path, params: { file: upload_file(vdr), exchange_connection_id: connection.id }
+      expect(ReceivedDocument.last.stream_key).to end_with(":connection:#{connection.id}")
+    end
+
+    it "refuses a provider from another boundary" do
+      elsewhere = create(:exchange_connection, authorization_boundary: create(:authorization_boundary))
+      sign_in_as(uploader)
+      expect { post index_path, params: { file: upload_file(vdr), exchange_connection_id: elsewhere.id } }
+        .not_to change(ReceivedDocument, :count)
+      expect(flash[:error]).to include("not a connection of this boundary")
+    end
+
     it "stores an upload through ReceivedDocumentService, recording the uploader" do
       sign_in_as(uploader)
       get index_path

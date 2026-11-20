@@ -57,7 +57,7 @@ class ReceivedDocumentService
     raise Error, "Not a FedRAMP, OSCAL, HDF or XCCDF document SPARC can read: #{validation[:error]}" if format.blank?
 
     document_type = validation[:document_type] || @document_type
-    stream_key = stream_key_for(format, document_type)
+    stream_key = stream_key_for(format, document_type, validation)
 
     existing = ReceivedDocument.find_by(stream_key: stream_key, sha256: sha256)
     return Outcome.new(document: existing, status: :unchanged) if existing
@@ -114,10 +114,35 @@ class ReceivedDocumentService
 
   # A pull's stream is its document address. An upload's is the boundary's
   # uploads of one format, document type and FedRAMP ID.
-  def stream_key_for(format, document_type)
+  # A pull's stream is its document address. An upload's (owner, 2026-11-20):
+  # the provider the uploader picked (a connection of this boundary), or
+  # else the identity the document carries — a package overview's FedRAMP
+  # package ID, a report's package-overview address — so two providers'
+  # uploads of one document type never replace each other.
+  def stream_key_for(format, document_type, validation)
     return @document_source.stream_key if @document_source
 
-    [ "upload", "boundary:#{@boundary.id}", format, document_type.presence || "-", @connection&.fedramp_id || "-" ].join(":")
+    base = [ "upload", format, document_type.presence || "-" ]
+    return [ *base, "connection:#{@connection.id}" ].join(":") if @connection
+
+    [ *base, "boundary:#{@boundary.id}", "id:#{document_identity(validation) || '-'}" ].join(":")
+  end
+
+  # The package a FedRAMP document belongs to, read defensively: a document
+  # that failed validation may be any JSON value.
+  def document_identity(validation)
+    return nil unless (validation[:format] || @format) == "fedramp"
+
+    data = JSON.parse(@bytes)
+    return nil unless data.is_a?(Hash)
+
+    identification = data["serviceIdentification"]
+    package_id = identification["fedRampPackageId"] if identification.is_a?(Hash)
+    overview = data["certificationPackageOverviewUri"]
+    value = (package_id.strip.presence if package_id.is_a?(String)) || (overview.strip.presence if overview.is_a?(String))
+    value&.slice(0, 500)
+  rescue JSON::ParserError
+    nil
   end
 
   def fedramp_id(validation)
