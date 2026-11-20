@@ -63,14 +63,21 @@ def _vdr_file(description: str) -> str:
         return f.name
 
 
-def _accept_dialogs(page) -> None:
-    """Pull now and Delete ask for confirmation (data-turbo-confirm)."""
-    page.on("dialog", lambda dialog: dialog.accept())
+def _boundary_path(boundary) -> str:
+    """Boundary pages are addressed by slug; the numeric id is a 404."""
+    return f"/authorization_boundaries/{boundary.get('slug') or boundary['id']}"
 
 
-def _upload(page, boundary_id, path: str) -> None:
+def _confirm(page) -> None:
+    """turbo_confirm opens SPARC's CSP-safe confirm modal, not a native dialog."""
+    confirm = page.locator("#sparc-confirm-modal-confirm")
+    confirm.wait_for(state="visible", timeout=5000)
+    confirm.click()
+
+
+def _upload(page, boundary, path: str) -> None:
     """Upload through the dropzone on the boundary's Received documents page."""
-    page.goto(f"/authorization_boundaries/{boundary_id}/received_documents")
+    page.goto(f"{_boundary_path(boundary)}/received_documents")
     page.wait_for_load_state("networkidle")
     form = page.locator("[data-testid='received-upload-form']")
     assert form.count() == 1, "the upload card is not offered to an exchange.upload holder"
@@ -89,8 +96,9 @@ def _delete_connection(page, connection_id) -> None:
     delete = page.get_by_role("button", name="Delete")
     if delete.count() == 0:
         return
-    with page.expect_navigation(wait_until="networkidle"):
-        delete.first.click()
+    delete.first.click()
+    _confirm(page)
+    page.wait_for_url("**/admin/exchange_connections", timeout=15000)
 
 
 def test_connections_screens_render_clean(authed_page):
@@ -102,8 +110,9 @@ def test_connections_screens_render_clean(authed_page):
     assert page.locator("[data-testid='connections-table']").count() == 1
 
     click_and_assert_clean(page, "[data-testid='new-connection']", during="opening New Connection")
+    # Turbo Drive changes the address after its fetch, not as a navigation.
+    page.wait_for_url("**/admin/exchange_connections/new", timeout=15000)
     page.wait_for_load_state("networkidle")
-    assert page.url.endswith("/admin/exchange_connections/new"), page.url
     assert page.locator("[data-testid='connection-form']").count() == 1
     assert "not set" in page.locator("[data-testid='credential-state']").inner_text()
     assert_no_csp_violations(page, during="the Connections screens")
@@ -133,7 +142,6 @@ def test_connections_are_offered_in_settings(authed_page):
 
 def test_create_connection_test_and_pull_record_the_error(authed_page):
     page = authed_page
-    _accept_dialogs(page)
     record_csp(page)
     boundary = create_boundary()
     name = f"phase2-ui-conn-{uuid.uuid4().hex[:8]}"
@@ -177,10 +185,10 @@ def test_create_connection_test_and_pull_record_the_error(authed_page):
         assert "Not reached" in result.inner_text()
 
         # Pull now: the failure is recorded on the document and the connection.
-        with page.expect_navigation(wait_until="networkidle"):
-            page.locator("[data-testid='pull-now']").click()
-        page.wait_for_load_state("networkidle")
+        page.locator("[data-testid='pull-now']").click()
+        _confirm(page)
         error = page.locator("[data-testid='source-last-error']")
+        error.first.wait_for(state="visible", timeout=30000)
         assert error.count() == 1 and error.inner_text().strip(), "the pull's error is not shown"
         assert page.locator("[data-testid='connection-last-error']").count() == 1
         assert_no_csp_violations(page, during="creating, testing and pulling a connection")
@@ -195,7 +203,7 @@ def test_received_documents_upload_valid_and_invalid(authed_page):
     boundary = create_boundary()
     try:
         # Reached from the boundary page's Evidence section, as a user would.
-        page.goto(f"/authorization_boundaries/{boundary['id']}")
+        page.goto(_boundary_path(boundary))
         page.wait_for_load_state("networkidle")
         link = page.locator("[data-boundary-action='received_documents']")
         assert link.count() == 1, "the Evidence section's Received documents link is missing"
@@ -207,19 +215,19 @@ def test_received_documents_upload_valid_and_invalid(authed_page):
         assert dropzone.count() == 1, "the shared dropzone is missing"
 
         description = f"Outdated library {uuid.uuid4().hex[:8]}"
-        _upload(page, boundary["id"], _vdr_file(description))
+        _upload(page, boundary, _vdr_file(description))
         assert "Pending review" in page.locator("[data-testid='received-metadata']").inner_text()
         assert page.locator("[data-testid='validation-errors']").count() == 0
         sha = page.locator("[data-testid='received-sha256']").inner_text().strip()
         assert re.fullmatch(r"[0-9a-f]{64}", sha), sha
 
-        page.goto(f"/authorization_boundaries/{boundary['id']}/received_documents")
+        page.goto(f"{_boundary_path(boundary)}/received_documents")
         page.wait_for_load_state("networkidle")
         assert page.locator("[data-testid='received-stream']").count() >= 1
         assert "vulnerability-detail-report" in page.locator("body").inner_text()
 
         # A required field left blank: stored, invalid, its error shown.
-        _upload(page, boundary["id"], _vdr_file("   "))
+        _upload(page, boundary, _vdr_file("   "))
         assert "Invalid" in page.locator("[data-testid='received-metadata']").inner_text()
         errors = page.locator("[data-testid='validation-errors']")
         assert errors.count() == 1, "the invalid version's errors are not shown"
@@ -293,7 +301,7 @@ def test_review_is_withheld_from_the_uploader(authed_page, user_authed_page):
         _grant(admin, user_id, boundary["id"], role_id)
 
         record_csp(user)
-        _upload(user, boundary["id"], _vdr_file(f"Uploader's finding {uuid.uuid4().hex[:8]}"))
+        _upload(user, boundary, _vdr_file(f"Uploader's finding {uuid.uuid4().hex[:8]}"))
         version_url = user.url
         assert "Pending review" in user.locator("[data-testid='received-metadata']").inner_text()
         for control in ("review-accept", "review-respond", "review-reject"):
