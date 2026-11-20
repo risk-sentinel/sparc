@@ -37,6 +37,7 @@ SCHEMA_FILE = /\Afedramp-.+-schema-\d{4}-\d{2}-\d{2}\.json\z/
 RAW_URL = "https://raw.githubusercontent.com/FedRAMP/schemas/%<ref>s/%<file>s"
 TREE_URL = "https://api.github.com/repos/FedRAMP/schemas/git/trees/%<ref>s"
 PUBLISHED_URL = "https://www.fedramp.gov/schemas/%<file>s"
+VERSION_KEY = "$schemaVersion"
 
 def fail_closed(message)
   warn "fedramp_schemas_upstream_diff: #{message}"
@@ -101,9 +102,9 @@ if changed.empty? && added.empty? && removed.empty?
 end
 
 changed.each do |f|
-  puts "CHANGED  #{f}: $schemaVersion #{vendored[f]['$schemaVersion'].inspect} -> #{upstream[f]['$schemaVersion'].inspect}"
+  puts "CHANGED  #{f}: $schemaVersion #{vendored[f][VERSION_KEY].inspect} -> #{upstream[f][VERSION_KEY].inspect}"
 end
-added.each { |f| puts "ADDED    #{f}: $schemaVersion #{upstream[f]['$schemaVersion'].inspect}" }
+added.each { |f| puts "ADDED    #{f}: $schemaVersion #{upstream[f][VERSION_KEY].inspect}" }
 removed.each { |f| puts "REMOVED  #{f}" }
 puts "Re-vendor: see re_vendor in lib/data/fedramp/fedramp-schemas.provenance.json."
 exit 1

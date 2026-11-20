@@ -49,6 +49,11 @@ class HdfRunner
   PINNED_VERSION = "3.8.0".freeze
   DEFAULT_BINARY = "hdf".freeze
 
+  # `hdf validate --type` values, from the pinned CLI's help (3.8.0). The
+  # check in #validate repeats them as a literal so static analysis sees the
+  # allow list where the value is used.
+  VALIDATE_TYPES = %w[results baseline comparison system plan amendments evidence-package requirement-change-event].freeze
+
   class Error < StandardError
     attr_reader :command, :exit_code, :stderr
 
@@ -111,6 +116,17 @@ class HdfRunner
   # @param schema_ver [Integer, String, nil] HDF schema major version; nil uses
   #   the CLI default (current).
   def validate(input, type: "results", schema_ver: nil)
+    # #1354 — the document type can come from a caller (the validation API's
+    # document_type), and it becomes an argv element. Fixed argv means no
+    # shell, but an unchecked value could still be read as a flag, so only the
+    # CLI's own types are passed (`hdf validate --help`; CWE-88, NIST SI-10).
+    unless %w[results baseline comparison system plan amendments evidence-package requirement-change-event].include?(type)
+      raise ArgumentError, "hdf validate --type must be one of #{VALIDATE_TYPES.join(', ')}, got #{type.inspect}"
+    end
+    unless schema_ver.nil? || %w[2 3].include?(schema_ver.to_s)
+      raise ArgumentError, "hdf validate --schema-ver must be 2 or 3, got #{schema_ver.inspect}"
+    end
+
     flags = [ "--type", type, "--quiet" ]
     flags += [ "--schema-ver", schema_ver.to_s ] unless schema_ver.nil?
     invoke("validate", flags, input: input)

@@ -89,8 +89,8 @@ class FedrampPackageSchemas
         end
 
         doc = JSON.parse(raw)
-        type = file[/\Afedramp-(.+)-schema-\d{4}-\d{2}-\d{2}\.json\z/, 1] or
-          raise Error, "#{file}: not a FedRAMP schema file name"
+        type = file[/\Afedramp-(.+)-schema-\d{4}-\d{2}-\d{2}\.json\z/, 1]
+        raise Error, "#{file}: not a FedRAMP schema file name" unless type
         [ type, Schema.new(document_type: type, file: file, id: doc.fetch("$id"),
                            version: doc["$schemaVersion"], title: doc["title"], sha256: actual, document: doc) ]
       end
