@@ -38,7 +38,7 @@
 # database that already holds the catalog) call CatalogImportService directly.
 module ImportedCatalogs
   Snapshot = Struct.new(:catalog_id, :counts, :max_ids, :tables, :from_cache, keyword_init: true)
-  CACHE_FILE = "imported_catalogs.v1.bin"
+  CACHE_FILE = "imported_catalogs.v2.json.gz"
 
   FIXTURES = Rails.root.join("spec/fixtures/files/catalogs")
 
@@ -84,12 +84,26 @@ module ImportedCatalogs
 
     # Writes the kept rows for the next run, when a cache directory is set and
     # this run kept something the file does not have.
+    #
+    # JSON, not Marshal: reading the file back can only produce hashes, arrays,
+    # strings and numbers, never an object of some class (#1264). The snapshot
+    # keys are arrays, which JSON cannot use as object keys, so the file is a
+    # list of { key, snapshot } pairs. COPY rows go in as UTF-8; if one is not
+    # valid UTF-8 nothing is written, and the next run imports for real.
     def save_cache
       return unless cache_path && @unsaved
 
+      entries = snapshots.map do |key, snapshot|
+        tables = snapshot.tables.transform_values { |rows| rows.map { |row| row.dup.force_encoding(Encoding::UTF_8) } }
+        { "key" => key, "snapshot" => snapshot.to_h.except(:from_cache).merge(tables: tables) }
+      end
+      unless entries.all? { |entry| entry["snapshot"][:tables].values.flatten.all?(&:valid_encoding?) }
+        warn "ImportedCatalogs: not writing #{cache_path}: a captured row is not valid UTF-8"
+        return
+      end
+
       FileUtils.mkdir_p(cache_path.dirname)
-      data = snapshots.transform_values { |snapshot| snapshot.to_h.except(:from_cache) }
-      File.binwrite("#{cache_path}.tmp", Zlib::Deflate.deflate(Marshal.dump(data), Zlib::BEST_SPEED))
+      File.binwrite("#{cache_path}.tmp", Zlib.gzip(JSON.generate(entries), level: Zlib::BEST_SPEED))
       File.rename("#{cache_path}.tmp", cache_path)
       @unsaved = false
     end
@@ -115,8 +129,15 @@ module ImportedCatalogs
       return {} unless cache_path&.file?
 
       connection = ActiveRecord::Base.connection
-      loaded = Marshal.load(Zlib::Inflate.inflate(File.binread(cache_path))) # rubocop:disable Security/MarshalLoad -- a file this module wrote
-      loaded.transform_values { |attributes| Snapshot.new(**attributes, from_cache: true) }.each_value do |snapshot|
+      entries = JSON.parse(Zlib.gunzip(File.binread(cache_path)))
+      loaded = entries.to_h do |entry|
+        saved = entry.fetch("snapshot")
+        [ entry.fetch("key"), Snapshot.new(catalog_id: saved.fetch("catalog_id"),
+                                           counts: saved.fetch("counts").transform_keys(&:to_sym),
+                                           max_ids: saved.fetch("max_ids"), tables: saved.fetch("tables"),
+                                           from_cache: true) ]
+      end
+      loaded.each_value do |snapshot|
         snapshot.max_ids.each do |table, max|
           sequence = connection.select_value("SELECT pg_get_serial_sequence(#{connection.quote(table)}, 'id')") or next
           connection.execute("SELECT setval('#{sequence}', GREATEST(#{max.to_i}, (SELECT last_value FROM #{sequence})))")
