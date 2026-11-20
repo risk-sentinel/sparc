@@ -87,6 +87,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL import/export at
 | [compliance/hdf-oscal-bridge-demo.md](compliance/hdf-oscal-bridge-demo.md) | HDF ↔ OSCAL translation pipeline demo |
 | [compliance/sparc-findings.yml](compliance/sparc-findings.yml) · [thresholds/](compliance/thresholds/) | CVE finding dispositions & security-gate thresholds (consumed by CI) |
 | [compliance/license-policy.yml](compliance/license-policy.yml) · [license-dispositions.yml](compliance/license-dispositions.yml) · [THIRD_PARTY_NOTICES.md](compliance/THIRD_PARTY_NOTICES.md) | License policy, dispositions, third-party notices |
+| [../samples/](../samples/README.md) | Fictional sample documents: OSCAL (traditional and 20x), the assembled ATO package, and the FedRAMP package (`fedramp-package-demo/`: one valid document per FedRAMP package schema, plus invalid variants) |
 
 ### Internal development docs
 
