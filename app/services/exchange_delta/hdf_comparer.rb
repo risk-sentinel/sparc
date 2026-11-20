@@ -94,7 +94,7 @@ class ExchangeDelta
     # "impact 0.7" for a summary, or nil when the requirement has none.
     # bare: just the number, "(none)" when there is none.
     def impact_text(impact, bare: false)
-      text = impact.nil? ? "(none)" : impact.to_s.delete_suffix(".0")
+      text = impact.nil? ? ExchangeDelta::NONE : impact.to_s.delete_suffix(".0")
       return text if bare
 
       impact.nil? ? nil : "impact #{text}"

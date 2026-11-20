@@ -23,6 +23,10 @@
 #
 #   AC-3 / AC-6 (discovery shows only what the caller may use), PM-5 (inventory)
 module ApiRoutePermissions
+  # #1354 — named once, used by several rules below (ruby:S1192).
+  CONNECTIONS_MANAGE = [ "connections.manage" ].freeze
+  EXCHANGE_REVIEW = [ "exchange.review" ].freeze
+
   RULES = {
     # ── Discovery, sessions, reference ───────────────────────────────────
     "discovery"              => { read: :authenticated },
@@ -147,13 +151,13 @@ module ApiRoutePermissions
     # Connections are instance-level: the controllers check connections.manage
     # without a boundary, so only an instance-wide grant (or an administrator)
     # passes. Discover and test fetch and store nothing, but still need it.
-    "exchange_connections"      => { read: [ "connections.manage" ], write: [ "connections.manage" ] },
-    "exchange_document_sources" => { read: [ "connections.manage" ], write: [ "connections.manage" ] },
+    "exchange_connections"      => { read: CONNECTIONS_MANAGE, write: CONNECTIONS_MANAGE },
+    "exchange_document_sources" => { read: CONNECTIONS_MANAGE, write: CONNECTIONS_MANAGE },
     # Received documents are checked against the boundary in the path.
     "received_documents"        => { read: [ "evidence.read" ], write: [ "exchange.upload" ],
-                                     actions: { "accept"  => [ "exchange.review" ],
-                                                "respond" => [ "exchange.review" ],
-                                                "reject"  => [ "exchange.review" ] } },
+                                     actions: { "accept"  => EXCHANGE_REVIEW,
+                                                "respond" => EXCHANGE_REVIEW,
+                                                "reject"  => EXCHANGE_REVIEW } },
     "exchange_indexes"          => { read: [ "evidence.read" ] },
 
     # ── Administration ──────────────────────────────────────────────────

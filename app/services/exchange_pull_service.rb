@@ -28,7 +28,9 @@ class ExchangePullService
   def call
     return finish(:failed, error: "The connection is disabled") unless @connection.enabled?
 
-    client = build_fetcher or return finish(:failed, error: @setup_error)
+    client = build_fetcher
+    return finish(:failed, error: @setup_error) unless client
+
     fetched = client.get(@source.url)
     outcome = ReceivedDocumentService.call(
       boundary: @connection.authorization_boundary, bytes: fetched.body, source: "pull",
