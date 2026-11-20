@@ -1,0 +1,47 @@
+{
+  "serviceIdentification": {
+    "fedRampPackageId": "FR2103344623",
+    "providerName": "Workday Inc.",
+    "serviceName": "Workday Government Cloud (WGC)",
+    "serviceAcronym": "Workday Government Cloud (WGC)",
+    "serviceDescription": "Workday is a provider of enterprise applications for financial management, human capital management, planning, and analytics. Workday Government Cloud is a multi-tenant cloud-based offering for U.S. federal, state, and local government customers, as well as U.S. government contractors, and Federally Funded Research and Development Centers (FFRDCs). It comprises the following enterprise management cloud applications: Adaptive Planning, Workday Core Financial Management, Projects, Project Billing, Expenses, Procurement, Inventory, Grants Management, Human Capital Management, Cloud Connect for Benefits, Payroll, Global Payroll Connect, Workday Media Cloud , Journeys, Time Tracking, Recruiting, Prism Analytics, Student, Workday Extend,  Absence Management, Advanced Compensation Management, Benefits, Succession Planning, Revenue Management, Talent Optimization, Learning, Help, Machine Learning, Accounting Center, People Analytics and Labor Optimization. Also available is Workday Success Plans, a subscription-based success package that provides education, tools, and expertise to help agencies maximize their use of Workday.",
+    "certificationType": "Rev5",
+    "website": "https://www.workday.com/",
+    "logo": "https://www.fedramp.gov/assets/img/logos/CSP_logos/Workday%20Logo.png"
+  },
+  "serviceProperties": {
+    "serviceType": [
+      "SaaS"
+    ],
+    "deploymentModel": "Government Community Cloud",
+    "businessCategory": [
+      "Analytics",
+      "Finance",
+      "Human Resources"
+    ]
+  },
+  "contactInformation": [
+    {
+      "contactType": "Security",
+      "contactEmail": "contact-1@example.com"
+    },
+    {
+      "contactType": "Sales",
+      "contactEmail": "contact-2@example.com"
+    }
+  ],
+  "assessor": {
+    "name": "Coalfire Systems, Inc.",
+    "assessorID": "138514"
+  },
+  "certifiedServices": [
+    {
+      "serviceName": "Adaptive Planning",
+      "serviceDescription": "",
+      "dateAvailable": "2026-06-30"
+    }
+  ],
+  "ZD_frid_retro": "FR2103344623",
+  "id_matches_expected": true,
+  "last_fetched_timestamp": "2026-11-20T05:01:58Z"
+}

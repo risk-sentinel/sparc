@@ -1,0 +1,99 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json",
+  "serviceIdentification": {
+    "fedRampPackageId": "FR0000000001",
+    "providerName": "Example Cloud Works, Inc.",
+    "serviceName": "Example Case Manager",
+    "serviceAcronym": "ECM",
+    "serviceDescription": "DEMO/SAMPLE DATA. Example Case Manager is a fictional multi-tenant SaaS case-management service used to demonstrate SPARC's FedRAMP package exchange. Agencies track cases, attach documents and route approvals. The service runs in a single commercial cloud region pair with encrypted storage, centralized logging and phishing-resistant MFA for every user.",
+    "certificationType": "20x",
+    "website": "https://www.example.com/case-manager",
+    "logo": "https://trust.example.com/assets/example-cloud-works-logo.png"
+  },
+  "serviceProperties": {
+    "serviceType": ["SaaS"],
+    "deploymentModel": "Public Cloud",
+    "businessCategory": ["Collaboration", "Operations Management", "Data Management"],
+    "trustCenter": {
+      "repositoryType": ["Trust Center", "Machine Readable Package"],
+      "url": "https://trust.example.com/fedramp/",
+      "repositoryDescription": "Example Cloud Works trust center: this package overview, the security decision record and every ongoing report, each in machine-readable JSON.",
+      "authenticationRequired": true,
+      "accessRequestInstructions": "Agencies request access by emailing trust-center@example.com from a .gov address; access is granted within two business days."
+    },
+    "secureConfigurationGuidance": {
+      "repositoryType": ["Secure Configuration Guidance"],
+      "url": "https://docs.example.com/case-manager/secure-configuration",
+      "repositoryDescription": "Secure configuration guide for agency administrators: SSO, MFA enforcement, retention settings and audit export.",
+      "authenticationRequired": false,
+      "accessRequestInstructions": "Public; no request needed."
+    },
+    "additionalRepositories": [
+      {
+        "repositoryType": ["Assessment Reports", "Policies and Procedures"],
+        "url": "https://trust.example.com/fedramp/assessments/",
+        "repositoryDescription": "Independent assessment results and the provider's security policies and procedures.",
+        "authenticationRequired": true,
+        "accessRequestInstructions": "Granted with trust-center access."
+      }
+    ],
+    "nextOngoingCertificationReportDate": "2027-02-01"
+  },
+  "contactInformation": [
+    {
+      "contactType": "Security",
+      "contactName": "Security Operations Team",
+      "contactEmail": "security@example.com",
+      "contactPhone": "202-555-0100"
+    },
+    {
+      "contactType": "Sales",
+      "contactName": "Federal Sales Team",
+      "contactEmail": "federal-sales@example.com",
+      "contactPhone": "(800) 555-0199"
+    },
+    {
+      "contactType": "Primary",
+      "contactName": "FedRAMP Program Office",
+      "contactEmail": "fedramp@example.com",
+      "contactPhone": "202-555-0101 ext. 42"
+    }
+  ],
+  "assessor": {
+    "name": "Example Assessment Services, LLC",
+    "assessorID": "000001"
+  },
+  "advisors": [
+    {
+      "name": "Example Advisory Group"
+    }
+  ],
+  "certifiedServices": [
+    {
+      "serviceName": "Case Tracking",
+      "serviceDescription": "Create, assign and close cases with a full audit history.",
+      "dateAvailable": "2026-07-01"
+    },
+    {
+      "serviceName": "Document Vault",
+      "serviceDescription": "Encrypted storage for case attachments, with retention rules per agency.",
+      "dateAvailable": "2026-07-01"
+    }
+  ],
+  "thirdPartyInformationResources": {
+    "certified": [
+      {
+        "fedRampCertifiedThirdPartyInformationResource": "FR0000000002",
+        "useCase": "Fictional FedRAMP Certified IaaS hosting all compute, storage and databases."
+      }
+    ],
+    "nonCertified": [
+      {
+        "name": "Example Mail Relay",
+        "provider": "Example Messaging Co.",
+        "website": "https://mail.example.net/",
+        "useCase": "Sends case-assignment notification email that carries no case content."
+      }
+    ]
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "description": "Real FedRAMP Certification Package Overview (FRC-CSO-PKG) records, copied from the FedRAMP Marketplace's public data export to check SPARC's validator against what providers actually publish (#1354, #1384). Each file is one record from .data[\"frc-cso-pkg\"], copied whole: no key removed, no value changed except the privacy substitutions listed for it.",
+  "source_repository": "https://github.com/FedRAMP/marketplace-fedramp-gov-data",
+  "source_commit": "b8b26191391b54cb772b9ca8b4ad44b63f20745b",
+  "source_commit_date": "2026-11-20",
+  "source_file": "fedramp-frc-cso-pkg.json",
+  "source_file_sha256": "f2333f8c172a6d53f850eb62e2c1362680a8be7941ddc69ecb3179c38e1f3bca",
+  "source_export_timestamp": "2026-11-20T05:05:56.102Z",
+  "source_total_entries": 798,
+  "retrieved": "2026-11-20",
+  "license_basis": "United States Government public data, published by FedRAMP (GSA). A work of the United States Government is not subject to copyright in the United States (17 U.S.C. 105).",
+  "privacy": "The records name real people as contacts. Every person's name, email address and phone number is replaced with a placeholder (Example Contact N, contact-N@example.com, 202-555-01NN). Each replacement keeps the value's type and format, and blank values stay blank, so neither check's outcome changes; expected below is measured on these files, and was the same on the original records. Company names, service descriptions, URLs and role mailboxes (such as security@<company>) are the providers' published business information and are kept.",
+  "source_record_sha256_method": "SHA-256 of the original record as compact JSON: Python json.dumps(record, ensure_ascii=False, separators=(\",\", \":\")).",
+  "expected_method": "DocumentValidationService.call(file bytes) with no format or document type named, so detection is checked too. Measured 2026-11-20 against the schemas vendored in lib/data/fedramp/schemas.",
+  "checked_by": "spec/samples/fedramp_package_demo_spec.rb",
+  "files": {
+    "cpo-blank-certified-service-description-FR2103344623.json": {
+      "record_index": 319,
+      "ZD_frid_retro": "FR2103344623",
+      "id_matches_expected": true,
+      "chosen_because": "certifiedServices[0].serviceDescription is an empty string, so completeness fails. By occurrences the most frequent failure in the marketplace export (1,350 blank service descriptions across 74 records, fedramp:marketplace_check on 2026-11-20).",
+      "sha256": "4e04fd60accf5724aa0b5a8132cb7fc226b493d5c34408d5451f40dee5f08e82",
+      "source_record_sha256": "ed93da43c6592c9e8d3fbef2b7b40f696777c42b4c6fc18fb022f2a040edf30b",
+      "expected": {
+        "valid": false,
+        "document_type": "certification-package-overview",
+        "errors": [
+          {
+            "check": "completeness",
+            "pointer": "/certifiedServices/0/serviceDescription",
+            "message": "required field is blank"
+          }
+        ],
+        "warnings_total": 11
+      },
+      "privacy_substitutions": [
+        {
+          "pointer": "/contactInformation/0/contactEmail",
+          "field": "email",
+          "replacement": "contact-1@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactEmail",
+          "field": "email",
+          "replacement": "contact-2@example.com"
+        }
+      ]
+    },
+    "cpo-blank-package-id-FR2700555848.json": {
+      "record_index": 105,
+      "ZD_frid_retro": "FR2700555848",
+      "id_matches_expected": null,
+      "chosen_because": "fedRampPackageId is an empty string: present, so the schema passes, but blank, so completeness fails.",
+      "sha256": "ee71bf409dda020cee255a741880bf9f756a09a4eb7286313d726fa7ba1df793",
+      "source_record_sha256": "1746664395e05728ef3b956cc6be4c6d1758c35e132734a3e6483e36091bbb37",
+      "expected": {
+        "valid": false,
+        "document_type": "certification-package-overview",
+        "errors": [
+          {
+            "check": "completeness",
+            "pointer": "/serviceIdentification/fedRampPackageId",
+            "message": "required field is blank"
+          }
+        ],
+        "warnings_total": 10
+      },
+      "privacy_substitutions": [
+        {
+          "pointer": "/contactInformation/0/contactName",
+          "field": "name",
+          "replacement": "Example Contact 1"
+        },
+        {
+          "pointer": "/contactInformation/0/contactEmail",
+          "field": "email",
+          "replacement": "contact-2@example.com"
+        },
+        {
+          "pointer": "/contactInformation/0/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0103"
+        },
+        {
+          "pointer": "/contactInformation/1/contactName",
+          "field": "name",
+          "replacement": "Example Contact 4"
+        },
+        {
+          "pointer": "/contactInformation/1/contactEmail",
+          "field": "email",
+          "replacement": "contact-5@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0106"
+        }
+      ]
+    },
+    "cpo-extra-non-schema-keys-FR2700857472.json": {
+      "record_index": 114,
+      "ZD_frid_retro": "FR2700857472",
+      "id_matches_expected": true,
+      "chosen_because": "Carries many keys the schema does not define (metadata, x-*, plus the marketplace's ZD_frid_retro, id_matches_expected, last_fetched_timestamp). FedRAMP's schemas do not set additionalProperties: false, so extra keys are allowed and it validates.",
+      "sha256": "f79aba785df5fd0a77c9b434c56f40587aa407f8d576fe607e7a2088369d9e8b",
+      "source_record_sha256": "64e6a2070d259484c4d5c3a2dd40e6b1ac58a6df9e92658573e119d9230a0bd0",
+      "expected": {
+        "valid": true,
+        "document_type": "certification-package-overview",
+        "errors": [],
+        "warnings_total": 4
+      },
+      "privacy_substitutions": [
+        {
+          "pointer": "/metadata/responsibleOfficial/name",
+          "field": "name",
+          "replacement": "Example Contact 1"
+        },
+        {
+          "pointer": "/metadata/responsibleOfficial/email",
+          "field": "email",
+          "replacement": "contact-2@example.com"
+        },
+        {
+          "pointer": "/metadata/responsibleOfficial/phone",
+          "field": "phone",
+          "replacement": "202-555-0103"
+        },
+        {
+          "pointer": "/contactInformation/0/contactName",
+          "field": "name",
+          "replacement": "Example Contact 4"
+        },
+        {
+          "pointer": "/contactInformation/0/contactEmail",
+          "field": "email",
+          "replacement": "contact-5@example.com"
+        },
+        {
+          "pointer": "/contactInformation/0/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0106"
+        },
+        {
+          "pointer": "/contactInformation/1/contactName",
+          "field": "name",
+          "replacement": "Example Contact 7"
+        },
+        {
+          "pointer": "/contactInformation/1/contactEmail",
+          "field": "email",
+          "replacement": "contact-8@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0109"
+        },
+        {
+          "pointer": "/contactInformation/2/contactName",
+          "field": "name",
+          "replacement": "Example Contact 10"
+        },
+        {
+          "pointer": "/contactInformation/2/contactEmail",
+          "field": "email",
+          "replacement": "contact-11@example.com"
+        },
+        {
+          "pointer": "/contactInformation/2/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0112"
+        },
+        {
+          "pointer": "/contactInformation/3/contactName",
+          "field": "name",
+          "replacement": "Example Contact 13"
+        },
+        {
+          "pointer": "/contactInformation/3/contactEmail",
+          "field": "email",
+          "replacement": "contact-14@example.com"
+        },
+        {
+          "pointer": "/contactInformation/3/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0115"
+        },
+        {
+          "pointer": "/contactInformation/4/contactName",
+          "field": "name",
+          "replacement": "Example Contact 16"
+        },
+        {
+          "pointer": "/contactInformation/4/contactEmail",
+          "field": "email",
+          "replacement": "contact-17@example.com"
+        },
+        {
+          "pointer": "/contactInformation/4/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0118"
+        },
+        {
+          "pointer": "/contactInformation/5/contactName",
+          "field": "name",
+          "replacement": "Example Contact 19"
+        },
+        {
+          "pointer": "/contactInformation/5/contactEmail",
+          "field": "email",
+          "replacement": "contact-20@example.com"
+        },
+        {
+          "pointer": "/contactInformation/5/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0121"
+        },
+        {
+          "pointer": "/contactInformation/6/contactName",
+          "field": "name",
+          "replacement": "Example Contact 22"
+        },
+        {
+          "pointer": "/contactInformation/6/contactEmail",
+          "field": "email",
+          "replacement": "contact-23@example.com"
+        },
+        {
+          "pointer": "/contactInformation/6/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0124"
+        },
+        {
+          "pointer": "/contactInformation/7/contactName",
+          "field": "name",
+          "replacement": "Example Contact 25"
+        },
+        {
+          "pointer": "/contactInformation/7/contactEmail",
+          "field": "email",
+          "replacement": "contact-26@example.com"
+        },
+        {
+          "pointer": "/contactInformation/7/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0127"
+        },
+        {
+          "pointer": "/contactInformation/8/contactName",
+          "field": "name",
+          "replacement": "Example Contact 28"
+        },
+        {
+          "pointer": "/contactInformation/8/contactEmail",
+          "field": "email",
+          "replacement": "contact-29@example.com"
+        },
+        {
+          "pointer": "/contactInformation/8/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0130"
+        }
+      ]
+    },
+    "cpo-placeholder-package-id-FR2633734912.json": {
+      "record_index": 57,
+      "ZD_frid_retro": "FR2633734912",
+      "id_matches_expected": false,
+      "chosen_because": "fedRampPackageId is the placeholder \"TBD\" and the marketplace's id_matches_expected is false. The schema sets no pattern for the ID, so it validates: catching a placeholder ID is not the schema's job.",
+      "sha256": "5e650a1f01a13e0c56e339bbd9da19e128949455f1cf5da1a0741c99cf34ca3c",
+      "source_record_sha256": "e847c2e21f507b7ef489c5da8aa960920dbff16b99883750069907ef95525c00",
+      "expected": {
+        "valid": true,
+        "document_type": "certification-package-overview",
+        "errors": [],
+        "warnings_total": 9
+      },
+      "privacy_substitutions": [
+        {
+          "pointer": "/contactInformation/0/contactEmail",
+          "field": "email",
+          "replacement": "contact-1@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactName",
+          "field": "name",
+          "replacement": "Example Contact 2"
+        },
+        {
+          "pointer": "/contactInformation/1/contactEmail",
+          "field": "email",
+          "replacement": "contact-3@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0104"
+        },
+        {
+          "pointer": "/contactInformation/2/contactName",
+          "field": "name",
+          "replacement": "Example Contact 5"
+        },
+        {
+          "pointer": "/contactInformation/2/contactEmail",
+          "field": "email",
+          "replacement": "contact-6@example.com"
+        },
+        {
+          "pointer": "/contactInformation/2/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0107"
+        }
+      ]
+    },
+    "cpo-valid-clean-FR2631747315.json": {
+      "record_index": 35,
+      "ZD_frid_retro": "FR2631747315",
+      "id_matches_expected": true,
+      "chosen_because": "A real record that passes both checks with no errors.",
+      "sha256": "7f9c21393a91c0435b97ebb1e8ca57f095fdcb4ccbedf83f43a3385cd4e16d73",
+      "source_record_sha256": "808da86eb066d5ff4b83aa68df80018f4d8259cc2b6253cdf375d4f0a7956517",
+      "expected": {
+        "valid": true,
+        "document_type": "certification-package-overview",
+        "errors": [],
+        "warnings_total": 2
+      },
+      "privacy_substitutions": [
+        {
+          "pointer": "/contactInformation/0/contactName",
+          "field": "name",
+          "replacement": "Example Contact 1"
+        },
+        {
+          "pointer": "/contactInformation/0/contactEmail",
+          "field": "email",
+          "replacement": "contact-2@example.com"
+        },
+        {
+          "pointer": "/contactInformation/0/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0103"
+        },
+        {
+          "pointer": "/contactInformation/1/contactName",
+          "field": "name",
+          "replacement": "Example Contact 4"
+        },
+        {
+          "pointer": "/contactInformation/1/contactEmail",
+          "field": "email",
+          "replacement": "contact-5@example.com"
+        },
+        {
+          "pointer": "/contactInformation/1/contactPhone",
+          "field": "phone",
+          "replacement": "202-555-0106"
+        },
+        {
+          "pointer": "/contactInformation/2/contactName",
+          "field": "name",
+          "replacement": "Example Contact 7"
+        },
+        {
+          "pointer": "/contactInformation/2/contactEmail",
+          "field": "email",
+          "replacement": "contact-8@example.com"
+        }
+      ]
+    }
+  }
+}

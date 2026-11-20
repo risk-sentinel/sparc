@@ -1,0 +1,70 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-historical-ver-activity-schema-2026-06-24.json",
+  "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "activeVulnerabilities": [
+    {
+      "providerTrackingId": "ECW-VULN-0013",
+      "detection": {
+        "detectedAt": "2026-10-20T11:40:00Z",
+        "detectionSource": "Annual penetration test"
+      },
+      "vulnerabilityDescription": "Session cookie missing the Partitioned attribute on one legacy endpoint.",
+      "potentialAgencyImpact": "Low: cross-site tracking of the session identifier in some browsers.",
+      "evaluationCompletedAt": "2026-10-21T10:00:00Z",
+      "isInternetReachable": true,
+      "isLikelyExploitable": false,
+      "currentRating": 2,
+      "projectedNextReduction": {
+        "estimatedAt": "2026-11-15T00:00:00Z",
+        "targetRating": 0
+      },
+      "overdueStatus": {
+        "isOverdue": false,
+        "explanation": "Within the timeframe for an N2 internet-reachable vulnerability."
+      },
+      "supplementaryRiskInformation": "The endpoint is scheduled for retirement; the fix ships in release 4.8.",
+      "painReductionEvents": [
+        {
+          "reducedAt": "2026-10-22T09:00:00Z",
+          "rating": 2
+        }
+      ],
+      "finalDisposition": "Partially Mitigated"
+    }
+  ],
+  "acceptedVulnerabilities": [
+    {
+      "vulnerabilityDetail": {
+        "providerTrackingId": "ECW-VULN-0007",
+        "detection": {
+          "detectedAt": "2026-06-11T08:00:00Z",
+          "detectionSource": "Dependency scanner"
+        },
+        "vulnerabilityDescription": "Image-resizing library flaw with no vendor fix available.",
+        "potentialAgencyImpact": "A malformed image could crash the thumbnail service; no data exposure.",
+        "evaluationCompletedAt": "2026-06-12T14:00:00Z",
+        "isInternetReachable": false,
+        "isLikelyExploitable": false,
+        "currentRating": 1,
+        "projectedNextReduction": {
+          "estimatedAt": "2027-03-31T00:00:00Z",
+          "targetRating": 0
+        },
+        "overdueStatus": {
+          "isOverdue": false,
+          "explanation": "Accepted vulnerability; reviewed monthly."
+        },
+        "supplementaryRiskInformation": "A WAF rule rejects images over 20 MB and non-standard headers before they reach the service.",
+        "painReductionEvents": [
+          {
+            "reducedAt": "2026-06-15T10:00:00Z",
+            "rating": 1
+          }
+        ],
+        "finalDisposition": "Partially Mitigated"
+      },
+      "acceptanceRationale": "No fix exists upstream; the compensating WAF rule keeps the rating at N1 and the service holds no agency data."
+    }
+  ]
+}
