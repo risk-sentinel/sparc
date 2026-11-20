@@ -25,9 +25,16 @@ RSpec.describe AddAdminOverridesToRoles do
                       .merge("permissions" => entry["permissions"].index_with(true)))
   end
 
-  # What the role editor and API wrote before #1259: every key, true or false.
+  # Permission keys added after #1259 shipped. An editor save from before
+  # #1259 could not have written them, and this migration runs on such a
+  # database before anyone can (#1354).
+  def keys_added_since = %w[exchange.upload exchange.review connections.manage]
+
+  # What the role editor and API wrote before #1259: every key of the time,
+  # true or false.
   def editor_save(role, changes = {})
-    full = Role::PERMISSION_KEYS.to_h { |key| [ key, role.permissions[key] == true ] }.merge(changes)
+    keys = Role::PERMISSION_KEYS - keys_added_since
+    full = keys.to_h { |key| [ key, role.permissions[key] == true ] }.merge(changes)
     role.update_columns(permissions: full)
   end
 
