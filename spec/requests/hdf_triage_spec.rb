@@ -451,5 +451,17 @@ RSpec.describe "HdfTriage", type: :request do
       get triage_authorization_boundary_path(boundary)
       expect(response).to redirect_to(root_path)
     end
+
+    # #1354 — every download of the boundary's triage data needs evidence.read
+    # on it. The POA&M export ran no check (CWE-862) from v1.17.9 to v1.17.10.
+    %i[triage_poam triage_amendments triage_package].each do |route|
+      it "refuses #{route} to a user who cannot read the boundary's evidence" do
+        allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true)
+        create(:finding_disposition, authorization_boundary: boundary, control_id: "CVE-2026-0001", kind: "poam")
+        sign_in_as(create(:user))
+        get public_send("#{route}_authorization_boundary_path", boundary)
+        expect(response).to redirect_to(root_path)
+      end
+    end
   end
 end
