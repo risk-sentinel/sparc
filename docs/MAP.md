@@ -83,7 +83,7 @@ CDEFs, and control catalogs — with a REST API and OSCAL import/export at
 |---|---|
 | [compliance/README.md](compliance/README.md) | Compliance process guide & sparc-iac integration model |
 | [compliance/nist-sp800-53-rev5-mapping.md](compliance/nist-sp800-53-rev5-mapping.md) | NIST SP 800-53 Rev 5 HIGH-baseline control mapping |
-| [compliance/oscal/cdefs/](compliance/oscal/cdefs/) | OSCAL component definitions, 5 CDEFs / 71 implemented requirements, stamped at `OscalSchema::DEFAULT_VERSION` |
+| [compliance/oscal/cdefs/](compliance/oscal/cdefs/) | OSCAL component definitions, 5 CDEFs / 73 implemented requirements, stamped at `OscalSchema::DEFAULT_VERSION` |
 | [compliance/hdf-oscal-bridge-demo.md](compliance/hdf-oscal-bridge-demo.md) | HDF ↔ OSCAL translation pipeline demo |
 | [compliance/sparc-findings.yml](compliance/sparc-findings.yml) · [thresholds/](compliance/thresholds/) | CVE finding dispositions & security-gate thresholds (consumed by CI) |
 | [compliance/license-policy.yml](compliance/license-policy.yml) · [license-dispositions.yml](compliance/license-dispositions.yml) · [THIRD_PARTY_NOTICES.md](compliance/THIRD_PARTY_NOTICES.md) | License policy, dispositions, third-party notices |

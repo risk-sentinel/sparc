@@ -99,7 +99,7 @@ the route to it.
 | Artifact | What it is |
 |---|---|
 | [`docs/compliance/nist-sp800-53-rev5-mapping.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/compliance/nist-sp800-53-rev5-mapping.md) | The control mapping — 313 rows, each with Responsibility, Status, an implementation narrative, and the source files that implement it |
-| [`docs/compliance/oscal/cdefs/`](https://github.com/risk-sentinel/sparc/tree/main/docs/compliance/oscal/cdefs) | 5 OSCAL component definitions, 71 implemented requirements — the machine-readable form |
+| [`docs/compliance/oscal/cdefs/`](https://github.com/risk-sentinel/sparc/tree/main/docs/compliance/oscal/cdefs) | 5 OSCAL component definitions, 73 implemented requirements — the machine-readable form |
 | [`docs/compliance/README.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/compliance/README.md) | The process guide: how these are maintained, and the sparc-iac split |
 | [`docs/compliance/sparc-findings.yml`](https://github.com/risk-sentinel/sparc/blob/main/docs/compliance/sparc-findings.yml) | Live CVE and scanner-finding dispositions, with review cadence by severity |
 | [`docs/compliance/thresholds/`](https://github.com/risk-sentinel/sparc/tree/main/docs/compliance/thresholds) | Per-scanner severity bands the CI security gate evaluates every pull request against |
