@@ -15,7 +15,7 @@
 # boundary's evidence area; a document belongs to the boundary only once the
 # boundary accepts it; a document that fails validation is stored with its
 # errors, shown; the person who uploaded a version cannot decide it
-# (instance administrators are exempt, as elsewhere in SPARC). Only a
+# (the break-glass administrator is exempt, as for dispositions). Only a
 # byte-identical re-delivery skips review, and that is not stored again.
 #
 # NIST SP 800-53: AC-3 (evidence.read / exchange.upload / exchange.review on
@@ -37,6 +37,7 @@ class ReceivedDocumentsController < ApplicationController
     @can_upload = permission?("exchange.upload")
     @formats = DocumentValidationService::FORMATS
     @fedramp_document_types = fedramp_document_types
+    @connections = @boundary.exchange_connections.order(:name)
   end
 
   def show
@@ -51,9 +52,12 @@ class ReceivedDocumentsController < ApplicationController
     file = params[:file]
     return redirect_to(index_path, error: "Choose a document to upload.") if file.blank?
 
+    connection = upload_connection
+    return redirect_to(index_path, error: "That provider is not a connection of this boundary.") if connection == false
+
     outcome = ReceivedDocumentService.call(
       boundary: @boundary, bytes: file.read, source: "upload", filename: file.original_filename,
-      content_type: file.content_type, received_by: current_user,
+      content_type: file.content_type, received_by: current_user, connection: connection,
       format: params[:document_format].presence, document_type: params[:document_type].presence
     )
     redirect_to document_path(outcome.document), **upload_flash(outcome)
@@ -76,6 +80,16 @@ class ReceivedDocumentsController < ApplicationController
   def reject = decide(:reject, "Rejected. The version stays on record and never takes effect.")
 
   private
+
+  # Owner, 2026-11-20: an upload may name its provider, one of this
+  # boundary's connections, so it joins that provider's stream. nil when
+  # none is named; false when the id names no connection of this boundary.
+  def upload_connection
+    id = params[:exchange_connection_id].presence
+    return nil unless id
+
+    @boundary.exchange_connections.find_by(id: id) || false
+  end
 
   def decide(action, message)
     note = params[:note].to_s.strip

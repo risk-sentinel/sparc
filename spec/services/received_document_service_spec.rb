@@ -182,12 +182,31 @@ RSpec.describe ReceivedDocumentService do
       expect(doc).to have_attributes(exchange_document_source: source, exchange_connection: connection, source: "pull")
     end
 
-    it "keys an upload by boundary, format, document type and FedRAMP ID" do
-      doc = deliver.document
-      expect(doc.stream_key).to eq("upload:boundary:#{boundary.id}:fedramp:vulnerability-detail-report:-")
+    # Owner, 2026-11-20: an upload joins the stream of the provider picked for
+    # it, or else of the package the document names, so two providers' uploads
+    # of one document type never replace each other.
+    it "keys an upload by the provider picked for it" do
+      doc = deliver(connection: connection).document
+      expect(doc.stream_key).to eq("upload:fedramp:vulnerability-detail-report:connection:#{connection.id}")
+    end
 
-      with_connection = deliver(vdr(to: "2026-10-30T00:00:00Z"), connection: connection).document
-      expect(with_connection.stream_key).to eq("upload:boundary:#{boundary.id}:fedramp:vulnerability-detail-report:FR2400000001")
+    it "keys an upload with no provider by the package the document names" do
+      doc = deliver.document
+      expect(doc.stream_key).to eq("upload:fedramp:vulnerability-detail-report:boundary:#{boundary.id}:" \
+                                   "id:https://provider.example/package/cpo.json")
+    end
+
+    it "keeps two providers' uploads of one document type in separate streams" do
+      one = deliver.document
+      other = JSON.parse(vdr).merge("certificationPackageOverviewUri" => "https://other.example/cpo.json").to_json
+      two = deliver(other).document
+      expect(two.stream_key).not_to eq(one.stream_key)
+    end
+
+    it "keys an upload that names no package by boundary, format and type alone" do
+      doc = deliver({ "certificationPackageOverviewUri" => 7 }.to_json, format: "fedramp",
+                    document_type: "vulnerability-detail-report").document
+      expect(doc.stream_key).to eq("upload:fedramp:vulnerability-detail-report:boundary:#{boundary.id}:id:-")
     end
 
     it "keeps the same bytes pulled and uploaded in separate streams" do
