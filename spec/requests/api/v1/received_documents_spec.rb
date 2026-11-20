@@ -90,6 +90,22 @@ RSpec.describe "API v1 received documents", type: :request do
   end
 
   describe "POST (upload)" do
+    # Owner, 2026-11-20: an upload may name its provider (a connection of
+    # this boundary) and then joins that provider's stream.
+    it "joins the named provider's stream" do
+      connection = create(:exchange_connection, authorization_boundary: boundary)
+      upload(vdr, exchange_connection_id: connection.id)
+      expect(response).to have_http_status(:created)
+      expect(ReceivedDocument.last.stream_key).to end_with(":connection:#{connection.id}")
+    end
+
+    it "refuses a provider that is not a connection of this boundary, storing nothing" do
+      elsewhere = create(:exchange_connection, authorization_boundary: create(:authorization_boundary))
+      expect { upload(vdr, exchange_connection_id: elsewhere.id) }.not_to change(ReceivedDocument, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("not a connection of this boundary")
+    end
+
     it "stores a valid upload for review: 201 with the version, the uploader recorded" do
       upload_file
       expect(response).to have_http_status(:created)
