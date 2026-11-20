@@ -17,7 +17,10 @@
 # vulnerability evaluation), AU-12 (audit).
 class HdfTriageController < ApplicationController
   before_action :set_boundary
-  before_action :authorize_read!,  only: %i[show amendments package]
+  # #1354 — poam is a download of the boundary's dispositions, the same data
+  # as amendments and package, and was missing here: any signed-in user could
+  # export any boundary's OSCAL POA&M (CWE-862, since v1.17.9).
+  before_action :authorize_read!,  only: %i[show amendments package poam]
   before_action :authorize_write!, only: %i[ingest disposition clear_disposition aggregate fedramp_evaluation]
   # #809 — approving an amendment is a SEPARATE authority from triaging one, and
   # it has to be enforced on the action, not just by hiding the button: the view's
