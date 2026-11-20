@@ -37,10 +37,11 @@ RSpec.describe FedrampKsiImportService do
     catalog
   end
 
-  # A scratch copy of lib/data/fedramp, so a test can damage one file.
+  # A scratch copy of lib/data/fedramp, so a test can damage one file. Files
+  # only: the importer reads none of the folders beside them (schemas/, #1354).
   def data_dir_with
     dir = Dir.mktmpdir("ksi-import-")
-    FileUtils.cp(Dir[Rails.root.join("lib/data/fedramp/*")], dir)
+    FileUtils.cp(Dir[Rails.root.join("lib/data/fedramp/*")].select { |p| File.file?(p) }, dir)
     yield Pathname(dir)
     dir
   end

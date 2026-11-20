@@ -90,7 +90,11 @@ RSpec.describe "Controller authorization coverage (#919)", type: :request do
                       "payload, translate it and return it. Nothing is written to SPARC's " \
                       "database, so there is no object to authorize against. Verified " \
                       "2026-08-11: no save/create!/update! anywhere in the controller. If a " \
-                      "translation ever persists, REMOVE THIS ENTRY"
+                      "translation ever persists, REMOVE THIS ENTRY",
+    "api/v1/document_validations" => "stateless document check (#1354): it validates an uploaded " \
+                      "FedRAMP, OSCAL, HDF or XCCDF document and returns the result. It writes " \
+                      "nothing but its audit event, so there is no object to authorize against. " \
+                      "If it ever persists the document, REMOVE THIS ENTRY"
   }.freeze
 
   # Controllers reachable from the routing table, so a controller that exists but
