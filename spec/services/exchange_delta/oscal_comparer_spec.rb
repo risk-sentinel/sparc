@@ -74,7 +74,8 @@ RSpec.describe ExchangeDelta::OscalComparer do
     it "reviews an SSP whose only change is a status improvement (only identical bytes are auto-accepted)" do
       result = compare(ssp(requirement("ac-2", status: "planned")), ssp(requirement("ac-2"),
                                                                         modified: "2026-12-01T00:00:00Z"))
-      expect(result.counts).to include(regression: 0, improvement: 1)
+      expect(result.counts).to include(regression: 0, neutral: 0)
+      expect(result.counts[:improvement]).to be_positive
       expect(result).not_to be_auto_acceptable
     end
 
