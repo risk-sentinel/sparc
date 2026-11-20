@@ -224,4 +224,72 @@ RSpec.describe BuiltInRoleSeeder do
       expect(result.skips.map { |s| [ s.key, s.reason ] }).to include([ "scope", "role has assignments" ])
     end
   end
+
+  # #1354 — roles 1.6.0: exchange.upload follows evidence.write (an upload
+  # never takes effect on its own); exchange.review follows amendment.approve
+  # (the other act of accepting what a provider asserts); connections.manage
+  # is granted to no built-in role (an instance administrator grants it).
+  describe "the received-document permissions (#1354)" do
+    def holders(key) = BuiltInRoles.all.select { |_name, d| d[:permissions][key] }.keys.sort
+
+    it "ships exchange.upload to exactly the roles holding evidence.write" do
+      expect(holders("evidence.write")).not_to be_empty
+      expect(holders("exchange.upload")).to eq(holders("evidence.write"))
+    end
+
+    it "ships exchange.review to exactly the roles holding amendment.approve" do
+      expect(holders("amendment.approve")).not_to be_empty
+      expect(holders("exchange.review")).to eq(holders("amendment.approve"))
+    end
+
+    it "ships connections.manage to no role" do
+      expect(holders("connections.manage")).to eq([])
+    end
+
+    it "keeps upload and review apart on every role but the one already trusted with both" do
+      expect(holders("exchange.upload") & holders("exchange.review")).to eq(%w[issm])
+    end
+
+    describe "an install from before the keys existed" do
+      # The state a pre-1.6.0 install's roles are in: the two keys absent.
+      def strip_exchange_keys(name)
+        r = role(name)
+        r.update_columns(permissions: r.permissions.except("exchange.upload", "exchange.review"))
+      end
+
+      before do
+        %w[isso ao issm view_only].each { |name| strip_exchange_keys(name) }
+        admin_sets("issm", "exchange.upload", false)
+      end
+
+      it "gains the shipped keys on every role nobody overrode" do
+        described_class.call
+
+        expect(role("isso").has_permission?("exchange.upload")).to be(true)
+        expect(role("isso").has_permission?("exchange.review")).to be(false)
+        expect(role("ao").has_permission?("exchange.review")).to be(true)
+        expect(role("ao").has_permission?("exchange.upload")).to be(false)
+        expect(role("view_only").has_permission?("exchange.upload")).to be(false)
+        expect(role("issm").has_permission?("exchange.review")).to be(true)
+      end
+
+      it "never undoes an administrator's revoke of a new key" do
+        expect(role("issm").admin_overrides).to eq("exchange.upload" => true)
+
+        described_class.call
+
+        expect(role("issm").has_permission?("exchange.upload")).to be(false)
+        expect(role("issm").admin_overrides).to eq("exchange.upload" => true)
+      end
+
+      it "audits each default it applied" do
+        described_class.call
+
+        applied = audits("role_default_applied").map { |e| [ e.metadata["role_name"], e.metadata["key"] ] }
+        expect(applied).to include([ "isso", "exchange.upload" ], [ "ao", "exchange.review" ],
+                                   [ "issm", "exchange.review" ])
+        expect(applied).not_to include([ "issm", "exchange.upload" ])
+      end
+    end
+  end
 end
