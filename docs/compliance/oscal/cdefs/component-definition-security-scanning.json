@@ -3,7 +3,7 @@
     "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
     "metadata": {
       "title": "SPARC Security Scanning and System Integrity",
-      "version": "1.2.6",
+      "version": "1.2.7",
       "oscal-version": "1.2.3",
       "last-modified": "2026-11-20T00:00:00Z",
       "roles": [
@@ -139,6 +139,18 @@
                 "control-id": "ra-3",
                 "description": "An amendment is a time-bounded risk decision, not a permanent suppression. AmendmentValidityService computes valid_until from the boundary profile's baseline level and the finding's NIST criticality, measured from the scan that first discovered the control rather than from the date the amendment was written. An open POA&M addressing the control confers validity for as long as it stays open. When an amendment expires it stops suppressing, and the finding returns to the triage board as expired for re-approval.",
                 "remarks": "Implemented in app/services/amendment_validity_service.rb and app/models/remediation_timeline.rb. Tested by spec/services/amendment_validity_service_spec.rb."
+              },
+              {
+                "uuid": "e7554e77-f575-4e34-a877-a776105c4579",
+                "control-id": "ca-3",
+                "description": "SPARC exchanges FedRAMP, OSCAL, HDF and XCCDF documents with other systems only through registered connections (#1354). An administrator, or a holder of connections.manage, registers each one: the provider's FedRAMP ID and certification class, the root trust-center address, each document to pull, and the boundary its documents land in. Every document received, pulled or uploaded, is validated against SPARC's pinned schema and for completeness, stored once by SHA-256 and never overwritten, and takes effect for its boundary only when a reviewer of the receiving boundary accepts it. The uploader cannot decide their own upload. Only a byte-identical re-delivery skips review. SPARC serves its own documents back out through an exchange index, and records who read it.",
+                "remarks": "Implemented in app/models/exchange_connection.rb, app/models/received_document.rb, app/services/received_document_service.rb, app/services/received_document_review_service.rb, app/services/exchange_pull_service.rb, app/services/exchange_index_service.rb and the Api::V1 exchange controllers (#1354)."
+              },
+              {
+                "uuid": "51f34294-0fe4-4fb8-a596-9ae27d10ed01",
+                "control-id": "sa-9",
+                "description": "SPARC reaches an external provider's trust center only under that connection's pins (#1354). ExchangeFetcher allows only the hosts of the connection's registered addresses, and resolves DNS once. It refuses private, loopback, link-local (including cloud metadata), carrier-grade NAT and other non-public addresses unless the connection's own IP ranges include them, then connects to the vetted address. It checks the TLS certificate and, when pinned, the public key's SHA-256 (two pins allow rotation). It follows no redirects and caps size and time. The credential SPARC presents is encrypted at rest and never shown again.",
+                "remarks": "Implemented in app/services/exchange_fetcher.rb and app/models/exchange_connection.rb; tested by spec/services/exchange_fetcher_spec.rb, including a real TLS socket (#1354)."
               }
             ]
           }
