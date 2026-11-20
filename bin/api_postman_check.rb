@@ -68,6 +68,9 @@ CONTROLLER_TO_FOLDER = {
   "discovery"                          => "Discovery",
   "evidence_control_links"             => "Evidence Control Links",
   "evidences"                          => "Evidence",
+  "exchange_connections"               => "Exchange Connections",
+  "exchange_document_sources"          => "Exchange Connections",
+  "exchange_indexes"                   => "Received Documents",
   "federation_peers"                   => "Federation Peers",
   "finding_dispositions"               => "Scanner Findings",
   "guides"                             => "Guides",
@@ -79,6 +82,7 @@ CONTROLLER_TO_FOLDER = {
   "poam_documents"                     => "POA&M Documents",
   "poam_risks"                         => "POA&M Risks",
   "profile_documents"                  => "Profile Documents",
+  "received_documents"                 => "Received Documents",
   "sap_documents"                      => "SAP Documents",
   "sar_documents"                      => "SAR Documents",
   "scan_runs"                          => "Scan Runs",
@@ -123,7 +127,9 @@ DUAL_MODE_ENDPOINTS = {
   "POST /api/v1/hdf/amendments_from_oscal_poam" =>
     { file: "poam.oscal.json", note: "An OSCAL POA&M document." },
   "POST /api/v1/authorization_boundaries/:id/scan_runs" =>
-    { file: HDF_SCAN_FIXTURE, note: "A scanner output file." }
+    { file: HDF_SCAN_FIXTURE, note: "A scanner output file." },
+  "POST /api/v1/authorization_boundaries/:id/received_documents" =>
+    { file: "vulnerability-detail-report.json", note: "A FedRAMP, OSCAL, HDF or XCCDF document (#1354)." }
 }.freeze
 
 # Adds the missing half of a dual-mode endpoint, so the collection carries a

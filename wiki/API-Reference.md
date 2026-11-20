@@ -125,6 +125,35 @@ does not. It stores nothing: a document SPARC could check gets `200` with
 documents, a warning for each optional field left empty. Details in
 [`docs/api/endpoints/document-validations.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/document-validations.md).
 
+**Exchange documents with other systems (v1.17.11, #1354).** SPARC pulls
+FedRAMP, OSCAL, HDF and XCCDF documents from other systems, takes them by upload,
+keeps every version, and serves its own documents back out.
+
+| Endpoints | What they do | Permission |
+|---|---|---|
+| `/api/v1/exchange_connections` (CRUD), `…/:id/pull`, `…/:id/discover`, `…/:id/test_connection`, `…/:exchange_connection_id/document_sources` (CRUD) | Register a connection (its boundary, root trust-center address, credential and trust pins) and the documents it pulls; pull now; list the root's document links; fetch and validate each document without storing it | `connections.manage` across the instance |
+| `/api/v1/authorization_boundaries/:id/received_documents` (list, upload), `…/:id`, `…/:id/file` | Every version the boundary received, its validation result and what changed since the version in effect; the exact bytes, with `X-Content-SHA256` | `evidence.read`; upload `exchange.upload` |
+| `…/received_documents/:id/accept`, `…/respond`, `…/reject` | The reviewer's decision | `exchange.review` |
+| `/api/v1/authorization_boundaries/:id/exchange_index` | The boundary's current documents (SPARC's exports and its accepted received versions), each with its download URL | `evidence.read` |
+
+- **The connection's credential is write-only.** It is accepted as `credential`
+  and never returned; responses say only `credential_set`.
+- **A document that fails validation is stored**, with its errors, and answers
+  `201` like any other upload. It can never be accepted. Bytes the stream already
+  holds answer `200` with `status: "unchanged"`.
+- **Every new version waits for a reviewer**, an improvement included: only a
+  byte-identical re-delivery needs no person, and that is recorded as unchanged.
+- **Separation of duties:** the person who uploaded a version cannot decide it
+  (`403`); the instance administrator is exempt.
+- Downloads and reads of the exchange index are audited, for FedRAMP's access
+  logs.
+
+Details in
+[`exchange-connections.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-connections.md),
+[`received-documents.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/received-documents.md)
+and
+[`exchange-index.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-index.md).
+
 > **An overdue POA&M risk no longer refuses `hdf/amendments_from_oscal_poam` (v1.17.2, #1208).**
 > A risk past its `deadline` becomes an expired amendment, and `hdf amend apply`
 > refuses any document holding one. So by default SPARC **leaves overdue
