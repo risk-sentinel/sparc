@@ -69,6 +69,8 @@ class AuthorizationBoundary < ApplicationRecord
   # boundary can be.
   has_many :received_documents, dependent: :destroy
   has_many :exchange_connections, dependent: :restrict_with_error
+  # #1354 — the provider's FedRAMP evaluation of each vulnerability (VER-EVA).
+  has_many :fedramp_vulnerability_evaluations, dependent: :destroy
   has_many :scanner_findings, dependent: :destroy
   has_many :finding_dispositions, dependent: :destroy
   has_many :risk_assessments, dependent: :destroy
@@ -94,6 +96,10 @@ class AuthorizationBoundary < ApplicationRecord
   before_validation :assign_uuid_if_blank
 
   validates :name, presence: true
+  # #1354 — the address of this system's FedRAMP Certification Package
+  # Overview, which FedRAMP's reports name (certificationPackageOverviewUri).
+  validates :fedramp_package_overview_uri,
+            format: { with: %r{\Ahttps://\S+\z}, message: "must be an https:// address" }, allow_blank: true
   # Only on the transition INTO `authorized`: an already-authorized boundary
   # whose ISSO leaves must remain editable, or the gate would trap records it
   # was meant to protect.
