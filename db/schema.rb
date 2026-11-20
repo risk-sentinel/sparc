@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -130,6 +130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_120000) do
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.string "fedramp_package_overview_uri"
     t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
     t.index ["profile_document_id"], name: "index_authorization_boundaries_on_profile_document_id"
     t.index ["slug"], name: "index_authorization_boundaries_on_slug", unique: true
@@ -758,6 +759,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_120000) do
     t.jsonb "public_metadata", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_federation_peers_on_name", unique: true
+  end
+
+  create_table "fedramp_vulnerability_evaluations", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.string "control_id", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.datetime "evaluated_at"
+    t.boolean "internet_reachable"
+    t.boolean "likely_exploitable"
+    t.integer "pain_rating"
+    t.jsonb "pain_history", default: [], null: false
+    t.datetime "next_reduction_at"
+    t.integer "next_reduction_rating"
+    t.text "supplementary_info"
+    t.bigint "evaluated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id", "control_id"], name: "index_fedramp_evaluations_on_boundary_and_control", unique: true
+    t.index ["authorization_boundary_id"], name: "idx_on_authorization_boundary_id_3798169e5d"
+    t.index ["evaluated_by_id"], name: "index_fedramp_vulnerability_evaluations_on_evaluated_by_id"
+    t.index ["uuid"], name: "index_fedramp_vulnerability_evaluations_on_uuid", unique: true
   end
 
   create_table "finding_dispositions", force: :cascade do |t|
@@ -2037,6 +2059,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_120000) do
   add_foreign_key "exchange_connections", "authorization_boundaries"
   add_foreign_key "exchange_connections", "users", column: "created_by_id"
   add_foreign_key "exchange_document_sources", "exchange_connections"
+  add_foreign_key "fedramp_vulnerability_evaluations", "authorization_boundaries"
+  add_foreign_key "fedramp_vulnerability_evaluations", "users", column: "evaluated_by_id"
   add_foreign_key "finding_dispositions", "authorization_boundaries"
   add_foreign_key "finding_dispositions", "users", column: "approved_by_user_id"
   add_foreign_key "finding_dispositions", "users", column: "decided_by_user_id"
