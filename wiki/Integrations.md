@@ -336,6 +336,25 @@ requires must be filled in, not just present.
 No schema is fetched at validation time. Over the API:
 `POST /api/v1/document_validations` ([API Reference](API-Reference)).
 
+### Connections to other systems (v1.17.11)
+
+SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF or XCCDF documents ([User Guide: Connections and Received Documents](User-Guide-Connections-and-Received-Documents)).
+
+- **In:** an administrator registers a **connection** in Settings. It records the provider's FedRAMP ID and certification class, its root trust-center address, each document to pull, and the boundary those documents land in.
+  - SPARC can crawl the root address and list the documents it finds, but it pulls only the documents set on the connection.
+  - Pulls run hourly, each on its document's own interval, or on **Pull now**.
+  - A person can also upload a document into a boundary by drag and drop.
+- **Trust:** SPARC reaches only the hosts of the addresses registered on the connection. It refuses private and internal addresses, checks the TLS certificate and, when pinned, its public key, and follows no redirects. The credential SPARC presents is encrypted and never shown again.
+- **Review:** every document received is validated (see Document validation above) and kept by SHA-256, never overwritten.
+  - A document that fails validation is stored with its errors shown, and can't take effect.
+  - A valid one takes effect for the boundary only when a reviewer accepts it. The reviewer sees what changed since the version in effect, sorted into regressions, improvements and other changes.
+  - Only a byte-identical re-delivery needs no review; it's recorded as unchanged.
+  - The person who uploaded a document can't decide it.
+  - An accepted HDF document also goes into the boundary's findings.
+- **Out:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists the boundary's documents for another system to pull: its OSCAL SSP, SAP, SAR, POA&M and CDEFs, its HDF system document, and the documents it has accepted, each with its download address. Accepted documents carry their SHA-256. SPARC's own exports are built on request, so the index gives no SHA-256 for them. Each read of the index is recorded in the audit log.
+
+The API is in [API Reference](API-Reference). Permissions: `connections.manage`, `exchange.upload` and `exchange.review` ([RBAC](RBAC)).
+
 ### sparc-horizon and sparc-validate
 
 - **SPARC-namespace props.** SSP, SAR and POA&M exports carry the nine props
