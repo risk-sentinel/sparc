@@ -64,6 +64,11 @@ class AuthorizationBoundary < ApplicationRecord
 
   # #447 — HDF Amendment triage layer, boundary-scoped.
   has_many :scan_runs, dependent: :destroy
+  # #1354 — documents received from other systems, and the connections that
+  # deliver them here. A connection must be moved or removed before its
+  # boundary can be.
+  has_many :received_documents, dependent: :destroy
+  has_many :exchange_connections, dependent: :restrict_with_error
   has_many :scanner_findings, dependent: :destroy
   has_many :finding_dispositions, dependent: :destroy
   has_many :risk_assessments, dependent: :destroy

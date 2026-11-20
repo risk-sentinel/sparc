@@ -116,6 +116,16 @@ Rails.application.routes.draw do
       get    "triage/poam",        to: "hdf_triage#poam",              as: :triage_poam
       get    "triage/package",     to: "hdf_triage#package",           as: :triage_package
     end
+    # #1354 — documents this boundary received from other systems or by upload,
+    # each reviewed by the receiving boundary.
+    resources :received_documents, only: [ :index, :show, :create ] do
+      member do
+        get  :file
+        post :accept
+        post :respond
+        post :reject
+      end
+    end
     resources :boundaries, only: [ :new, :create, :edit, :update, :destroy ]
     resources :memberships,
       controller: "authorization_boundary_memberships",
@@ -558,6 +568,16 @@ Rails.application.routes.draw do
       end
     end
     resources :roles
+
+    # #1354 — connections to other systems that speak FedRAMP, OSCAL, HDF or XCCDF.
+    resources :exchange_connections do
+      member do
+        post :pull
+        post :discover
+        post :test_connection
+      end
+      resources :document_sources, controller: "exchange_document_sources", only: [ :create, :edit, :update, :destroy ]
+    end
 
     # #860 — unmatched IdP grants (read-only queue).
     resources :idp_grants, only: [ :index ] do
@@ -1081,6 +1101,19 @@ Rails.application.routes.draw do
       # and their Read/Write levels, from the one definition enforcement uses.
       get "api_endpoints", to: "api_endpoints#index"
       resources :authorization_boundaries, only: [ :index, :show, :create, :update, :destroy ] do
+        # #1354 — documents received from other systems or by upload, and the
+        # boundary's exchange index (what it serves back out).
+        resources :received_documents, only: [ :index, :show, :create ] do
+          member do
+            get  :file
+            post :accept
+            post :respond
+            post :reject
+          end
+        end
+        member do
+          get "exchange_index", to: "exchange_indexes#show"
+        end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was
         # creatable only from a browser.
@@ -1170,6 +1203,14 @@ Rails.application.routes.draw do
       # #1354 — check a FedRAMP, OSCAL, HDF or XCCDF document against SPARC's
       # pinned schemas and for completeness. Stateless, like the translations.
       resources :document_validations, only: [ :create ]
+      resources :exchange_connections, only: [ :index, :show, :create, :update, :destroy ] do
+        member do
+          post :pull
+          post :discover
+          post :test_connection
+        end
+        resources :document_sources, controller: "exchange_document_sources", only: [ :index, :create, :update, :destroy ]
+      end
 
       # Admin credential rotation (#403) — receives a new admin password
       # from the sparc-iac rotation Lambda. See sparc-iac#197.

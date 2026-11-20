@@ -91,6 +91,9 @@ class Role < ApplicationRecord
     back_matter.bulk_import
     back_matter.federate
     amendment.approve
+    exchange.upload
+    exchange.review
+    connections.manage
     admin.rotate_credentials
     admin.administer
   ].freeze

@@ -44,6 +44,12 @@ module BuiltInRoles
   K_SAR_WRITE                     = "sar.write"
   K_SSP_READ                      = "ssp.read"
   K_SSP_WRITE                     = "ssp.write"
+  # #1354 — documents received from another system. Uploading one never puts it
+  # in effect (a reviewer of the receiving boundary accepts it), so upload
+  # follows evidence.write; review follows amendment.approve, the other act of
+  # accepting what a provider asserts.
+  K_EXCHANGE_UPLOAD               = "exchange.upload"
+  K_EXCHANGE_REVIEW               = "exchange.review"
 
   # #947 — Policy holds `evidence.attest` so that INSTANCE-WIDE evidence has an
   # authority chain of its own. Boundary-less evidence is provider material —
@@ -78,14 +84,14 @@ module BuiltInRoles
     K_SAP_READ => true, K_POAM_READ => true, K_POAM_WRITE => true,
     K_CDEF_READ => true, K_EVIDENCE_READ => true,
     K_EVIDENCE_ATTEST => true,
-    "amendment.approve" => true
+    "amendment.approve" => true, K_EXCHANGE_REVIEW => true
   }.freeze
 
   PERM_SO_ISO = {
     K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SSP_WRITE => true,
     K_SAR_READ => true, K_SAP_READ => true, K_POAM_READ => true,
     K_POAM_WRITE => true, K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true,
     K_EVIDENCE_ATTEST => true
   }.freeze
 
@@ -101,7 +107,7 @@ module BuiltInRoles
     K_SAR_READ => true, K_SAR_WRITE => true,
     K_SAP_READ => true, K_SAP_WRITE => true,
     K_POAM_READ => true, K_POAM_WRITE => true,
-    K_CDEF_READ => true, K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
+    K_CDEF_READ => true, K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true,
     K_EVIDENCE_ATTEST => true
   }.freeze
 
@@ -110,7 +116,7 @@ module BuiltInRoles
     K_SSP_READ => true, K_SSP_WRITE => true,
     K_POAM_READ => true, K_POAM_WRITE => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_ASSESSOR = {
@@ -141,7 +147,7 @@ module BuiltInRoles
   PERM_COMMON_CONTROL = {
     K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true, K_SSP_WRITE => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true,
     K_EVIDENCE_ATTEST => true
   }.freeze
 
@@ -158,7 +164,7 @@ module BuiltInRoles
     K_SAP_READ => true, K_SAP_WRITE => true,
     K_POAM_READ => true, K_POAM_WRITE => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_EVIDENCE_ENGINEER = {
@@ -168,7 +174,7 @@ module BuiltInRoles
     K_SAP_READ => true,
     K_POAM_READ => true,
     K_CDEF_READ => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_CHIEF_ACQUISITION_OFFICER = {
@@ -182,9 +188,9 @@ module BuiltInRoles
     K_SAR_READ => true, K_SAP_READ => true,
     K_POAM_READ => true, K_POAM_WRITE => true,
     K_CDEF_READ => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true,
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true,
     K_EVIDENCE_ATTEST => true,
-    "amendment.approve" => true # #809 — ISSM reviews/approves amendments on the AO's behalf
+    "amendment.approve" => true, K_EXCHANGE_REVIEW => true # #809 — ISSM reviews/approves amendments on the AO's behalf
   }.freeze
 
   PERM_CSP = {
@@ -193,7 +199,7 @@ module BuiltInRoles
     K_SAR_READ => true, K_SAP_READ => true,
     K_POAM_READ => true, K_POAM_WRITE => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_SYSTEM_ARCHITECT = {
@@ -206,14 +212,14 @@ module BuiltInRoles
   PERM_COMPONENT_SUPPLIER = {
     K_AUTHORIZATION_BOUNDARIES_READ => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_SYSTEM_OPERATOR = {
     K_AUTHORIZATION_BOUNDARIES_READ => true,
     K_SSP_READ => true, K_POAM_READ => true,
     K_CDEF_READ => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   PERM_INFO_OWNER = {
@@ -231,7 +237,7 @@ module BuiltInRoles
   PERM_VENDOR_DEPENDENCY = {
     K_AUTHORIZATION_BOUNDARIES_READ => true, K_SSP_READ => true,
     K_CDEF_READ => true, K_CDEF_WRITE => true,
-    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true
+    K_EVIDENCE_READ => true, K_EVIDENCE_WRITE => true, K_EXCHANGE_UPLOAD => true
   }.freeze
 
   # #1044 — instance-administrator authority. `admin.administer` short-circuits

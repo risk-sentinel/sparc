@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -704,6 +704,48 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
     t.index ["uuid"], name: "index_evidences_on_uuid", unique: true
   end
 
+  create_table "exchange_connections", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "authorization_boundary_id", null: false
+    t.string "fedramp_id"
+    t.string "certification_class"
+    t.string "certification_type"
+    t.string "root_url"
+    t.string "auth_scheme", default: "none", null: false
+    t.string "auth_header_name"
+    t.text "encrypted_credential"
+    t.jsonb "allowed_hosts", default: [], null: false
+    t.jsonb "spki_sha256", default: [], null: false
+    t.jsonb "allowed_cidrs", default: [], null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_pulled_at"
+    t.string "last_pull_status"
+    t.text "last_error"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id"], name: "index_exchange_connections_on_authorization_boundary_id"
+    t.index ["created_by_id"], name: "index_exchange_connections_on_created_by_id"
+    t.index ["name"], name: "index_exchange_connections_on_name", unique: true
+  end
+
+  create_table "exchange_document_sources", force: :cascade do |t|
+    t.bigint "exchange_connection_id", null: false
+    t.string "url", null: false
+    t.string "format", null: false
+    t.string "document_type"
+    t.integer "pull_interval_hours", default: 24, null: false
+    t.boolean "enabled", default: true, null: false
+    t.datetime "last_pulled_at"
+    t.string "last_status"
+    t.string "last_sha256"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["exchange_connection_id", "url"], name: "idx_on_exchange_connection_id_url_5193a90e65", unique: true
+    t.index ["exchange_connection_id"], name: "index_exchange_document_sources_on_exchange_connection_id"
+  end
+
   create_table "federation_peers", force: :cascade do |t|
     t.string "base_url", null: false
     t.datetime "created_at", null: false
@@ -1175,6 +1217,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
     t.index ["submitted_by_user_id"], name: "index_profile_documents_on_submitted_by_user_id"
     t.index ["uploaded_by_user_id"], name: "index_profile_documents_on_uploaded_by_user_id"
     t.index ["uuid"], name: "index_profile_documents_on_uuid", unique: true
+  end
+
+  create_table "received_documents", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.bigint "exchange_connection_id"
+    t.bigint "exchange_document_source_id"
+    t.string "source", null: false
+    t.string "stream_key", null: false
+    t.string "format", null: false
+    t.string "document_type"
+    t.string "fedramp_id"
+    t.string "sha256", null: false
+    t.bigint "byte_size", default: 0, null: false
+    t.string "filename"
+    t.string "content_type"
+    t.string "state", default: "pending_review", null: false
+    t.boolean "valid_document", default: false, null: false
+    t.jsonb "validation", default: {}, null: false
+    t.jsonb "delta", default: {}, null: false
+    t.integer "regression_count", default: 0, null: false
+    t.integer "improvement_count", default: 0, null: false
+    t.integer "neutral_count", default: 0, null: false
+    t.boolean "auto_accepted", default: false, null: false
+    t.datetime "received_at", null: false
+    t.bigint "received_by_id"
+    t.string "review_action"
+    t.text "review_note"
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.bigint "scan_run_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id"], name: "index_received_documents_on_authorization_boundary_id"
+    t.index ["exchange_connection_id"], name: "index_received_documents_on_exchange_connection_id"
+    t.index ["exchange_document_source_id"], name: "index_received_documents_on_exchange_document_source_id"
+    t.index ["received_by_id"], name: "index_received_documents_on_received_by_id"
+    t.index ["reviewed_by_id"], name: "index_received_documents_on_reviewed_by_id"
+    t.index ["scan_run_id"], name: "index_received_documents_on_scan_run_id"
+    t.index ["stream_key", "sha256"], name: "index_received_documents_on_stream_key_and_sha256", unique: true
+    t.index ["stream_key", "state"], name: "index_received_documents_on_stream_key_and_state"
   end
 
   create_table "remediation_timelines", force: :cascade do |t|
@@ -1952,6 +2034,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
   add_foreign_key "evidence_control_links", "evidences", on_delete: :cascade
   add_foreign_key "evidences", "authorization_boundaries", on_delete: :nullify
   add_foreign_key "evidences", "users", column: "collected_by_user_id", on_delete: :nullify
+  add_foreign_key "exchange_connections", "authorization_boundaries"
+  add_foreign_key "exchange_connections", "users", column: "created_by_id"
+  add_foreign_key "exchange_document_sources", "exchange_connections"
   add_foreign_key "finding_dispositions", "authorization_boundaries"
   add_foreign_key "finding_dispositions", "users", column: "approved_by_user_id"
   add_foreign_key "finding_dispositions", "users", column: "decided_by_user_id"
@@ -1993,6 +2078,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
   add_foreign_key "profile_documents", "control_catalogs", on_delete: :nullify
   add_foreign_key "profile_documents", "profile_documents", column: "source_profile_id"
   add_foreign_key "profile_documents", "users", column: "uploaded_by_user_id", on_delete: :nullify
+  add_foreign_key "received_documents", "authorization_boundaries"
+  add_foreign_key "received_documents", "exchange_connections"
+  add_foreign_key "received_documents", "exchange_document_sources"
+  add_foreign_key "received_documents", "scan_runs"
+  add_foreign_key "received_documents", "users", column: "received_by_id"
+  add_foreign_key "received_documents", "users", column: "reviewed_by_id"
   add_foreign_key "risk_assessments", "authorization_boundaries"
   add_foreign_key "risk_assessments", "evidences"
   add_foreign_key "sap_control_fields", "sap_controls", on_delete: :cascade
