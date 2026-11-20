@@ -31,6 +31,9 @@ class DocumentValidationService
   FORMATS = %w[fedramp oscal hdf xccdf].freeze
   OSCAL_XML_NAMESPACE = "http://csrc.nist.gov/ns/oscal/1.0"
   MAX_ERRORS = 200
+  SCHEMA_KEY = "$schema"
+  # hdf validate --type values (the pinned CLI's own list, `hdf validate --help`).
+  HDF_TYPES = HdfRunner::VALIDATE_TYPES
 
   Result = Struct.new(:format, :document_type, :schema, :errors, :warnings, :warnings_total, keyword_init: true) do
     def valid? = errors.empty?
@@ -85,7 +88,7 @@ class DocumentValidationService
 
   def detect_json_format(data)
     if data.is_a?(Hash)
-      return "fedramp" if data["$schema"].to_s.match?(%r{\Ahttps?://(www\.)?fedramp\.gov/schemas/})
+      return "fedramp" if data[SCHEMA_KEY].to_s.match?(%r{\Ahttps?://(www\.)?fedramp\.gov/schemas/})
       return "oscal" if (data.keys & oscal_root_keys).any?
       return "hdf" if data.key?("profiles") || data.key?("baselines")
       return "fedramp" if fedramp_type_from_shape(data)
@@ -113,8 +116,8 @@ class DocumentValidationService
   # The document's own `$schema`, then the caller's document_type, then the
   # schema whose required top-level fields the document has.
   def fedramp_schema_for(data)
-    if data["$schema"].present?
-      named = FedrampPackageSchemas.for_schema_uri(data["$schema"])
+    if data[SCHEMA_KEY].present?
+      named = FedrampPackageSchemas.for_schema_uri(data[SCHEMA_KEY])
       raise Error, "$schema #{data['$schema']} is not a FedRAMP schema SPARC carries" unless named
       if @document_type && @document_type != named.document_type
         raise Error, "document_type #{@document_type} does not match the document's $schema (#{named.document_type})"
@@ -171,6 +174,9 @@ class DocumentValidationService
   # reported invalid for being legacy.
   def validate_hdf(data)
     type = @document_type.presence || "results"
+    unless HDF_TYPES.include?(type)
+      raise Error, "Unknown HDF document_type '#{type}'. Known: #{HDF_TYPES.join(', ')}"
+    end
     legacy = (data.is_a?(Array) ? data.first : data).is_a?(Hash) && (data.is_a?(Array) ? data.first : data).key?("profiles")
     docs = data.is_a?(Array) ? data : [ data ]
     runner = HdfRunner.new

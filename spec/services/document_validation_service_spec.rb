@@ -123,6 +123,11 @@ RSpec.describe DocumentValidationService do
       expect(result.errors).to eq([])
     end
 
+    it "refuses an HDF document_type hdf validate does not define (#1354, CWE-88)" do
+      expect { call({ "profiles" => [] }, format: "hdf", document_type: "--output=/tmp/x") }
+        .to raise_error(described_class::Error, /Unknown HDF document_type/)
+    end
+
     it "reports what hdf validate rejects" do
       result = call({ "profiles" => "not a list" }, format: "hdf")
       expect(result).not_to be_valid
