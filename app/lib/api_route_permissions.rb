@@ -32,6 +32,7 @@ module ApiRoutePermissions
     "control_lookups"        => { read: :authenticated },
     "artifacts"              => { read: :authenticated },
     "translations"           => { read: :authenticated },
+    "document_validations"   => { read: :authenticated },
 
     # ── Catalogs, profiles, CDEFs, mappings: the shared library ─────────
     # Reads follow the control-library model (owner, 2026-10-22): any signed-in
