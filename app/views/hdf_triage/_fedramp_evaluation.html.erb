@@ -1,0 +1,101 @@
+<%# #1354 / #1384 — the provider's FedRAMP evaluation of one detected
+    vulnerability (FRR.VER: VER-EVA-EIR, VER-EVA-ELX, VER-EVA-EPA, VER-RPT-VDT),
+    shown and edited beside its finding. The form posts to
+    hdf_triage#fedramp_evaluation, which calls FedrampEvaluationService — the
+    same path as PUT /api/v1/authorization_boundaries/:id/fedramp_evaluations/:control_id.
+    Locals: boundary, finding, evaluation (nil when not yet evaluated). %>
+<% yes_no = [ [ "Not evaluated", "" ], [ "Yes", "true" ], [ "No", "false" ] ] %>
+<% ratings = FedrampVulnerabilityEvaluation::PAIN_RATINGS.map { |n| [ "N#{n}", n ] } %>
+<% key = "fedramp_#{finding.id}" %>
+<div data-testid="fedramp-summary" data-fedramp-control="<%= finding.control_id %>">
+  <% if evaluation&.evaluated? %>
+    <span class="badge bg-<%= evaluation.internet_reachable ? "danger" : "secondary" %>"
+          title="Internet-reachable vulnerability (VER-EVA-EIR)">
+      <%= evaluation.internet_reachable.nil? ? "IRV ?" : (evaluation.internet_reachable ? "IRV" : "Not IRV") %>
+    </span>
+    <span class="badge bg-<%= evaluation.likely_exploitable ? "danger" : "secondary" %>"
+          title="Likely exploitable vulnerability (VER-EVA-ELX)">
+      <%= evaluation.likely_exploitable.nil? ? "LEV ?" : (evaluation.likely_exploitable ? "LEV" : "Not LEV") %>
+    </span>
+    <span class="badge badge-info" title="Potential Agency Impact N-rating (VER-EVA-EPA)">
+      <%= FedrampVulnerabilityEvaluation.pain_label(evaluation.pain_rating) || "N ?" %>
+    </span>
+    <div class="small text-muted">evaluated <%= evaluation.evaluated_at.to_date %></div>
+    <% if evaluation.next_reduction_rating %>
+      <div class="small text-muted">
+        next: N<%= evaluation.next_reduction_rating %><%= " by #{evaluation.next_reduction_at.to_date}" if evaluation.next_reduction_at %>
+      </div>
+    <% end %>
+  <% else %>
+    <span class="text-muted small">Not evaluated</span>
+  <% end %>
+</div>
+<details class="mt-1" data-testid="fedramp-evaluation" data-fedramp-control="<%= finding.control_id %>">
+  <summary class="btn btn-outline-secondary btn-sm">FedRAMP</summary>
+  <%= form_with url: triage_fedramp_evaluation_authorization_boundary_path(boundary), method: :post,
+        data: { turbo: false }, class: "mt-2" do |f| %>
+    <%= hidden_field_tag :control_id, finding.control_id, id: "#{key}_control_id" %>
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <%= label_tag "#{key}_internet_reachable", "Internet-reachable", class: "form-label small mb-0" %>
+        <%= field_help FedrampVulnerabilityEvaluation.rule_statement("VER-EVA-EIR") %>
+        <%= select_tag :internet_reachable,
+              options_for_select(yes_no, evaluation&.internet_reachable.to_s.presence || ""),
+              id: "#{key}_internet_reachable", class: "form-select form-select-sm" %>
+      </div>
+      <div class="col-6">
+        <%= label_tag "#{key}_likely_exploitable", "Likely exploitable", class: "form-label small mb-0" %>
+        <%= field_help FedrampVulnerabilityEvaluation.rule_statement("VER-EVA-ELX") %>
+        <%= select_tag :likely_exploitable,
+              options_for_select(yes_no, evaluation&.likely_exploitable.to_s.presence || ""),
+              id: "#{key}_likely_exploitable", class: "form-select form-select-sm" %>
+      </div>
+    </div>
+    <div class="mb-2">
+      <%= label_tag "#{key}_pain_rating", "Potential Agency Impact (N-rating)", class: "form-label small mb-0" %>
+      <%= field_help "FedRAMP VER-EVA-EPA: the likely potential agency impact of exploitation on government customers. Each change is kept; a fall is a PAIN reduction." %>
+      <%= select_tag :pain_rating, options_for_select(ratings, evaluation&.pain_rating),
+            include_blank: "Not rated", id: "#{key}_pain_rating", class: "form-select form-select-sm" %>
+      <ul class="list-unstyled small text-muted mb-0 mt-1" data-testid="fedramp-pain-definitions">
+        <% FedrampVulnerabilityEvaluation.pain_definitions.each do |rating, text| %>
+          <li><strong>N<%= rating %></strong>: <%= text %></li>
+        <% end %>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <%= label_tag "#{key}_evaluated_at", "Evaluated", class: "form-label small mb-0" %>
+      <%= field_help "When the evaluation was completed. Left empty, the first save records now." %>
+      <%= datetime_local_field_tag :evaluated_at, evaluation&.evaluated_at&.strftime("%Y-%m-%dT%H:%M"),
+            id: "#{key}_evaluated_at", class: "form-control form-control-sm" %>
+    </div>
+    <div class="row g-2 mb-2">
+      <div class="col-6">
+        <%= label_tag "#{key}_next_reduction_rating", "Next reduction to", class: "form-label small mb-0" %>
+        <%= field_help "The target N-rating of the next planned reduction (VER-RPT-VDT). It must be lower than the current N-rating." %>
+        <%= select_tag :next_reduction_rating, options_for_select(ratings, evaluation&.next_reduction_rating),
+              include_blank: "None planned", id: "#{key}_next_reduction_rating", class: "form-select form-select-sm" %>
+      </div>
+      <div class="col-6">
+        <%= label_tag "#{key}_next_reduction_at", "Next reduction by", class: "form-label small mb-0" %>
+        <%= field_help "The estimated time of the next reduction in N-rating (VER-RPT-VDT)." %>
+        <%= date_field_tag :next_reduction_at, evaluation&.next_reduction_at&.to_date,
+              id: "#{key}_next_reduction_at", class: "form-control form-control-sm" %>
+      </div>
+    </div>
+    <div class="mb-2">
+      <%= label_tag "#{key}_supplementary_info", "Supplementary information", class: "form-label small mb-0" %>
+      <%= field_help "Anything that will help federal agencies assess or mitigate the risk to their federal customer data from this vulnerability (VER-RPT-VDT)." %>
+      <%= text_area_tag :supplementary_info, evaluation&.supplementary_info, rows: 2,
+            id: "#{key}_supplementary_info", class: "form-control form-control-sm",
+            maxlength: FedrampEvaluationService::MAX_SUPPLEMENTARY_INFO %>
+    </div>
+    <% if evaluation && Array(evaluation.pain_history).size > 1 %>
+      <p class="small text-muted mb-2" data-testid="fedramp-pain-history">
+        N-rating history:
+        <%= Array(evaluation.pain_history).map { |h| "N#{h['rating']} (#{h['at'].to_s.first(10)})" }.join(" → ") %>
+      </p>
+    <% end %>
+    <%= f.submit "Save FedRAMP evaluation", id: "#{key}_submit",
+          class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
+  <% end %>
+</details>

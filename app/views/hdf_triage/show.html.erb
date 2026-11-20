@@ -30,6 +30,11 @@
   </div>
 <% end %>
 
+<%# ── FedRAMP reports (#1354, #1384) ─────────────────────────────────────
+    The FedRAMP report downloads (Vulnerability Detail Report, VER-RPT-VDT;
+    Accepted Vulnerability Info, VER-RPT-AVI) render here, from their own
+    partial, built from the evaluations recorded in the table below. %>
+
 <div class="row g-3 mb-4">
   <div class="col-md-6">
     <div class="card h-100">
@@ -132,11 +137,11 @@
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0" id="hdf-findings-table">
       <thead>
-        <tr><th>Control</th><th>Component</th><th>Severity</th><th>Status</th><th>Lifecycle</th><th>Disposition</th><th>Triage</th></tr>
+        <tr><th>Control</th><th>Component</th><th>Severity</th><th>Status</th><th>Lifecycle</th><th>Disposition</th><th>Triage</th><th>FedRAMP evaluation</th></tr>
       </thead>
       <tbody>
         <% if @findings.none? %>
-          <tr><td colspan="7" class="text-muted p-3">No findings match the current filter.</td></tr>
+          <tr><td colspan="8" class="text-muted p-3">No findings match the current filter.</td></tr>
         <% end %>
         <% @findings.each do |finding| %>
           <% disp = @dispositions_by_control[finding.control_id] %>
@@ -271,6 +276,16 @@
                   <%= f.submit "Save disposition", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm" %>
                 <% end %>
               </details>
+            </td>
+            <%# #1354 / #1384 — FedRAMP evaluates every detected vulnerability, so
+                the evaluation is offered on the current scan's failing findings. %>
+            <td>
+              <% if finding.current && finding.status == "failed" %>
+                <%= render "hdf_triage/fedramp_evaluation", boundary: @boundary, finding: finding,
+                           evaluation: @fedramp_evaluations_by_control[finding.control_id] %>
+              <% else %>
+                <span class="text-muted small">—</span>
+              <% end %>
             </td>
           </tr>
         <% end %>

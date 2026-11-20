@@ -9,13 +9,16 @@
 #   POST   /authorization_boundaries/:id/triage/disposition    — set a disposition
 #   DELETE /authorization_boundaries/:id/triage/disposition    — clear a disposition
 #   GET    /authorization_boundaries/:id/triage/amendments     — download Amendments JSON
+#   POST   /authorization_boundaries/:id/triage/fedramp_evaluation — record a finding's
+#          FedRAMP evaluation (#1354, #1384; FedrampEvaluationService, as the API's PUT)
 #
 # NIST 800-53: AC-3/AC-6 (boundary-scoped RBAC via evidence.read/write),
-# CA-7 (continuous monitoring), SI-2 (flaw remediation), AU-12 (audit).
+# CA-7 (continuous monitoring), SI-2 (flaw remediation), RA-3/RA-5 (the FedRAMP
+# vulnerability evaluation), AU-12 (audit).
 class HdfTriageController < ApplicationController
   before_action :set_boundary
   before_action :authorize_read!,  only: %i[show amendments package]
-  before_action :authorize_write!, only: %i[ingest disposition clear_disposition aggregate]
+  before_action :authorize_write!, only: %i[ingest disposition clear_disposition aggregate fedramp_evaluation]
   # #809 — approving an amendment is a SEPARATE authority from triaging one, and
   # it has to be enforced on the action, not just by hiding the button: the view's
   # @can_approve only controls rendering, so gating these on evidence.write would
@@ -34,6 +37,8 @@ class HdfTriageController < ApplicationController
     @findings = @findings.where(cdef_document_id: params[:cdef_document_id]) if params[:cdef_document_id].present?
     @scan_runs = @boundary.scan_runs.recent.limit(10)
     @dispositions_by_control = @boundary.finding_dispositions.index_by(&:control_id)
+    # #1354 / #1384 — the FedRAMP evaluation of each failing finding, by control.
+    @fedramp_evaluations_by_control = @boundary.fedramp_vulnerability_evaluations.index_by(&:control_id)
     @kinds = FindingDisposition::KINDS
     @vocabulary = DispositionVocabulary
     @linkage = FindingDispositionService::LINKAGE
@@ -115,6 +120,24 @@ class HdfTriageController < ApplicationController
     redirect_to triage_path, success: "Disposition saved for #{finding.control_id}."
   rescue FindingDispositionService::DispositionError => e
     redirect_to triage_path, error: "Disposition failed: #{e.message}"
+  end
+
+  # #1354 / #1384 — the FedRAMP evaluation of one vulnerability: the same
+  # service, refusals and audit as PUT /api/v1/.../fedramp_evaluations/:control_id.
+  # The form sends every field; a blank clears it (evaluated_at excepted).
+  def fedramp_evaluation
+    control_id = params[:control_id].to_s
+    result = FedrampEvaluationService.new(@boundary).record(
+      control_id: control_id, user: current_user,
+      attributes: params.permit(*FedrampEvaluationService::FIELDS).to_h
+    )
+    audit_log("fedramp_evaluation_recorded", subject: result.evaluation,
+              metadata: { authorization_boundary_id: @boundary.id, control_id: control_id,
+                          created: result.created, changed: result.changes,
+                          pain_rating: result.evaluation.pain_rating })
+    redirect_to triage_path, success: "FedRAMP evaluation saved for #{control_id}."
+  rescue FedrampEvaluationService::Error => e
+    redirect_to triage_path, error: "FedRAMP evaluation not saved: #{e.message}"
   end
 
   def clear_disposition
