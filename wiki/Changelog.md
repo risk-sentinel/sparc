@@ -4,6 +4,36 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
+## v1.17.11 -- Connections for FedRAMP, OSCAL, HDF and XCCDF (2026-11-22)
+
+SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF or XCCDF documents, and writes FedRAMP's vulnerability reports ([#1354](https://github.com/risk-sentinel/sparc/issues/1354), [#1384](https://github.com/risk-sentinel/sparc/issues/1384)).
+
+- **Document validation:** every FedRAMP, OSCAL, HDF and XCCDF document SPARC exchanges is checked against the schema SPARC pins, and for completeness: a required field left blank is an error, which FedRAMP's own schemas accept. Available over the API (`POST /api/v1/document_validations`). FedRAMP's 11 package schemas and the XCCDF 1.2 schema are now vendored and pinned, and FedRAMP's consolidated rules are re-vendored at release 2026.11.02.01: 40 KSIs gain or lose NIST control links, refreshed on existing installs at first boot.
+- **Connections** (Settings → Connections, in the admin menu):
+  - Register another system: its FedRAMP ID and certification class, its trust center, each document to pull, and the boundary documents land in.
+  - SPARC can list the documents a trust center links to, and pulls only the ones you set, hourly or on **Pull now**.
+  - It reaches only the registered hosts, refuses internal addresses, checks the TLS key pin when one is set, and never follows a redirect. The credential is encrypted and never shown again.
+- **Received documents** (a boundary's Evidence section):
+  - Documents arrive by pull or by drag-and-drop upload, optionally naming their provider.
+  - Each version is validated and kept by SHA-256; one that fails is kept with its errors shown.
+  - A document takes effect only when a reviewer of the receiving boundary accepts it, seeing what changed since the version in effect. Only a byte-identical re-delivery skips review. The uploader cannot decide their own upload.
+  - An accepted HDF document goes into the boundary's findings.
+  - New permissions: `exchange.upload`, `exchange.review`, `connections.manage`.
+- **The exchange index:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists what a boundary serves to other systems.
+- **HDF ingest reads v2 and v3.** Every upload is checked with `hdf validate`, and v2 is converted to v3. A hand-built HDF v2 file missing fields that Heimdall's v2 schema requires is now refused. Real InSpec and SAF output is unaffected.
+- **FedRAMP evaluation and reports:**
+  - The triage page records the provider's FedRAMP evaluation of each failing finding: internet-reachable, likely exploitable, the Potential Agency Impact N-rating (N0–N5) and its history, and the planned next reduction.
+  - From these, the findings and their dispositions, SPARC writes the boundary's FedRAMP **Vulnerability Detail Report** and **Accepted Vulnerability Info** (FedRAMP VER-RPT-VDT and VER-RPT-AVI, effective 2026-12-07), validated before they are returned.
+  - A boundary records its Certification Package Overview address, which the reports name.
+- **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
+- **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
+
+**Upgrading:** an image swap from v1.17.10. Two migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+
+[Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
+
+---
+
 ## v1.17.10 -- Ruby 3.4.13 (2026-11-19)
 
 A security release ([#1380](https://github.com/risk-sentinel/sparc/issues/1380)).
