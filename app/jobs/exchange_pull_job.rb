@@ -20,7 +20,18 @@ class ExchangePullJob < ApplicationJob
 
     ExchangeDocumentSource.enabled.joins(:exchange_connection).merge(ExchangeConnection.enabled)
                           .find_each do |src|
-      ExchangePullService.call(src) if src.due?
+      pull_one(src) if src.due?
     end
+  end
+
+  private
+
+  # ExchangePullService records the failures it expects (a fetch, a refused
+  # document). Anything else is reported and the run goes on to the next
+  # document, so one bad document never stops every pull after it.
+  def pull_one(src)
+    ExchangePullService.call(src)
+  rescue StandardError => e
+    Rails.error.report(e, handled: true, context: { exchange_document_source_id: src.id })
   end
 end

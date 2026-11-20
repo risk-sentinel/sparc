@@ -124,7 +124,12 @@ class ReceivedDocumentService
     @connection&.fedramp_id.presence || begin
       return nil unless validation[:format] == "fedramp"
 
-      JSON.parse(@bytes).dig("serviceIdentification", "fedRampPackageId").presence
+      # A document that failed validation may be any JSON value, so each level
+      # is checked before it is read.
+      data = JSON.parse(@bytes)
+      identification = data["serviceIdentification"] if data.is_a?(Hash)
+      package_id = identification["fedRampPackageId"] if identification.is_a?(Hash)
+      package_id.is_a?(String) ? package_id.strip.presence : nil
     rescue JSON::ParserError
       nil
     end
