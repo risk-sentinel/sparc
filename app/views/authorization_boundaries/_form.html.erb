@@ -40,6 +40,15 @@
     </div>
   </div>
 
+  <%# #1354 — FedRAMP's reports name the package overview
+      (certificationPackageOverviewUri). %>
+  <div class="mb-3">
+    <%= f.label :fedramp_package_overview_uri, "FedRAMP package overview address", class: "form-label fw-semibold" %>
+    <%= field_help "The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it." %>
+    <%= f.url_field :fedramp_package_overview_uri, class: "form-control", placeholder: "https://",
+                    pattern: "https://.+", title: "An https:// address" %>
+  </div>
+
   <div class="d-flex gap-2">
     <%= f.submit class: "sparc-action sparc-action--primary sparc-action--solid" %>
     <%= link_to "Cancel", authorization_boundaries_path, class: "sparc-action sparc-action--neutral sparc-action--ghost" %>
