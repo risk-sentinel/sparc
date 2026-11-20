@@ -174,6 +174,30 @@ and FedRAMP evaluations.
 Details in
 [`fedramp-reports.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-reports.md).
 
+**Record the FedRAMP evaluation of each vulnerability (v1.17.11, #1354).**
+FedRAMP asks a provider to evaluate every detected vulnerability (FRR.VER).
+SPARC keeps one evaluation per vulnerability in a boundary, keyed by the
+finding's control id, so it outlives each scan: internet-reachable
+(VER-EVA-EIR), likely exploitable (VER-EVA-ELX), the Potential Agency Impact
+N-rating N0–N5 (VER-EVA-EPA) with its history, when it was evaluated, the planned
+next reduction and supplementary information (VER-RPT-VDT).
+
+| Endpoints | What they do | Permission |
+|---|---|---|
+| `GET /api/v1/authorization_boundaries/:id/fedramp_evaluations` | The boundary's evaluations; `?unevaluated=true` lists the current failing findings not yet evaluated | `evidence.read` |
+| `GET …/fedramp_evaluations/:control_id` | One vulnerability's evaluation | `evidence.read` |
+| `PUT …/fedramp_evaluations/:control_id` | Record it: `201` the first time, `200` after; only the fields sent change | `evidence.write` |
+
+- A control id with a slash (a package URL) is sent percent-encoded (`%2F`).
+- `422` for a control the boundary has no failing finding for, an N-rating
+  outside N0–N5, or a next reduction that is not lower than the current rating.
+- The boundary's `fedramp_package_overview_uri` (the FedRAMP Certification
+  Package Overview address FedRAMP's reports name) is set with
+  `PATCH /api/v1/authorization_boundaries/:id`, `https://` only.
+
+Details in
+[`fedramp-evaluations.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-evaluations.md).
+
 > **An overdue POA&M risk no longer refuses `hdf/amendments_from_oscal_poam` (v1.17.2, #1208).**
 > A risk past its `deadline` becomes an expired amendment, and `hdf amend apply`
 > refuses any document holding one. So by default SPARC **leaves overdue
