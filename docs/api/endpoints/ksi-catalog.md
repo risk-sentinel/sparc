@@ -226,8 +226,8 @@ curl "https://sparc.example.com/api/v1/ksi_catalog/mappings?page=1" \
   ],
   "meta": {
     "page": 1,
-    "pages": 8,
-    "count": 373,
+    "pages": 12,
+    "count": 558,
     "items": 50,
     "mapping_name": "FedRAMP 20x KSI to NIST SP 800-53 Rev 5",
     "mapping_status": "complete"
@@ -275,14 +275,14 @@ curl -X POST "https://sparc.example.com/api/v1/ksi_catalog/import?dry_run=true" 
 {
   "data": {
     "status": "planned",
-    "upstream_version": "2026.09.13.02",
+    "upstream_version": "2026.11.02.01",
     "dry_run": true,
     "changes": {
       "renamed": 10,
       "retired": 44,
       "indicators_created": 36,
       "themes_retired": 1,
-      "crosswalk_entries": 373
+      "crosswalk_entries": 558
     },
     "errors": []
   }
