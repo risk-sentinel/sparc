@@ -85,6 +85,7 @@ markers = [
     "poam: tests for the POA&M sub-objects — items, observations, findings, local components, remediations, milestones (#1010)",
     "findings: tests for scanner findings and their triage dispositions (#447, #1034)",
     "health: tests for the /up and /up/ready probes (#1151)",
+    "document_validations: tests for checking FedRAMP, OSCAL, HDF and XCCDF documents against SPARC's pinned schemas (#1354)",
 ]
 
 [tool.ruff]
