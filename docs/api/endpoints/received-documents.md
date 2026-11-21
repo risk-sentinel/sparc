@@ -9,6 +9,11 @@ Each arrival goes the same way:
 3. **Compare** it with the version in effect for its stream, change by change, classed as regression, improvement or neutral.
 4. **Review.** Only a byte-identical re-delivery needs no person (owner, 2026-11-20), and step 2 already records that as `unchanged`. Every other valid version, an improvement included, waits for a reviewer. A version that fails validation is stored with its errors, shown, and can never be accepted.
 
+Two other kinds of arrival take the same path:
+
+- **A provider's push** ([Exchange Connections: Push](exchange-connections.md#push)). SPARC confirms it by pulling the document fresh from its registered address. When the bytes match, the pulled version is received and carries `push_confirmed: true`. When they do not, or the address cannot be reached, the pushed bytes are received with `source: "push"` and `push_confirmed: false`: an **unconfirmed push**, flagged, never auto-accepted. `push_confirmed` is `null` for a version that no push announced.
+- **A Class A material** ([Exchange Connections: Class A materials](exchange-connections.md#class-a-materials)), `format: "class_a_material"`, `document_type` its kind. It is a file FedRAMP gives no schema for, so step 1 does not apply (`validation.checked: false`) and step 3 compares nothing; it is reviewed as a whole. Materials are added on the connection, not through the upload below, and never listed in the exchange index.
+
 A **stream** is one pulled document address, or a boundary's uploads of one format, document type and FedRAMP ID. Each stream has at most one version in effect (`accepted`). A document belongs to the boundary only once the boundary accepts it; an accepted HDF document also goes through the existing ingest into the boundary's findings.
 
 | State | Meaning |
@@ -53,7 +58,7 @@ Paginated, newest first. Filters:
 | Parameter | Description |
 |---|---|
 | `state` | One state, or several comma-separated (`pending_review,responded`) |
-| `document_format` | `fedramp`, `oscal`, `hdf` or `xccdf` (not `format`, which Rails keeps for the response format) |
+| `document_format` | `fedramp`, `oscal`, `hdf`, `xccdf` or `class_a_material` (not `format`, which Rails keeps for the response format) |
 | `document_type` | |
 | `stream` | A stream key, as each version returns it |
 | `exchange_connection_id` | |
@@ -66,7 +71,7 @@ Paginated, newest first. Filters:
       "source": "upload", "stream": "upload:boundary:12:fedramp:vulnerability-detail-report:-",
       "format": "fedramp", "document_type": "vulnerability-detail-report", "fedramp_id": null,
       "filename": "vdr.json", "content_type": "application/json",
-      "sha256": "…", "byte_size": 2048, "state": "pending_review", "valid": true,
+      "sha256": "…", "byte_size": 2048, "state": "pending_review", "valid": true, "push_confirmed": null,
       "counts": { "regression": 1, "improvement": 0, "neutral": 2 },
       "received_at": "2026-11-20T15:02:11Z", "received_by": { "id": 5, "name": "Pat Uploader" },
       "review": { "action": null, "note": null, "reviewed_at": null, "reviewed_by": null },

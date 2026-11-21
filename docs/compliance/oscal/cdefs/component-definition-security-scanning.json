@@ -3,9 +3,9 @@
     "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
     "metadata": {
       "title": "SPARC Security Scanning and System Integrity",
-      "version": "1.2.8",
+      "version": "1.2.9",
       "oscal-version": "1.2.3",
-      "last-modified": "2026-11-21T00:00:00Z",
+      "last-modified": "2026-11-22T00:00:00Z",
       "roles": [
         {
           "id": "prepared-by",
@@ -143,13 +143,13 @@
               {
                 "uuid": "e7554e77-f575-4e34-a877-a776105c4579",
                 "control-id": "ca-3",
-                "description": "SPARC exchanges FedRAMP, OSCAL, HDF and XCCDF documents with other systems only through registered connections (#1354). An administrator, or a holder of connections.manage, registers each one: the provider's FedRAMP ID and certification class, the root trust-center address, each document to pull, and the boundary its documents land in. Every document received, pulled or uploaded, is validated against SPARC's pinned schema and for completeness, stored once by SHA-256 and never overwritten, and takes effect for its boundary only when a reviewer of the receiving boundary accepts it. The uploader cannot decide their own upload. Only a byte-identical re-delivery skips review. SPARC serves its own documents back out through an exchange index, and records who read it.",
-                "remarks": "Implemented in app/models/exchange_connection.rb, app/models/received_document.rb, app/services/received_document_service.rb, app/services/received_document_review_service.rb, app/services/exchange_pull_service.rb, app/services/exchange_index_service.rb and the Api::V1 exchange controllers (#1354)."
+                "description": "SPARC exchanges FedRAMP, OSCAL, HDF and XCCDF documents with other systems only through registered connections (#1354). An administrator, or a holder of connections.manage, registers each one: the provider's FedRAMP ID and certification class, the root trust-center address, each document to pull, and the boundary its documents land in. Every document received, pulled or uploaded, is validated against SPARC's pinned schema and for completeness, stored once by SHA-256 and never overwritten, and takes effect for its boundary only when a reviewer of the receiving boundary accepts it. The uploader cannot decide their own upload. Only a byte-identical re-delivery skips review. SPARC serves its own documents back out through an exchange index, and records who read it. A provider may also push a changed document, signed with an Ed25519 key pinned on the connection (at most two, for rotation): SPARC accepts it only within 5 minutes of its timestamp, once per signature, from inside the connection's IP ranges and within the upload limit, then pulls the document fresh from its registered address. Matching bytes confirm the push; anything else is received as an unconfirmed push, flagged and never auto-accepted. A Class A connection records the alternative security framework its certification rests on (FedRAMP FRC-CLA-ASF) and its date, flags it expired 12 months later, and receives the assessment materials behind it (FRC-CLA-EAM) as reviewed documents of the boundary, kept by SHA-256 and never served back out.",
+                "remarks": "Implemented in app/models/exchange_connection.rb, app/models/received_document.rb, app/services/received_document_service.rb, app/services/received_document_review_service.rb, app/services/exchange_pull_service.rb, app/services/exchange_index_service.rb, app/services/exchange_push_service.rb, app/services/exchange_push_confirm_service.rb, app/services/certification_material_service.rb and the Api::V1 exchange controllers (#1354); tested by spec/services/exchange_push_service_spec.rb and spec/requests/api/v1/exchange_pushes_spec.rb."
               },
               {
                 "uuid": "51f34294-0fe4-4fb8-a596-9ae27d10ed01",
                 "control-id": "sa-9",
-                "description": "SPARC reaches an external provider's trust center only under that connection's pins (#1354). ExchangeFetcher allows only the hosts of the connection's registered addresses, and resolves DNS once. It refuses private, loopback, link-local (including cloud metadata), carrier-grade NAT and other non-public addresses unless the connection's own IP ranges include them, then connects to the vetted address. It checks the TLS certificate and, when pinned, the public key's SHA-256 (two pins allow rotation). It follows no redirects and caps size and time. The credential SPARC presents is encrypted at rest and never shown again.",
+                "description": "SPARC reaches an external provider's trust center only under that connection's pins (#1354). ExchangeFetcher allows only the hosts of the connection's registered addresses, and resolves DNS once. It refuses private, loopback, link-local (including cloud metadata), carrier-grade NAT and other non-public addresses unless the connection's own IP ranges include them, then connects to the vetted address. It checks the TLS certificate and, when pinned, the public key's SHA-256 (two pins allow rotation). It follows no redirects and caps size and time. The credential SPARC presents is encrypted at rest and never shown again. A push from the provider never chooses what SPARC fetches: the confirming pull reads only the document's registered address, under the same pins.",
                 "remarks": "Implemented in app/services/exchange_fetcher.rb and app/models/exchange_connection.rb; tested by spec/services/exchange_fetcher_spec.rb, including a real TLS socket (#1354)."
               }
             ]
