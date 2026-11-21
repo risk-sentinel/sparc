@@ -61,7 +61,11 @@ and the detail) carries these fields:
 | `description` | string | Short description |
 | `status` | string | Lifecycle status |
 | `authorization_date` / `next_decision_date` | string (`YYYY-MM-DD`) or `null` | Decision dates (#1154) |
-| `fedramp_package_overview_uri` | string or `null` | The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it (`certificationPackageOverviewUri`; #1354) |
+| `fedramp_package_overview_uri` | string or `null` | The address of this system's FedRAMP Certification Package Overview, normally its trust center. FedRAMP's reports name it (`certificationPackageOverviewUri`; #1354) |
+| `fedramp_overview_from_sparc` | boolean | `true` when the reports name SPARC's own overview endpoint instead (#1390) |
+| `fedramp_overview_address` | string or `null` | The overview address the reports name: one of the two above (#1390) |
+| `fedramp_package` | object | The fields SPARC writes the [Certification Package Overview](fedramp-reports.md) from (#1390); see below |
+| `fedramp_contacts` | array | The provider's contacts for the overview, kept on the boundary and separate from SPARC users (#1390): `contact_type` (`Security`, `Sales` or `Primary`), `name`, `email`, `phone` |
 | `created_at` / `updated_at` | string (ISO 8601) | Timestamps |
 
 The detail (`GET /api/v1/authorization_boundaries/:id`) additionally carries
@@ -217,6 +221,9 @@ Create a new authorization boundary.
 | `authorization_date` | string | No | When the authorization in force was granted, `YYYY-MM-DD` (#1154). `null` or `""` clears it |
 | `next_decision_date` | string | No | When the authorizing official is next due to decide, `YYYY-MM-DD` (#1154). Exported on the boundary's SSP as the SPARC-namespace prop `next-decision-date`. `null` or `""` clears it |
 | `fedramp_package_overview_uri` | string | No | The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it (#1354). Must be an `https://` address, or `422`; `null` or `""` clears it |
+| `fedramp_overview_from_sparc` | boolean | No | `true` names SPARC's own overview endpoint in the reports instead (#1390). Refused with `422` unless `SPARC_APP_URL` is an `https://` address |
+| `fedramp_package` | object | No | The overview's fields (#1390). **Merged** with what is stored: a key sent as `null` or `""` is removed, and a key not sent is kept. Keys: `package_id`*, `uei_number`, `provider_name`*, `service_name`*, `service_acronym`*, `service_description`*, `certification_type`* (`20x` or `Rev5`), `website`*, `logo`* (an image address), `service_types`* (array of `SaaS`, `PaaS`, `IaaS`), `deployment_model`*, `business_categories` (array, at most 10), `next_ocr_date` (`YYYY-MM-DD`), `trust_center_url`, `trust_center_description`, `trust_center_authentication_required`, `trust_center_access_instructions`. Starred keys are required before the overview can be written. The allowed values are those of FedRAMP's schema; any other is refused with `422` |
+| `fedramp_contacts` | array | No | The overview's contacts (#1390), replacing the stored list; `[]` clears it. Each has `contact_type` (`Security`, `Sales` or `Primary`), `name`, `email` and `phone` (a US number). At most 20. The overview needs a `Security` and a `Sales` contact |
 
 Both dates are also accepted on update, are returned on every response
 (`null` when unset), and are refused with `422` unless they are a real calendar

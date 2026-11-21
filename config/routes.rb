@@ -112,6 +112,9 @@ Rails.application.routes.draw do
       # #1390 — VER-TFR-MRH, the historical activity (12 months by default).
       get "triage/fedramp/historical_ver_activity", to: "fedramp_reports#historical_ver_activity",
                                                     as: :triage_fedramp_historical_ver_activity
+      # #1390 — FRC-CSO-PKG, the Certification Package Overview.
+      get "triage/fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview",
+                                                           as: :triage_fedramp_certification_package_overview
       # #447 — HDF Amendment triage UI (thin client over the triage services).
       get    :triage,              to: "hdf_triage#show"
       post   "triage/ingest",      to: "hdf_triage#ingest",            as: :triage_ingest
@@ -1131,6 +1134,8 @@ Rails.application.routes.draw do
           get "fedramp/accepted_vulnerability_info", to: "fedramp_reports#accepted_vulnerability_info"
           # #1390 — VER-TFR-MRH, the historical activity.
           get "fedramp/historical_ver_activity", to: "fedramp_reports#historical_ver_activity"
+          # #1390 — FRC-CSO-PKG, the Certification Package Overview.
+          get "fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview"
         end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was
