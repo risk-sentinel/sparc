@@ -85,6 +85,14 @@ RSpec.describe "Controller authorization coverage (#919)", type: :request do
                      "rate-limited. Requiring authorization would discard the reports we " \
                      "added it to collect",
 
+    "api/v1/exchange_pushes" => "#1354 a provider's push. No token or session by design: the " \
+                     "request is signed with an Ed25519 key pinned on the connection, and " \
+                     "ExchangePushService refuses it unless the signature verifies, the timestamp " \
+                     "is within 5 minutes, the signature is new (replay), the document is one " \
+                     "registered on that connection and the caller is inside its IP ranges. Every " \
+                     "refusal is audited; Rack::Attack rate-limits it. It stores only a receipt; what " \
+                     "the boundary receives comes from a fresh pull of the registered address",
+
     # Non-persisting despite POST verbs.
     "api/v1/translations" => "stateless HDF/OSCAL translation endpoints — they take an uploaded " \
                       "payload, translate it and return it. Nothing is written to SPARC's " \

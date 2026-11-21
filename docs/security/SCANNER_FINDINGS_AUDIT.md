@@ -1,8 +1,35 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-19 (v1.17.10 — Ruby 3.4.13, for six advisories in the interpreter)
+**Last reviewed:** 2026-11-21 (v1.17.11 — connections for FedRAMP, OSCAL, HDF and XCCDF)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.11 rescan (2026-11-21).** Real rescan of the v1.17.11 release code's
+> image (arm64, `a4aa8a47fb2e`, built from `854e2aad`), not an SBOM, with grype
+> 0.114.0 (DB built 2026-11-21 06:20 UTC) and Trivy 0.74.0. The image #1387
+> merged with (`55d6dffa342d`) was rescanned on the same database for
+> comparison.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype, #1387 image (`55d6dffa342d`) | 0 | **8** | 44 | 37 |
+> | Grype, v1.17.11 image | **0** | **8** | 44 | 37 |
+> | Trivy 0.74.0, v1.17.11 image | 0 | 0 | 0 | 1 |
+>
+> - **Three new Highs, from the database, not the code.** The 2026-11-21
+>   database added CVE-2026-107494 and CVE-2026-124709 (`openssl-libs`
+>   1:3.5.9-1.el10_3, both in OpenSSL's QUIC stack) and CVE-2026-129483
+>   (`cyrus-sasl-lib` 2.1.28-30.el10_2, the SRP server mechanism). The #1387
+>   image, scanned on the same database, reports the same eight. All three are
+>   not-fixed by Red Hat and not on CISA's KEV list (catalog of 2026-11-20).
+>   They are registered as **deviation-requested** risk adjustments to LOW: the
+>   image speaks no QUIC, and carries neither a SASL server nor the SRP plugin.
+>   They need the owner's `/approve-deviation`; until then the grype gate is red.
+> - **The other 5 Highs** are unchanged: `libpq` CVE-2026-116328 and four
+>   `sqlite-libs`, all approved deviations.
+> - **bundle-audit** (Ruby 3.4.13, ruby-advisory-db `74723cd`): no
+>   vulnerabilities.
+> - **Register:** 13 active entries (10 approved, 3 requested).
 
 > **v1.17.10 rescan (2026-11-19).** Real rescan of the built `sparc:v1.17.10`
 > image (arm64, `a19828d74a3c`, Ruby 3.4.13), not an SBOM, with grype 0.114.0

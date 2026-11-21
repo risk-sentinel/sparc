@@ -13,8 +13,15 @@
 <div class="d-flex justify-content-between align-items-start my-4 gap-3 flex-wrap">
   <div>
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <h1 class="h3 fw-bold mb-0"><%= exchange_format_label(doc.format) %> <%= doc.document_type %></h1>
+      <h1 class="h3 fw-bold mb-0">
+        <% if doc.certification_material? %>
+          <%= ExchangeConnection::CLASS_A_MATERIALS.fetch(doc.document_type, doc.document_type) %>
+        <% else %>
+          <%= exchange_format_label(doc.format) %> <%= doc.document_type %>
+        <% end %>
+      </h1>
       <%= received_state_badge(doc.state) %>
+      <%= unconfirmed_push_badge(doc) %>
     </div>
     <p class="text-body-secondary mb-0 small">
       <%= link_to @boundary.name, authorization_boundary_path(@boundary) %> ·
@@ -38,6 +45,15 @@
         <table class="table table-sm mb-0" data-testid="received-metadata">
           <tr><th>State</th><td><%= received_state_badge(doc.state) %></td></tr>
           <tr><th>Source</th><td><%= received_source_label(doc) %></td></tr>
+          <% unless doc.push_confirmed.nil? %>
+            <tr><th>Push</th><td data-testid="received-push">
+              <% if doc.push_confirmed %>
+                Confirmed: the registered address returned these exact bytes.
+              <% else %>
+                <span class="text-warning-emphasis">Unconfirmed: the registered address did not return these bytes when SPARC pulled it. Check with the provider before accepting.</span>
+              <% end %>
+            </td></tr>
+          <% end %>
           <% if doc.exchange_document_source %>
             <tr><th>Address</th><td class="text-break"><code><%= doc.exchange_document_source.url %></code></td></tr>
           <% end %>
@@ -133,13 +149,21 @@
 <div class="card mt-4" data-testid="received-validation">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">Validation</h5>
-    <% if doc.valid_document? %>
+    <% if doc.certification_material? %>
+      <span class="sparc-status sparc-status--neutral">Not checked</span>
+    <% elsif doc.valid_document? %>
       <span class="sparc-status sparc-status--success">Valid</span>
     <% else %>
       <span class="sparc-status sparc-status--danger">Invalid</span>
     <% end %>
   </div>
   <div class="card-body">
+    <% if doc.certification_material? %>
+      <p class="mb-0" data-testid="material-not-checked">
+        A Class A certification material (FedRAMP FRC-CLA-EAM). FedRAMP publishes no schema for these files, so SPARC
+        keeps the exact bytes by SHA-256 and leaves the content to the reviewer.
+      </p>
+    <% end %>
     <% schema = doc.validation["schema"] %>
     <% if schema.is_a?(Hash) && schema["name"].present? %>
       <p class="small text-body-secondary">
@@ -149,7 +173,8 @@
     <% end %>
     <% errors = doc.validation_errors.select { |e| e.is_a?(Hash) } %>
     <% warnings = doc.validation_warnings.select { |w| w.is_a?(Hash) } %>
-    <% if errors.any? %>
+    <% if doc.certification_material? %>
+    <% elsif errors.any? %>
       <h6 class="fw-semibold text-danger"><%= pluralize(errors.size, "error") %></h6>
       <div class="table-responsive">
         <table class="table table-sm align-middle" data-testid="validation-errors">
@@ -205,7 +230,9 @@
     </span>
   </div>
   <div class="card-body">
-    <% if !doc.valid_document? %>
+    <% if doc.certification_material? %>
+      <p class="text-body-secondary mb-0">Not compared: a Class A material is a file, reviewed as a whole.</p>
+    <% elsif !doc.valid_document? %>
       <p class="text-body-secondary mb-0">Not compared: a version that failed validation is not compared.</p>
     <% elsif delta.blank? %>
       <p class="text-body-secondary mb-0">No comparison recorded.</p>

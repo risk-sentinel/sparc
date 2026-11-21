@@ -40,12 +40,15 @@ RSpec.describe "Api::V1::Discovery", type: :request do
         get "/api/v1/available", headers: admin_headers
         listed = JSON.parse(response.body)["endpoints"].map { |e| e["path"] }
 
-        expected = ApiEndpointCatalog.routes.map do |r|
+        # A signed route (a provider's push, #1354) takes no token, so it is
+        # never advertised to one (ApiRoutePermissions, :signed).
+        expected = ApiEndpointCatalog.routes.reject { |r| ApiRoutePermissions.rule_for(r) == :signed }.map do |r|
           path = r.spec.delete_suffix("(.:format)")
           Api::V1::DiscoveryController::LEGACY_PATHS.fetch(path, path)
         end.uniq
         expect(listed).to match_array(expected)
         expect(listed.size).to be > 150
+        expect(listed).not_to include("/api/v1/exchange_connections/:exchange_connection_id/document_sources/:id/push")
       end
 
       # sparc-iac matches on these; the registry's spelling is kept.

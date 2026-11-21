@@ -134,7 +134,9 @@ module Admin
       @sources = @connection.document_sources.order(:id)
       @new_source = ExchangeDocumentSource.new(exchange_connection: @connection, pull_interval_hours: 24, enabled: true)
       @document_count = @connection.received_documents.count
-      @recent_documents = @connection.received_documents.recent.limit(10)
+      @recent_documents = @connection.received_documents.documents.includes(:authorization_boundary).recent.limit(10)
+      @push_receipts = @connection.push_receipts.includes(:exchange_document_source, received_document: :authorization_boundary).recent.limit(10)
+      @materials = @connection.received_documents.certification_materials.includes(:authorization_boundary).recent
     end
 
     def load_form
@@ -144,13 +146,16 @@ module Admin
     def connection_params
       permitted = params.require(:exchange_connection).permit(
         :name, :authorization_boundary_id, :fedramp_id, :certification_class, :certification_type,
-        :root_url, :auth_scheme, :auth_header_name, :enabled, :spki_sha256, :allowed_cidrs
+        :root_url, :auth_scheme, :auth_header_name, :enabled, :spki_sha256, :allowed_cidrs, :push_public_keys,
+        :class_a_framework, :class_a_certified_on
       )
       # The pins arrive as one text box each (one value per line, or comma
       # separated); the model splits and normalises them.
       %i[spki_sha256 allowed_cidrs].each do |key|
         permitted[key] = permitted[key].to_s.split(/[\s,]+/).compact_blank if permitted.key?(key)
       end
+      # Push keys may be pasted as PEM, which spans lines; the model splits them.
+      permitted[:push_public_keys] = [ permitted[:push_public_keys].to_s ] if permitted.key?(:push_public_keys)
       permitted
     end
 
@@ -169,7 +174,9 @@ module Admin
       { connection_id: connection.id, name: connection.name, authorization_boundary_id: connection.authorization_boundary_id,
         fedramp_id: connection.fedramp_id, root_url: connection.root_url, auth_scheme: connection.auth_scheme,
         enabled: connection.enabled, spki_pins: connection.spki_sha256.size,
-        allowed_cidrs: connection.allowed_cidrs }.compact
+        allowed_cidrs: connection.allowed_cidrs,
+        push_keys: connection.push_public_keys.map { |k| ExchangeConnection.key_fingerprint(k) },
+        class_a_framework: connection.class_a_framework, class_a_certified_on: connection.class_a_certified_on&.iso8601 }.compact
     end
 
     def pull_flash(results)

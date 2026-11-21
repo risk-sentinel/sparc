@@ -119,7 +119,7 @@ help guides have no navigation entry in that posture.
 
 ### Patch: `v1.17.11` — connect to any system that speaks FedRAMP, OSCAL, HDF or XCCDF (#1354, #1384)
 
-**Status (2026-11-21):** PRs 1 and 2 shipped combined as #1386 (owner's call: one gate, one review). PR A carries the FedRAMP sample package and its tests, the provider's FedRAMP evaluation of each vulnerability, the Vulnerability Detail Report and Accepted Vulnerability Info, a fix to the triage POA&M download's authorization, and the v1.17.11 version bump. Push and Class A follow as PR B (owner approved the split).
+**Status (2026-11-22):** PRs 1 and 2 shipped combined as #1386 (owner's call: one gate, one review). PR A (#1387, merged) carries the FedRAMP sample package and its tests, the provider's FedRAMP evaluation of each vulnerability, the Vulnerability Detail Report and Accepted Vulnerability Info, a fix to the triage POA&M download's authorization, and the v1.17.11 version bump. PR B (`feature/1354_fedramp_push_class_a`) adds push (Ed25519-signed, pinned keys, 5-minute window, replay-proof, confirmed by a fresh pull) and Class A (framework, date, 12-month expiry, reviewed materials); the owner moved it into v1.17.11 before the tag. Then the rf port.
 
 Owner, 2026-11-20: SPARC must connect, for automation, to any system using the FedRAMP, OSCAL,
 HDF or XCCDF schemas, ready by 2026-11-22. A patch release from `main`, then carried onto

@@ -92,6 +92,38 @@
     </div>
   </div>
 
+  <hr>
+  <h5 class="fw-semibold mb-3">Push</h5>
+  <p class="small text-body-secondary">
+    The provider can tell SPARC a document changed by sending it, signed with an Ed25519 key. SPARC then pulls the
+    document fresh from its registered address and compares the two. No key: the connection takes no pushes.
+  </p>
+  <div class="mb-3">
+    <%= f.label :push_public_keys, "Ed25519 public keys", class: "form-label fw-semibold small" %>
+    <%= f.text_area :push_public_keys, value: connection.push_public_keys.join("\n"), rows: 3,
+          class: "form-control font-monospace", placeholder: "PEM (BEGIN PUBLIC KEY), or base64 of the 32 raw bytes, one per line" %>
+    <div class="form-text">Up to <%= ExchangeConnection::MAX_PUSH_KEYS %>: the current key and the next, so the provider can rotate. Public keys only.</div>
+  </div>
+
+  <hr>
+  <h5 class="fw-semibold mb-3" id="class-a-fields">Class A certification</h5>
+  <p class="small text-body-secondary">
+    For a Class A connection: the alternative security framework the certification rests on (FedRAMP FRC-CLA-ASF) and
+    when it was certified. It expires 12 months later. The materials behind it are added on the connection's page.
+  </p>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :class_a_framework, "Framework", class: "form-label fw-semibold small" %>
+      <%= f.select :class_a_framework, ExchangeConnection::CLASS_A_FRAMEWORKS.map { |key, label| [ label, key ] },
+            { include_blank: "Not recorded" }, class: "form-select" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :class_a_certified_on, "Certified on", class: "form-label fw-semibold small" %>
+      <%= f.date_field :class_a_certified_on, class: "form-control", max: Date.current.iso8601 %>
+      <div class="form-text">Only with a framework, and only when the certification class is Class A.</div>
+    </div>
+  </div>
+
   <div class="form-check form-switch mb-4">
     <%= f.check_box :enabled, class: "form-check-input", role: "switch" %>
     <%= f.label :enabled, "Enabled — pulled on schedule and by Pull now", class: "form-check-label" %>

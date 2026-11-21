@@ -828,6 +828,7 @@ Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` 
 | SPARC_RATE_LIMIT_LOGIN_FAILURES_PER_MIN | Per-IP cap on `POST /login` + `/auth/failure` within 1 minute. Credential-stuffing defense. | `3` | `5` | No |
 | SPARC_RATE_LIMIT_CONTROLS_DOWNLOADS_PER_5MIN_PER_IP | Per-IP cap on Controls-layer document downloads (catalog/profile/mapping/CDEF `download_*`) within 5 minutes. These become anonymous when `SPARC_PUBLIC_CATALOGS=true` and are the most expensive read in the product — the full NIST 800-53 Rev 5 catalog export measures ~24s and ~3 MB — so the bucket stops a published instance being used as an amplifier. Screens and the API are unaffected. | `30` | `10` | No |
 | SPARC_RATE_LIMIT_CSP_REPORTS_PER_MIN | Per-IP cap on Content-Security-Policy violation reports per minute (#528), so a misbehaving or hostile client cannot flood the log. Generous, because one page with several violations sends a burst legitimately | `60` | `120` | No |
+| SPARC_RATE_LIMIT_EXCHANGE_PUSHES_PER_MIN | Cap on a provider's signed pushes (`POST /api/v1/exchange_connections/:id/document_sources/:id/push`, #1354) within 1 minute, applied per connection and, separately, per IP. Each push carries a whole document and starts a pull from the registered address. | `30` | `10` | No |
 | SPARC_RATE_LIMIT_SAFELIST_CIDRS | Comma-separated CIDR list. IPs in any listed CIDR bypass ALL throttles. Used for internal health-check IPs, NLB targets, etc. Loopback addresses safelisted by default for dev convenience. | `127.0.0.1,::1` | `127.0.0.1,::1,10.0.0.0/8` | No |
 
 <!-- markdownlint-enable MD013 -->
@@ -840,6 +841,8 @@ Rack::Attack throttle thresholds. Counters live in `Rails.cache` (`solid_cache` 
 | `uploads/hour/user` | authenticated user id | 1 hour | 100 |
 | `api/writes/min/token` | Bearer token (first 12 chars) | 1 minute | 300 |
 | `logins/failures/min/ip` | client IP | 1 minute | 5 |
+| `exchange/pushes/min/connection` | connection id in the push path | 1 minute | 30 |
+| `exchange/pushes/min/ip` | client IP | 1 minute | 30 |
 
 ### 429 response shape
 

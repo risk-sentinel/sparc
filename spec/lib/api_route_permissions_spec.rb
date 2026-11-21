@@ -60,6 +60,10 @@ RSpec.describe ApiRoutePermissions do
       expect(described_class.satisfied?(user, [ "role:policy_manager" ])).to be(true)
     end
 
+    it "never advertises a signed route, even to an administrator (#1354)" do
+      expect(described_class.satisfied?(create(:user, :admin), :signed)).to be(false)
+    end
+
     it "refuses a route with no rule" do
       expect(described_class.satisfied?(user, nil)).to be(false)
     end
