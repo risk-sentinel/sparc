@@ -762,11 +762,12 @@ controllers:
       poam: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/disposition_poam"]
       # #1354 / #1384 — the same FedrampEvaluationService upsert.
       fedramp_evaluation: ["PUT /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluations/:control_id"]
-  # #1354 / #1384 — the triage page's FedRAMP report downloads.
+  # #1354 / #1384 / #1390 — the triage page's FedRAMP report downloads.
   fedramp_reports:
     mapped:
       vulnerability_detail_report: ["GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report"]
       accepted_vulnerability_info: ["GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info"]
+      historical_ver_activity: ["GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

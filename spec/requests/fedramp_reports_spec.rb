@@ -43,6 +43,17 @@ RSpec.describe "FedRAMP report downloads", type: :request do
     expect(JSON.parse(response.body)["acceptedVulnerabilities"]).to eq([])
   end
 
+  it "sends the historical activity (#1390), 12 months by default, and audits it" do
+    sign_in_as(create(:user, :admin))
+    path = triage_fedramp_historical_ver_activity_authorization_boundary_path(boundary)
+    expect { get path }.to change { AuditEvent.where(action: "fedramp_historical_ver_activity_exported").count }.by(1)
+    expect(response.headers["Content-Disposition"]).to include("fedramp-ver-history.json")
+    doc = JSON.parse(response.body)
+    expect(doc).to include("activeVulnerabilities", "acceptedVulnerabilities", "generatedAt")
+    expect(AuditEvent.where(action: "fedramp_historical_ver_activity_exported").last.metadata["generated_at"])
+      .to eq(doc["generatedAt"])
+  end
+
   it "refuses a user without evidence.read on this boundary" do
     sign_in_as(user_with({ "evidence.read" => true }, on: create(:authorization_boundary)))
     get vdr_path
@@ -81,6 +92,8 @@ RSpec.describe "FedRAMP report downloads", type: :request do
       expect(form.at_css("input[name='from'][type='date']")).to be_present
       expect(form.at_css("input[name='to'][type='date']")).to be_present
       expect(form.at_css("[data-testid='triage-download-fedramp-avi']")["formaction"]).to eq(avi_path)
+      history = page.at_css("[data-testid='triage-download-fedramp-ver-history']")
+      expect(history["href"]).to eq(triage_fedramp_historical_ver_activity_authorization_boundary_path(boundary))
     end
 
     it "explains why there are no downloads when the boundary has no address" do
@@ -90,6 +103,7 @@ RSpec.describe "FedRAMP report downloads", type: :request do
       page = Nokogiri::HTML(response.body)
       expect(page.at_css("[data-testid='triage-fedramp-reports-unavailable']")).to be_present
       expect(page.at_css("[data-testid='triage-download-fedramp-vdr']")).to be_nil
+      expect(page.at_css("[data-testid='triage-download-fedramp-ver-history']")).to be_nil
     end
   end
 end
