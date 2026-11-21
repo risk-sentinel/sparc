@@ -8,12 +8,15 @@
 #       [?from=ISO8601&to=ISO8601]   default: the 30 days ending now
 #   GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity      (VER-TFR-MRH, #1390)
 #       [?from=ISO8601&to=ISO8601]   default: the 12 months ending now
+#   GET /api/v1/authorization_boundaries/:id/fedramp/certification_package_overview (FRC-CSO-PKG, #1390)
+#       written by FedrampPackageOverviewService; names no overview address
 #
 # The response body IS the FedRAMP document (not wrapped), with `$schema`
 # naming the FedRAMP schema it validates against.
 #
 #   422 — the boundary has no FedRAMP Certification Package Overview address,
-#         or the period is not usable;
+#         or the period is not usable; for the overview, the boundary does not
+#         yet record a field it requires (the message lists them);
 #   502 — SPARC built a report that fails its own FedRAMP schema or
 #         completeness check. It is never returned: the fault is SPARC's, not
 #         the caller's (as Api::V1::TranslationsController refuses invalid OSCAL).
@@ -30,7 +33,8 @@ class Api::V1::FedrampReportsController < Api::V1::BaseController
   before_action :authorize_read!
 
   rescue_from FedrampVulnerabilityReportService::MissingPackageOverview,
-              FedrampVulnerabilityReportService::InvalidPeriod do |e|
+              FedrampVulnerabilityReportService::InvalidPeriod,
+              FedrampPackageOverviewService::Incomplete do |e|
     render json: { error: e.message }, status: :unprocessable_content
   end
 
@@ -63,6 +67,14 @@ class Api::V1::FedrampReportsController < Api::V1::BaseController
     doc = FedrampVulnerabilityReportService.historical_ver_activity(@boundary, from: params[:from], to: params[:to])
     count = doc["activeVulnerabilities"].size + doc["acceptedVulnerabilities"].size
     audit("fedramp_historical_ver_activity_exported", doc, count)
+    render json: doc
+  end
+
+  # GET .../fedramp/certification_package_overview
+  def certification_package_overview
+    doc = FedrampPackageOverviewService.call(@boundary)
+    audit_log("fedramp_certification_package_overview_exported", subject: @boundary,
+              metadata: { authorization_boundary_id: @boundary.id, contacts: doc["contactInformation"].size })
     render json: doc
   end
 

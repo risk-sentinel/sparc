@@ -9,6 +9,7 @@
 #       [?from=&to=]  ISO 8601 dates or date-times; default the 30 days ending now
 #   GET /authorization_boundaries/:id/triage/fedramp/historical_ver_activity      (VER-TFR-MRH, #1390)
 #       [?from=&to=]  default the 12 months ending now
+#   GET /authorization_boundaries/:id/triage/fedramp/certification_package_overview (FRC-CSO-PKG, #1390)
 #
 # A report that cannot be written (no package overview address, a bad
 # period) or that fails its own validation is never sent; the triage page
@@ -33,7 +34,32 @@ class FedrampReportsController < ApplicationController
             %w[activeVulnerabilities acceptedVulnerabilities], "ver-history")
   end
 
+  def certification_package_overview
+    doc = FedrampPackageOverviewService.call(@boundary)
+    audit_log("fedramp_certification_package_overview_exported", subject: @boundary,
+              metadata: { authorization_boundary_id: @boundary.id, contacts: doc["contactInformation"].size })
+    send_document(doc, "package-overview")
+  rescue FedrampVulnerabilityReportService::Error => e
+    refuse(e)
+  end
+
   private
+
+  def send_document(doc, suffix)
+    send_data JSON.pretty_generate(doc),
+              filename: "#{@boundary.slug || @boundary.uuid}-fedramp-#{suffix}.json",
+              type: "application/json", disposition: "attachment"
+  end
+
+  def refuse(error)
+    if error.is_a?(FedrampVulnerabilityReportService::InvalidReport)
+      messages = error.errors.first(3).map { |err| "#{err[:pointer]} #{err[:message]}".strip }
+      redirect_to triage_authorization_boundary_path(@boundary),
+                  error: "SPARC produced an invalid report and did not send it: #{messages.join('; ')}"
+    else
+      redirect_to triage_authorization_boundary_path(@boundary), error: "FedRAMP report not produced: #{error.message}"
+    end
+  end
 
   def deliver(report, action, list_keys, suffix)
     doc = FedrampVulnerabilityReportService.public_send(report, @boundary, from: params[:from], to: params[:to])
@@ -42,15 +68,9 @@ class FedrampReportsController < ApplicationController
               metadata: { authorization_boundary_id: @boundary.id, vulnerabilities: count,
                           from: doc.dig("reportPeriod", "from"), to: doc.dig("reportPeriod", "to"),
                           generated_at: doc["generatedAt"] }.compact)
-    send_data JSON.pretty_generate(doc),
-              filename: "#{@boundary.slug || @boundary.uuid}-fedramp-#{suffix}.json",
-              type: "application/json", disposition: "attachment"
-  rescue FedrampVulnerabilityReportService::InvalidReport => e
-    messages = e.errors.first(3).map { |err| "#{err[:pointer]} #{err[:message]}".strip }
-    redirect_to triage_authorization_boundary_path(@boundary),
-                error: "SPARC produced an invalid report and did not send it: #{messages.join('; ')}"
+    send_document(doc, suffix)
   rescue FedrampVulnerabilityReportService::Error => e
-    redirect_to triage_authorization_boundary_path(@boundary), error: "FedRAMP report not produced: #{e.message}"
+    refuse(e)
   end
 
   def set_boundary

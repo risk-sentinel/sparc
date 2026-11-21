@@ -240,13 +240,17 @@ FedRAMP's reports also name the system's **FedRAMP package overview address**,
 which you set on the boundary's **Edit** page (see
 [Authorization Boundaries](User-Guide-Authorization-Boundaries)).
 
-Once it's set, the **FedRAMP vulnerability reports** card on the triage page
-downloads them:
+Once it's set, the **FedRAMP reports** card on the triage page downloads them:
 
 - **Vulnerability Detail Report** and **Accepted Vulnerability Info**, for the
   dates you pick (by default the last 30 days);
 - **Historical Vulnerability Activity** (VER-TFR-MRH, #1390): both lists in one
   snapshot, for the 12 months ending now.
+
+The same card offers **Download Certification Package Overview** (#1390) once
+the boundary's FedRAMP package overview fields and its Security and Sales
+contacts are saved. The overview names no address, so it doesn't need one.
+Until then, the card lists what is missing.
 
 See [Integrations](Integrations) for what each contains.
 

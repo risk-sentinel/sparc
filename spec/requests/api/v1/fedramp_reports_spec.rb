@@ -4,7 +4,7 @@ require "rails_helper"
 
 # #1354 / #1384 / #1390 — GET /api/v1/authorization_boundaries/:id/fedramp/
 # vulnerability_detail_report, .../accepted_vulnerability_info and
-# .../historical_ver_activity.
+# .../historical_ver_activity, and .../certification_package_overview (#1390).
 # evidence.read on the boundary; each download audited; 422 without the
 # boundary's package overview address; 502, never the document, when SPARC's
 # own report fails validation.
@@ -129,5 +129,85 @@ RSpec.describe "API v1 FedRAMP reports", type: :request do
     expect(body["activeVulnerabilities"].map { |v| v["providerTrackingId"] }).to eq([ "CVE-2026-0001" ])
     expect(body["acceptedVulnerabilities"].sole.dig("vulnerabilityDetail", "providerTrackingId")).to eq("CVE-2026-0002")
     expect(body).not_to have_key("reportPeriod")
+  end
+
+  # #1390 — FRC-CSO-PKG, written from the boundary's FedRAMP fields.
+  describe "certification_package_overview" do
+    let(:path) { "#{base}/certification_package_overview" }
+    let(:action) { "fedramp_certification_package_overview_exported" }
+
+    before { boundary.update!(attributes_for(:authorization_boundary, :fedramp_overview_ready).slice(:fedramp_package, :fedramp_contacts)) }
+
+    it "401s without a token and 403s without evidence.read on this boundary" do
+      get path
+      expect(response).to have_http_status(:unauthorized)
+      get path, headers: headers_for(user_with({ "ssp.read" => true }))
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "serves the overview to an evidence.read holder and audits the download" do
+      expect { get path, headers: headers_for(reader) }.to change { AuditEvent.where(action: action).count }.by(1)
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body["$schema"]).to end_with("fedramp-certification-package-overview-schema-2026-06-24.json")
+      expect(body.dig("serviceIdentification", "serviceName")).to eq("Example Cloud")
+      expect(AuditEvent.where(action: action).last.metadata).to include("authorization_boundary_id" => boundary.id, "contacts" => 2)
+    end
+
+    it "is served by the boundary UUID, the form SPARC's own overview address uses" do
+      get "/api/v1/authorization_boundaries/#{boundary.uuid}/fedramp/certification_package_overview", headers: headers_for(reader)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "needs no overview address" do
+      boundary.update!(fedramp_package_overview_uri: nil)
+      get path, headers: headers_for(reader)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "422s, listing what is missing, when the boundary lacks a required field" do
+      boundary.update!(fedramp_package: { website: "" })
+      expect { get path, headers: headers_for(reader) }.not_to(change { AuditEvent.where(action: action).count })
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("Missing: Website")
+    end
+
+    it "502s, never the document, when SPARC's overview fails validation" do
+      invalid = DocumentValidationService::Result.new(
+        format: "fedramp", document_type: "x", schema: {}, warnings: [], warnings_total: 0,
+        errors: [ { check: "schema", pointer: "/serviceIdentification", message: "is bad" } ]
+      )
+      allow(DocumentValidationService).to receive(:call).and_return(invalid)
+      get path, headers: headers_for(reader)
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body).to include("document_type" => "certification-package-overview")
+      expect(response.parsed_body).not_to have_key("serviceIdentification")
+    end
+  end
+
+  describe "SPARC's own overview address (#1390)" do
+    around do |example|
+      saved = ENV.fetch("SPARC_APP_URL", nil)
+      ENV["SPARC_APP_URL"] = "https://sparc.example.gov"
+      example.run
+    ensure
+      saved.nil? ? ENV.delete("SPARC_APP_URL") : ENV["SPARC_APP_URL"] = saved
+    end
+
+    it "is the address the reports name when the boundary chooses it" do
+      boundary.update!(fedramp_overview_from_sparc: true)
+      get vdr_path, headers: headers_for(reader)
+      expect(response.parsed_body["certificationPackageOverviewUri"]).to eq(
+        "https://sparc.example.gov/api/v1/authorization_boundaries/#{boundary.uuid}/fedramp/certification_package_overview"
+      )
+    end
+
+    it "422s, saying why, once SPARC_APP_URL is no longer https" do
+      boundary.update!(fedramp_overview_from_sparc: true)
+      ENV["SPARC_APP_URL"] = "http://sparc.example.gov"
+      get vdr_path, headers: headers_for(reader)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["error"]).to include("SPARC_APP_URL is not an https:// address")
+    end
   end
 end
