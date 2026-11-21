@@ -290,8 +290,14 @@ class AuthorizationBoundariesController < ApplicationController
       # replaces it whole, so a form posting two dates would erase the rest.
       # The accessors merge one key at a time.
       *AuthorizationBoundary::BOUNDARY_DATE_KEYS,
-      boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS  # #395 P3
-    )
+      :fedramp_overview_from_sparc,                               # #1390
+      boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS,  # #395 P3
+      **AuthorizationBoundary::PERMITTED_PARAMS                          # #1390
+    ).tap do |permitted|
+      # #1390 — the form marks its contacts list, so removing every row
+      # clears it (an empty list posts no fields at all).
+      permitted[:fedramp_contacts] ||= [] if params[:authorization_boundary][:fedramp_contacts_listed].present?
+    end
   end
 
   def ato_package_params

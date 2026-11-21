@@ -1,10 +1,12 @@
-<%# #1354 / #1384 — download the boundary's FedRAMP Vulnerability Detail Report
-    (VER-RPT-VDT) and Accepted Vulnerability Info (VER-RPT-AVI) for a period.
+<%# #1354 / #1384 / #1390 — download the boundary's FedRAMP Vulnerability Detail
+    Report (VER-RPT-VDT) and Accepted Vulnerability Info (VER-RPT-AVI) for a
+    period, its Historical Vulnerability Activity, and its Certification
+    Package Overview.
     FedrampReportsController; the same service as the API. %>
 <div class="card mb-4" data-testid="triage-fedramp-reports">
-  <div class="card-header">FedRAMP vulnerability reports</div>
+  <div class="card-header">FedRAMP reports</div>
   <div class="card-body">
-    <% if boundary.fedramp_package_overview_uri.blank? %>
+    <% if boundary.fedramp_overview_address.blank? %>
       <p class="text-muted small mb-0" data-testid="triage-fedramp-reports-unavailable">
         These reports name the boundary's FedRAMP Certification Package Overview address,
         and this boundary has none yet. Set it on the boundary to produce them.
@@ -43,5 +45,21 @@
         <span class="text-muted small">Active and accepted vulnerabilities together, for the 12 months ending now.</span>
       </div>
     <% end %>
+    <%# #1390 — FRC-CSO-PKG. It names no overview address, so it needs only the
+        fields the boundary records (Edit boundary, FedRAMP package overview). %>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top" data-testid="triage-fedramp-overview">
+      <% missing = boundary.fedramp_overview_missing %>
+      <% if missing.empty? %>
+        <%= link_to "Download Certification Package Overview",
+              triage_fedramp_certification_package_overview_authorization_boundary_path(boundary),
+              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+              data: { turbo: false, testid: "triage-download-fedramp-overview" } %>
+        <span class="text-muted small">The system's FedRAMP package overview, from the boundary's FedRAMP fields.</span>
+      <% else %>
+        <span class="text-muted small" data-testid="triage-fedramp-overview-unavailable">
+          The Certification Package Overview needs, on the boundary: <%= missing.to_sentence %>.
+        </span>
+      <% end %>
+    </div>
   </div>
 </div>

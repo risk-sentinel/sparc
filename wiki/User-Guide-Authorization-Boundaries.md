@@ -161,9 +161,36 @@ authorization date is included in the boundary's HDF system document.
 
 ![The Authorization date and Next decision date fields on the boundary Edit page](images/boundary-decision-dates.png)
 
-The **FedRAMP package overview address** is the address of this system's FedRAMP
-Certification Package Overview. FedRAMP's reports name it. It must be an
-`https://` address; leave it blank if the system has none (v1.17.11, #1354).
+### FedRAMP package overview
+
+The **FedRAMP package overview** section of the **Edit** page holds what SPARC
+needs to write this system's FedRAMP Certification Package Overview, and the
+address FedRAMP's reports name for it (v1.17.11, #1354, #1390). Open it to fill
+it in.
+
+- **Overview address in FedRAMP reports.** Choose **The address below**
+  (normally your trust center, which FedRAMP requires) and enter the
+  **FedRAMP package overview address**, an `https://` address. Or choose
+  **SPARC's own overview endpoint**; the page shows its address. That choice
+  needs `SPARC_APP_URL` to be an `https://` address, and readers of that
+  endpoint need a SPARC token, so it does not by itself meet FedRAMP's trust
+  center rules.
+- **Service identification** and **Service properties**: the FedRAMP ID,
+  provider, service name, acronym and description, certification type,
+  website, logo address, service model and deployment model are required
+  (marked *). The UEI number, business categories and next ongoing
+  certification report date are optional. The lists offer only the values
+  FedRAMP's schema allows.
+- **Trust center** (optional): its address and description, whether readers
+  must sign in, and, if they must, how to request access.
+- **Contacts**: the provider's contacts as FedRAMP should list them. Use
+  **+ Add contact** for each one. They need no SPARC account. The overview
+  needs a **Security** and a **Sales** contact.
+
+Once every required field and both contacts are saved, the boundary's
+**Amendments** page offers **Download Certification Package Overview** (see
+[HDF Amendment Triage](User-Guide-HDF-Amendment-Triage)). Until then, it lists
+what is missing.
 
 ## How to add an environment
 

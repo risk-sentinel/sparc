@@ -1,0 +1,150 @@
+<%# #1354 / #1390 — the FedRAMP Certification Package Overview: the address
+    FedRAMP's reports name (certificationPackageOverviewUri), and the fields
+    SPARC writes the overview from (FedrampPackageOverview). Contacts are a
+    list kept on the boundary, separate from SPARC users. %>
+<% boundary = authorization_boundary %>
+<% pkg = boundary.fedramp_package || {} %>
+<% name_for = ->(key) { "authorization_boundary[fedramp_package][#{key}]" } %>
+<% id_for = ->(key) { "authorization_boundary_fedramp_package_#{key}" } %>
+<% sparc_base = AuthorizationBoundary.sparc_https_base_url %>
+<details class="mb-3 border rounded-3 p-3" data-testid="boundary-fedramp-package" <%= "open" if boundary.errors[:fedramp_package].any? || boundary.errors[:fedramp_contacts].any? || boundary.errors[:fedramp_overview_from_sparc].any? %>>
+  <summary class="fw-semibold">FedRAMP package overview</summary>
+  <p class="text-body-secondary small mt-2">
+    What SPARC needs to write this system's FedRAMP Certification Package Overview, and the address
+    FedRAMP's reports name for it. Required by FedRAMP: the fields marked *, and a Security and a Sales contact.
+  </p>
+
+  <fieldset class="mb-3">
+    <legend class="form-label fw-semibold fs-6">Overview address in FedRAMP reports</legend>
+    <div class="form-check">
+      <%= radio_button_tag "authorization_boundary[fedramp_overview_from_sparc]", "false", !boundary.fedramp_overview_from_sparc?,
+            id: "authorization_boundary_fedramp_overview_from_sparc_false", class: "form-check-input" %>
+      <%= label_tag "authorization_boundary_fedramp_overview_from_sparc_false", "The address below (normally your trust center)", class: "form-check-label" %>
+    </div>
+    <div class="form-check">
+      <%= radio_button_tag "authorization_boundary[fedramp_overview_from_sparc]", "true", boundary.fedramp_overview_from_sparc?,
+            id: "authorization_boundary_fedramp_overview_from_sparc_true", class: "form-check-input",
+            disabled: sparc_base.nil? && !boundary.fedramp_overview_from_sparc? %>
+      <%= label_tag "authorization_boundary_fedramp_overview_from_sparc_true", "SPARC's own overview endpoint", class: "form-check-label" %>
+      <div class="form-text">
+        <% if sparc_base %>
+          <code data-testid="boundary-fedramp-sparc-address"><%= sparc_base %><%= format(FedrampPackageOverview::OVERVIEW_PATH, boundary.uuid || "<boundary-uuid>") %></code>.
+          Readers need a SPARC token, so this address does not by itself meet FedRAMP's trust center rules.
+        <% else %>
+          Needs SPARC_APP_URL to be an https:// address.
+        <% end %>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="mb-3">
+    <%= f.label :fedramp_package_overview_uri, "FedRAMP package overview address", class: "form-label fw-semibold" %>
+    <%= field_help "Where your trust center publishes this system's FedRAMP Certification Package Overview. FedRAMP's reports name it." %>
+    <%= f.url_field :fedramp_package_overview_uri, class: "form-control", placeholder: "https://",
+                    pattern: "https://.+", title: "An https:// address" %>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-4">Service identification</h3>
+  <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+    <% %w[package_id uei_number provider_name service_name service_acronym].each do |key| %>
+      <% _, _, label, required, = FedrampPackageOverview::FIELDS[key] %>
+      <div class="col">
+        <%= label_tag id_for.(key), "#{label}#{' *' if required}", class: "form-label fw-semibold" %>
+        <%= text_field_tag name_for.(key), pkg[key], id: id_for.(key), class: "form-control" %>
+      </div>
+    <% end %>
+    <div class="col">
+      <%= label_tag id_for.("certification_type"), "Certification type *", class: "form-label fw-semibold" %>
+      <%= select_tag name_for.("certification_type"),
+            options_for_select(AuthorizationBoundary.fedramp_choices("certification_type"), pkg["certification_type"]),
+            include_blank: true, id: id_for.("certification_type"), class: "form-select" %>
+    </div>
+  </div>
+  <div class="mb-3">
+    <%= label_tag id_for.("service_description"), "Service description *", class: "form-label fw-semibold" %>
+    <%= field_help "May use Markdown." %>
+    <%= text_area_tag name_for.("service_description"), pkg["service_description"], id: id_for.("service_description"), class: "form-control", rows: 3 %>
+  </div>
+  <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+    <div class="col">
+      <%= label_tag id_for.("website"), "Website *", class: "form-label fw-semibold" %>
+      <%= url_field_tag name_for.("website"), pkg["website"], id: id_for.("website"), class: "form-control", placeholder: "https://" %>
+    </div>
+    <div class="col">
+      <%= label_tag id_for.("logo"), "Logo address *", class: "form-label fw-semibold" %>
+      <%= url_field_tag name_for.("logo"), pkg["logo"], id: id_for.("logo"), class: "form-control", placeholder: "https://…/logo.png" %>
+      <div class="form-text">A PNG, JPEG, GIF, SVG, WebP, ICO, BMP or TIFF image.</div>
+    </div>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-4">Service properties</h3>
+  <fieldset class="mb-3">
+    <legend class="form-label fw-semibold fs-6">Service model *</legend>
+    <%= hidden_field_tag "#{name_for.('service_types')}[]", "", id: nil %>
+    <% AuthorizationBoundary.fedramp_choices("service_types").each do |choice| %>
+      <div class="form-check form-check-inline">
+        <%= check_box_tag "#{name_for.('service_types')}[]", choice, Array(pkg["service_types"]).include?(choice),
+              id: "#{id_for.('service_types')}_#{choice.parameterize}", class: "form-check-input" %>
+        <%= label_tag "#{id_for.('service_types')}_#{choice.parameterize}", choice, class: "form-check-label" %>
+      </div>
+    <% end %>
+  </fieldset>
+  <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+    <div class="col">
+      <%= label_tag id_for.("deployment_model"), "Deployment model *", class: "form-label fw-semibold" %>
+      <%= select_tag name_for.("deployment_model"),
+            options_for_select(AuthorizationBoundary.fedramp_choices("deployment_model"), pkg["deployment_model"]),
+            include_blank: true, id: id_for.("deployment_model"), class: "form-select" %>
+    </div>
+    <div class="col">
+      <%= label_tag id_for.("next_ocr_date"), "Next ongoing certification report date", class: "form-label fw-semibold" %>
+      <%= date_field_tag name_for.("next_ocr_date"), pkg["next_ocr_date"], id: id_for.("next_ocr_date"), class: "form-control" %>
+    </div>
+  </div>
+  <div class="mb-3">
+    <%= label_tag id_for.("business_categories"), "Business categories", class: "form-label fw-semibold" %>
+    <%= field_help "Up to #{FedrampPackageOverview::BUSINESS_CATEGORY_MAX}. Hold Ctrl or Command to choose more than one." %>
+    <%= hidden_field_tag "#{name_for.('business_categories')}[]", "", id: nil %>
+    <%= select_tag "#{name_for.('business_categories')}[]",
+          options_for_select(AuthorizationBoundary.fedramp_choices("business_categories"), pkg["business_categories"]),
+          multiple: true, size: 6, id: id_for.("business_categories"), class: "form-select" %>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-4">Trust center</h3>
+  <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+    <div class="col">
+      <%= label_tag id_for.("trust_center_url"), "Trust center address", class: "form-label fw-semibold" %>
+      <%= url_field_tag name_for.("trust_center_url"), pkg["trust_center_url"], id: id_for.("trust_center_url"), class: "form-control", placeholder: "https://" %>
+    </div>
+    <div class="col">
+      <%= label_tag id_for.("trust_center_description"), "Trust center description", class: "form-label fw-semibold" %>
+      <%= text_field_tag name_for.("trust_center_description"), pkg["trust_center_description"], id: id_for.("trust_center_description"), class: "form-control" %>
+    </div>
+  </div>
+  <div class="form-check mb-2">
+    <%= hidden_field_tag name_for.("trust_center_authentication_required"), "false", id: nil %>
+    <%= check_box_tag name_for.("trust_center_authentication_required"), "true", pkg["trust_center_authentication_required"] == true,
+          id: id_for.("trust_center_authentication_required"), class: "form-check-input" %>
+    <%= label_tag id_for.("trust_center_authentication_required"), "Readers must sign in", class: "form-check-label" %>
+  </div>
+  <div class="mb-3">
+    <%= label_tag id_for.("trust_center_access_instructions"), "How to request access", class: "form-label fw-semibold" %>
+    <%= field_help "Needed when readers must sign in. May use Markdown." %>
+    <%= text_area_tag name_for.("trust_center_access_instructions"), pkg["trust_center_access_instructions"],
+          id: id_for.("trust_center_access_instructions"), class: "form-control", rows: 2 %>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-4">Contacts</h3>
+  <p class="text-body-secondary small">The provider's contacts as FedRAMP should list them. They need no SPARC account.</p>
+  <%= hidden_field_tag "authorization_boundary[fedramp_contacts_listed]", "1", id: nil %>
+  <div data-controller="oscal-repeater">
+    <template data-oscal-repeater-target="template"><%= render "authorization_boundaries/fedramp_contact_row", contact: {} %></template>
+    <div data-oscal-repeater-target="rows">
+      <% Array(boundary.fedramp_contacts).each do |contact| %>
+        <%= render "authorization_boundaries/fedramp_contact_row", contact: contact %>
+      <% end %>
+    </div>
+    <button type="button" data-action="click->oscal-repeater#add" data-testid="boundary-fedramp-add-contact"
+            class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm mt-1">+ Add contact</button>
+  </div>
+</details>

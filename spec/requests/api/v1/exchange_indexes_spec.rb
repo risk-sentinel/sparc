@@ -86,6 +86,20 @@ RSpec.describe "API v1 exchange index", type: :request do
     end
   end
 
+  # #1390 — the overview names no address; it is listed once it can be written.
+  it "lists the Certification Package Overview once the boundary records what it requires" do
+    admin = create(:user, :admin)
+    boundary.update!(attributes_for(:authorization_boundary, :fedramp_overview_ready).slice(:fedramp_package, :fedramp_contacts))
+    get path, headers: headers_for(admin)
+    fedramp = response.parsed_body.dig("data", "documents").select { |d| d["format"] == "fedramp" }
+    expect(fedramp).to contain_exactly(
+      a_hash_including("origin" => "sparc", "document_type" => "certification-package-overview", "sha256" => nil,
+                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/certification_package_overview")
+    )
+    get fedramp.sole["download_url"], headers: headers_for(admin)
+    expect(response).to have_http_status(:ok)
+  end
+
   it "takes the boundary's slug" do
     get "/api/v1/authorization_boundaries/#{boundary.slug}/exchange_index", headers: headers_for(create(:user, :admin))
     expect(response).to have_http_status(:ok)
