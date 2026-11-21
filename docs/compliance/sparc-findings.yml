@@ -392,7 +392,11 @@ findings:
   next_review_date: '2026-12-21'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1388"
+    approved_at: "2026-11-21"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a process that speaks QUIC to an untrusted peer. Nothing in the image
       speaks QUIC (measured 2026-11-21, below). No fix exists to apply, so the residual is what is being
@@ -425,7 +429,11 @@ findings:
   next_review_date: '2026-12-21'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1388"
+    approved_at: "2026-11-21"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a QUIC server. The image runs none (measured 2026-11-21, below). No fix
       exists to apply, so the residual is what is being accepted until Red Hat ships one.
@@ -455,7 +463,11 @@ findings:
   next_review_date: '2026-12-21'
   deviation:
     type: risk_adjustment
-    risk_status: deviation-requested
+    risk_status: deviation-approved
+    approved_by: "@clem-field"
+    approved_in: "risk-sentinel/sparc#1388"
+    approved_at: "2026-11-21"
+    approval_mechanism: approve-deviation-comment
     adjusted_severity: LOW
     adjustment_rationale: HIGH grades a SASL server offering the SRP mechanism. The image is no SASL server and
       does not carry the SRP mechanism (measured 2026-11-21, below). No fix exists to apply, so the residual
