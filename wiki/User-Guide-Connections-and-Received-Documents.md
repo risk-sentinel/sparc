@@ -1,6 +1,7 @@
 # User Guide: Connections and Received Documents
 
-Take in FedRAMP, OSCAL, HDF and XCCDF documents from another system, or from a
+Take in FedRAMP, OSCAL, HDF and XCCDF documents from another system (pulled
+on a schedule, or pushed by the provider when something changes), or from a
 person's upload, and decide each version before it counts. SPARC keeps every
 version it receives, checks each one against its schema and for completeness,
 shows what changed since the version in effect, and lets a reviewer of the
@@ -38,6 +39,7 @@ detail is on [RBAC](RBAC).
 
 ```mermaid
 flowchart LR
+    H[Provider pushes a signed change] -->|SPARC pulls it fresh| P
     P[Pull from a connection] --> V[Validate: schema + completeness]
     U[Upload into a boundary] --> V
     V -->|fails| I[Stored as Invalid, errors shown]
@@ -263,6 +265,84 @@ SHA-256 is shown so they can be checked.
 
 ---
 
+## 8. Let a provider push changes
+
+Instead of waiting for the next scheduled pull, a provider can tell SPARC that a
+document changed by **pushing** it: sending the new document, signed with an
+Ed25519 key. The push never decides what the boundary receives. SPARC pulls the
+document fresh from its registered address and compares the two.
+
+1. Ask the provider for the **public** half of its signing key (a PEM
+   `BEGIN PUBLIC KEY` block, or the base64 of its 32 raw bytes). SPARC never
+   holds the private key.
+2. On the connection's **Edit** page, paste it into **Ed25519 public keys**.
+   Up to two, one after the other: the current key and the next, so the
+   provider can rotate without a gap. Save.
+3. The connection's **Push** card now says **Accepting pushes** and shows each
+   key as a short **SHA-256** fingerprint. Give the provider the **Push address**
+   it shows, with the number of each document under **Documents pulled** (the
+   `#` before its address), and point them at the signing steps in the
+   [Exchange Connections API](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-connections.md#push).
+
+SPARC accepts a push only when it is signed by a pinned key, names a document
+registered on that connection, was signed within the last 5 minutes, has not
+been received before, comes from inside the connection's **IP ranges** (when it
+has any), and is within the upload limit. Anything else is refused and recorded
+in the audit log with the reason; the provider is told only that it was not
+accepted.
+
+What happens next is on the **Push** card, one row per push:
+
+- **Confirmed:** the registered address returned the same bytes. That version is
+  received like any pull: pending review, or **Unchanged** if it is already on
+  record.
+- **Unconfirmed:** the address returned something else, or could not be reached.
+  The pushed bytes are still received, so nothing is lost, but the version is
+  flagged **Unconfirmed push** on the boundary's Received documents and on its
+  page. It is never accepted without a person. Check with the provider before
+  accepting it. A later pull that finds the same bytes at the address confirms
+  it and clears the flag.
+
+A connection whose last push was unconfirmed is flagged on the **Connections**
+list too. With no key pinned, a connection takes no pushes at all.
+
+![A connection's Push and Class A certification cards](images/connections-push-class-a.png)
+
+---
+
+## 9. Class A certification
+
+A FedRAMP Class A certification rests on another security framework (FedRAMP
+rule FRC-CLA-ASF): FedRAMP Rev5 (or FedRAMP Ready), SOC 2 Type II, or GovRAMP,
+completed within the past 12 months.
+
+1. On the connection's **Edit** page, set **Certification class** to **Class A**.
+2. Under **Class A certification**, choose the **Framework** and the
+   **Certified on** date. Save.
+3. The connection's **Class A certification** card shows the date it **expires**,
+   12 months later, and how many days are left. Once that date passes, the card
+   and the **Connections** list say **Expired**.
+
+### Materials
+
+FedRAMP asks for the assessment materials behind the certification (rule
+FRC-CLA-EAM): for SOC 2 Type II, the complete report, a bridge or gap letter,
+the audit engagement documentation and the schedule for the next report; for
+FedRAMP Ready and GovRAMP, the Readiness Assessment Report and the Security
+Assessment Plan.
+
+1. On the **Class A certification** card, choose the kind of **Material**, pick
+   the file, and choose **Add**.
+2. The file is kept exactly as uploaded, by SHA-256, as a received document of
+   the connection's boundary, and waits for a reviewer there, like any other
+   version (and never the person who added it). Accepting a newer file of the
+   same kind supersedes the old one.
+3. Materials are **not** schema-checked: FedRAMP publishes no schema for a PDF.
+   Their page says so and offers the file for download. They are never served
+   back out in the boundary's exchange index.
+
+---
+
 ## Try it with the sample package
 
 SPARC ships a complete FedRAMP package for a fictional provider, in
@@ -301,7 +381,10 @@ Everything on these screens is also in the API (see
 [API Reference](API-Reference)):
 
 - `/api/v1/exchange_connections`: list, create, update, delete, plus `pull`,
-  `discover` and `test_connection`, and each connection's `document_sources`.
+  `discover` and `test_connection`, each connection's `document_sources`,
+  `push_receipts` and `certification_materials`.
+- `POST /api/v1/exchange_connections/:id/document_sources/:id/push`: the
+  provider's signed push. It takes no token.
 - `/api/v1/authorization_boundaries/:id/received_documents`: list, show,
   upload, `file`, and the `accept`, `respond` and `reject` decisions.
 - `POST /api/v1/document_validations` checks a document without storing it.
@@ -320,3 +403,11 @@ Everything on these screens is also in the API (see
   never stored twice. Change nothing to keep the version in effect.
 - **You uploaded it and cannot accept it.** Ask another reviewer of the
   boundary: separation of duties.
+- **Every push is refused.** The provider's clock may be more than 5 minutes
+  off, the key it signs with may not be the one pinned, or it may be pushing
+  from outside the connection's IP ranges. The audit log's
+  `exchange_push_refused` entries give the reason for each.
+- **A push is unconfirmed.** The provider pushed one version but its registered
+  address serves another (often a cache or CDN that has not caught up). Once
+  the address serves the pushed version, **Pull now**: a pull that finds the
+  same bytes there confirms the push, and the flag clears.

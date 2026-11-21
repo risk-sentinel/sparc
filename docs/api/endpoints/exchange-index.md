@@ -4,7 +4,7 @@ What a boundary serves back out to the systems it exchanges with (#1354): one li
 
 - **SPARC's own documents** for the boundary: its SSPs, assessment plans, assessment results and POA&Ms, the component definitions it uses (all through the existing OSCAL export endpoints), and the boundary as an HDF system document. These are built on request, so their `sha256` is `null`: the index would otherwise have to build every export each time it is read.
 - **Its FedRAMP Vulnerability Detail Report and Accepted Vulnerability Info** ([FedRAMP Reports](fedramp-reports.md)), format `fedramp`, document types `vulnerability-detail-report` and `accepted-vulnerability-info`, listed only when the boundary has a FedRAMP Certification Package Overview address. They are built on request too, so their `sha256` is `null` and their `updated_at` is when the index was read.
-- **Every received document the boundary has accepted** ([Received Documents](received-documents.md)), with the SHA-256 recorded at receipt.
+- **Every received document the boundary has accepted** ([Received Documents](received-documents.md)), with the SHA-256 recorded at receipt. Class A certification materials are left out: they are the provider's to share, not the boundary's.
 
 The download URLs are the existing authenticated endpoints, and each checks its own permission: a caller needs a token that may read each document it fetches. The other system typically reads the index with a service-account token scoped to the boundary.
 

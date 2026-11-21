@@ -19,6 +19,8 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - A document takes effect only when a reviewer of the receiving boundary accepts it, seeing what changed since the version in effect. Only a byte-identical re-delivery skips review. The uploader cannot decide their own upload.
   - An accepted HDF document goes into the boundary's findings.
   - New permissions: `exchange.upload`, `exchange.review`, `connections.manage`.
+- **Push:** a provider can push a changed document, signed with an Ed25519 key pinned on the connection (two allowed, for rotation). SPARC accepts it only within 5 minutes of its timestamp, once per signature, from the connection's IP ranges, and rate-limited. It then pulls the document fresh from its registered address: the same bytes confirm the push; anything else is received as an **unconfirmed push**, flagged and never accepted without a person.
+- **Class A:** a Class A connection records the framework its certification rests on (FedRAMP Rev5 or Ready, SOC 2 Type II, GovRAMP) and its date, and is flagged expired 12 months later. Its assessment materials, such as a SOC 2 report or a Readiness Assessment Report, are added on the connection and reviewed on the boundary, kept by SHA-256 and not schema-checked.
 - **The exchange index:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists what a boundary serves to other systems.
 - **HDF ingest reads v2 and v3.** Every upload is checked with `hdf validate`, and v2 is converted to v3. A hand-built HDF v2 file missing fields that Heimdall's v2 schema requires is now refused. Real InSpec and SAF output is unaffected.
 - **FedRAMP evaluation and reports:**
@@ -28,7 +30,7 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
 
-**Upgrading:** an image swap from v1.17.10. Two migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+**Upgrading:** an image swap from v1.17.10. Three migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
 
