@@ -374,6 +374,100 @@ findings:
         no interactive shell users (ECS Fargate, no exec)
     kev_checked: '2026-11-06'
     kev_listed: false
+- cve_id: CVE-2026-107494
+  package: openssl-libs
+  installed_version: 1:3.5.9-1.el10_3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE BASE IMAGE''S openssl-libs 1:3.5.9-1.el10_3 [rpm]. The QUIC stack queues a
+    RETIRE_CONNECTION_ID frame for retransmitted NEW_CONNECTION_ID frames, so a malicious QUIC peer can
+    queue them without limit and exhaust memory (CWE-770; CVSS 3.1 7.5, AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H;
+    an incomplete fix of CVE-2026-84784). Red Hat el10 data: not-fixed, no package to take. NOT INTRODUCED BY A CODE CHANGE: the v1.17.11 PR A build of 2026-11-20 (55d6dffa342d) carries the same package and grype did not report the advisory on its database built 2026-11-20; it reached the database built 2026-11-21 06:20 UTC, and that image reports it there too.
+    Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a fix, which the next image
+    build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-21'
+  next_review_date: '2026-12-21'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a process that speaks QUIC to an untrusted peer. Nothing in the image
+      speaks QUIC (measured 2026-11-21, below). No fix exists to apply, so the residual is what is being
+      accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: no QUIC in the image - Puma serves HTTP/1.1 on TCP; Ruby's openssl extension exposes no
+        QUIC API (OpenSSL::SSL has no QUIC constant); no library or executable other than libssl itself
+        references the QUIC entry points
+        (OSSL_QUIC_*, SSL_new_listener); there is no openssl or curl binary (sparc:v1.17.11 a4aa8a47fb2e,
+        measured 2026-11-21)
+    - description: outbound TLS (OIDC discovery, exchange pulls) is TCP; SPARC never opens a QUIC connection,
+        so no peer can send it QUIC frames
+    kev_checked: '2026-11-21'
+    kev_listed: false
+- cve_id: CVE-2026-124709
+  package: openssl-libs
+  installed_version: 1:3.5.9-1.el10_3
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE BASE IMAGE''S openssl-libs 1:3.5.9-1.el10_3 [rpm]. A QUIC SERVER that rejects a
+    stream the peer opened keeps that stream''s state for the life of the connection when the peer resets it
+    first, so a client that completes a QUIC handshake can grow server memory without bound (CVSS 3.1 7.5,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H). Red Hat el10 data: not-fixed, no package to take. NOT INTRODUCED BY A CODE CHANGE: the v1.17.11 PR A build of 2026-11-20 (55d6dffa342d) carries the same package and grype did not report the advisory on its database built 2026-11-20; it reached the database built 2026-11-21 06:20 UTC, and that image reports it there too.
+    Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a fix, which the next image
+    build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-21'
+  next_review_date: '2026-12-21'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a QUIC server. The image runs none (measured 2026-11-21, below). No fix
+      exists to apply, so the residual is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: no QUIC server in the image - Puma listens on TCP only; no library or executable other than
+        libssl itself references the QUIC server entry points (SSL_new_listener, OSSL_QUIC_server_method)
+        (sparc:v1.17.11 a4aa8a47fb2e, measured 2026-11-21)
+    - description: TLS in front of SPARC is terminated by the deployment's load balancer or proxy, outside this
+        image
+    kev_checked: '2026-11-21'
+    kev_listed: false
+- cve_id: CVE-2026-129483
+  package: cyrus-sasl-lib
+  installed_version: 2.1.28-30.el10_2
+  fixed_version: none available upstream (not-fixed)
+  severity: HIGH
+  disposition: deferred
+  rationale: 'PRESENT IN THE BASE IMAGE''S cyrus-sasl-lib 2.1.28-30.el10_2 [rpm]. The SRP SERVER mechanism
+    (srp_server_mech_step2) does not reject a client public value that is a multiple of N, so an
+    unauthenticated client can force a zero shared secret and authenticate as any user (CVSS 3.1 9.1,
+    AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N; graded High). Red Hat el10 data: not-fixed, no package to take.
+    NOT INTRODUCED BY A CODE CHANGE: the v1.17.11 PR A build of 2026-11-20 (55d6dffa342d) carries the same package and grype did not report the advisory on its database built 2026-11-20; it reached the database built 2026-11-21 06:20 UTC, and that image reports it there too. Deferred as a POA&M with a risk_adjustment deviation until Red Hat ships a fix, which the
+    next image build then takes.'
+  nist_control: si-2
+  reviewed_by: '@clem-field'
+  discovery_date: '2026-11-21'
+  next_review_date: '2026-12-21'
+  deviation:
+    type: risk_adjustment
+    risk_status: deviation-requested
+    adjusted_severity: LOW
+    adjustment_rationale: HIGH grades a SASL server offering the SRP mechanism. The image is no SASL server and
+      does not carry the SRP mechanism (measured 2026-11-21, below). No fix exists to apply, so the residual
+      is what is being accepted until Red Hat ships one.
+    mitigating_factors:
+    - description: the SRP mechanism is not installed - /usr/lib64/sasl2 holds only the anonymous and sasldb
+        plugins (libanonymous, libsasldb); there is no libsrp (sparc:v1.17.11 a4aa8a47fb2e, measured
+        2026-11-21)
+    - description: libsasl2 is loaded only by the libldap and libpq CLIENT libraries; SPARC accepts no SASL
+        authentication, and its own LDAP sign-in uses net-ldap (pure Ruby), not libldap
+    kev_checked: '2026-11-21'
+    kev_listed: false
 - cve_id: CVE-2026-116328
   package: libpq, postgresql, postgresql-private-libs
   installed_version: libpq 16.14-1.el10_2; postgresql and postgresql-private-libs 16.15-2.el10_3
