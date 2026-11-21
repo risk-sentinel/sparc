@@ -1,9 +1,10 @@
 # FedRAMP Reports API
 
-A boundary's FedRAMP vulnerability reports (#1354, #1384), written from its scanner findings, finding dispositions and the provider's FedRAMP evaluation of each vulnerability:
+A boundary's FedRAMP vulnerability reports (#1354, #1384, #1390), written from its scanner findings, finding dispositions and the provider's FedRAMP evaluation of each vulnerability:
 
 - the **Vulnerability Detail Report** (FedRAMP rule VER-RPT-VDT), against FedRAMP's `fedramp-vulnerability-detail-report-schema-2026-06-24.json`;
-- the **Accepted Vulnerability Info** (VER-RPT-AVI), against `fedramp-accepted-vulnerability-info-schema-2026-06-24.json`.
+- the **Accepted Vulnerability Info** (VER-RPT-AVI), against `fedramp-accepted-vulnerability-info-schema-2026-06-24.json`;
+- the **Historical Vulnerability Activity** (VER-TFR-MRH), against `fedramp-historical-ver-activity-schema-2026-06-24.json`: both lists in one snapshot, for automated retrieval.
 
 The response body is the FedRAMP document itself, with `$schema` naming the schema it validates against. SPARC validates every report against that pinned schema, and checks that every required field is filled in, before returning it.
 
@@ -13,20 +14,21 @@ The response body is the FedRAMP document itself, with `$schema` naming the sche
 |---|---|---|
 | GET | `/api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report` | The Vulnerability Detail Report for a period |
 | GET | `/api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info` | The Accepted Vulnerability Info for a period |
+| GET | `/api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity` | The Historical Vulnerability Activity: active and accepted vulnerabilities together, by default for the 12 months ending now |
 
-The boundary may be named by id, slug or UUID. Both reports are also listed in the boundary's [exchange index](exchange-index.md) once the boundary has a FedRAMP Certification Package Overview address.
+The boundary may be named by id, slug or UUID. All three are also listed in the boundary's [exchange index](exchange-index.md) once the boundary has a FedRAMP Certification Package Overview address.
 
 ## Authentication and authorization
 
 A valid Bearer token whose user holds `evidence.read` on the boundary (or across the instance), or an instance administrator.
 
-Each download is recorded in the audit log as `fedramp_vulnerability_detail_report_exported` or `fedramp_accepted_vulnerability_info_exported`, with who downloaded it, the period and how many vulnerabilities it listed.
+Each download is recorded in the audit log as `fedramp_vulnerability_detail_report_exported`, `fedramp_accepted_vulnerability_info_exported` or `fedramp_historical_ver_activity_exported`, with who downloaded it, the period (or, for the historical activity, its `generatedAt`) and how many vulnerabilities it listed.
 
 ## Parameters
 
 | Parameter | Description |
 |---|---|
-| `from` | Start of the report period: an ISO 8601 date-time, or a date (the start of that day, UTC). Default: 30 days before `to` |
+| `from` | Start of the report period: an ISO 8601 date-time, or a date (the start of that day, UTC). Default: 30 days before `to`; for the historical activity, 12 months before `to` |
 | `to` | End of the report period: an ISO 8601 date-time, or a date (the end of that day, UTC). Default: now |
 
 ## What the reports contain
@@ -52,6 +54,8 @@ Each download is recorded in the audit log as `fedramp_vulnerability_detail_repo
 | `finalDisposition` | `False Positive` (an approved falsePositive), `Remediated` (the newest result passes or is not applicable), `Partially Mitigated` (an approved riskAdjustment, still detected); left out while still active |
 
 `overdueStatus.isOverdue` is `false` once resolved, and for a vulnerability accepted by a disposition. It is `true` when 192 days have passed since evaluation (VER-TFR-MAV), or when a vulnerability has gone unevaluated for more than 14 days, the longest VER-TFR-EVU time frame. An unevaluated vulnerability more than 2 and up to 14 days old has no `overdueStatus`: it depends on the certification class, which SPARC does not record for a boundary.
+
+**The historical activity** lists the same entries as the two reports for its period: `activeVulnerabilities` holds the Vulnerability Detail Report's, and `acceptedVulnerabilities` the Accepted Vulnerability Info's, each with its `acceptanceRationale`. FedRAMP's schema gives it no `reportPeriod`; it carries `generatedAt`, when the snapshot was built. Its default window, the 12 months ending now, spans the 192 days after which a vulnerability not remediated is accepted.
 
 Fields SPARC does not know are left out, never sent empty or null. `potentialAgencyImpact` (a description of the impact) is not written: SPARC records the N-rating, not a description.
 

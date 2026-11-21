@@ -3,7 +3,7 @@
     "uuid": "0aa1b931-de70-4da9-8fe6-1938e21e8eae",
     "metadata": {
       "title": "SPARC Security Scanning and System Integrity",
-      "version": "1.2.9",
+      "version": "1.2.10",
       "oscal-version": "1.2.3",
       "last-modified": "2026-11-22T00:00:00Z",
       "roles": [
@@ -125,7 +125,7 @@
               {
                 "uuid": "2dc24c3c-e032-419e-8144-fc9af229e46b",
                 "control-id": "ca-7",
-                "description": "Continuous monitoring output reaches the authorization package instead of stopping at a worklist. HdfAggregationService maps each current finding to the NIST control or controls named in its HDF tags.nist and writes a dedicated hdf_scan_result annotation field on the matching SSP, SAP and SAR controls. The write is non-destructive: authored narrative is never overwritten. It runs on demand or asynchronously through AggregateFindingsJob. Continuous monitoring of the running system includes the /up (liveness) and /up/ready (readiness: database, pending migrations, schema drift) probes (#1151), and a CI job that upgrades a database built by the last published release with each change and fails on schema drift. A boundary's FedRAMP Vulnerability Detail Report and Accepted Vulnerability Info (FedRAMP VER-RPT-VDT, VER-RPT-AVI; effective 2026-12-07) are built from its findings, dispositions and FedRAMP evaluations for a report period. A vulnerability not remediated within 192 days of evaluation is reported as accepted (VER-TFR-MAV). Each report is validated against FedRAMP's pinned schema and for completeness before it is returned (#1354).",
+                "description": "Continuous monitoring output reaches the authorization package instead of stopping at a worklist. HdfAggregationService maps each current finding to the NIST control or controls named in its HDF tags.nist and writes a dedicated hdf_scan_result annotation field on the matching SSP, SAP and SAR controls. The write is non-destructive: authored narrative is never overwritten. It runs on demand or asynchronously through AggregateFindingsJob. Continuous monitoring of the running system includes the /up (liveness) and /up/ready (readiness: database, pending migrations, schema drift) probes (#1151), and a CI job that upgrades a database built by the last published release with each change and fails on schema drift. A boundary's FedRAMP Vulnerability Detail Report and Accepted Vulnerability Info (FedRAMP VER-RPT-VDT, VER-RPT-AVI; effective 2026-12-07) are built from its findings, dispositions and FedRAMP evaluations for a report period. A vulnerability not remediated within 192 days of evaluation is reported as accepted (VER-TFR-MAV). The boundary's Historical Vulnerability Activity (VER-TFR-MRH) carries both lists in one snapshot for automated retrieval, by default for the 12 months ending now (#1390). Each report is validated against FedRAMP's pinned schema and for completeness before it is returned (#1354).",
                 "remarks": "Implemented in app/services/hdf_aggregation_service.rb, app/jobs/aggregate_findings_job.rb and app/controllers/api/v1/aggregations_controller.rb. Tested by spec/services/hdf_aggregation_service_spec.rb. app/controllers/health_controller.rb; bin/upgrade_path_check and the upgrade_path job in .github/workflows/ci.yml (advisory until promoted). FedRAMP reports: app/services/fedramp_vulnerability_report_service.rb, app/controllers/api/v1/fedramp_reports_controller.rb (#1354)."
               },
               {

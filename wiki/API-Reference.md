@@ -156,15 +156,16 @@ Details in
 and
 [`exchange-index.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-index.md).
 
-**FedRAMP vulnerability reports (v1.17.11, #1354, #1384).** A boundary's
+**FedRAMP vulnerability reports (v1.17.11, #1354, #1384, #1390).** A boundary's
 Vulnerability Detail Report (FedRAMP rule VER-RPT-VDT) and Accepted Vulnerability
-Info (VER-RPT-AVI) for a report period, written from its findings, dispositions
-and FedRAMP evaluations.
+Info (VER-RPT-AVI) for a report period, and its Historical Vulnerability Activity
+(VER-TFR-MRH), written from its findings, dispositions and FedRAMP evaluations.
 
 | Endpoints | What they do | Permission |
 |---|---|---|
 | `/api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report` | The Vulnerability Detail Report, `?from=&to=` (ISO 8601; default the 30 days ending now) | `evidence.read` |
 | `/api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info` | The Accepted Vulnerability Info, same period parameters | `evidence.read` |
+| `/api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity` | The Historical Vulnerability Activity (VER-TFR-MRH): active and accepted vulnerabilities together; default the 12 months ending now | `evidence.read` |
 
 - The body is the FedRAMP document itself, validated against FedRAMP's pinned
   schema and for completeness before it is returned.

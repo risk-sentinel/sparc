@@ -1,9 +1,10 @@
-"""Tests for a boundary's FedRAMP vulnerability reports (#1354, #1384).
+"""Tests for a boundary's FedRAMP vulnerability reports (#1354, #1384, #1390).
 
     /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report
     /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info
+    /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity
 
-Both reports name the boundary's FedRAMP Certification Package Overview
+All three name the boundary's FedRAMP Certification Package Overview
 address, and a boundary without one is refused with a 422 naming the
 setting. The boundary API does not set that address, so these tests cover the
 refusals and the exchange index's silence about reports it cannot build; the
@@ -29,7 +30,7 @@ from conftest import assert_error_envelope
 pytestmark = [pytest.mark.exchange, pytest.mark.phase2]
 
 BOUNDARIES = "/api/v1/authorization_boundaries"
-REPORTS = ("vulnerability_detail_report", "accepted_vulnerability_info")
+REPORTS = ("vulnerability_detail_report", "accepted_vulnerability_info", "historical_ver_activity")
 
 
 @pytest.fixture
