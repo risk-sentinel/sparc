@@ -84,4 +84,11 @@ title = "SPARC Gitleaks Configuration"
     # is still scanned. Owner-approved 2026-09-29.
     '''Example: 'JsonWebKey2020', 'RsaVerificationKey2018', 'Ed25519VerificationKey2020'\.''',
     '''"controller": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"''',
+    # #1354 — the PUBLIC halves of three Ed25519 test keys (base64 of the raw
+    # 32 bytes) in tests/api's push tests; their private halves were thrown
+    # away, so nothing can sign with them. Public keys are not secrets, but the
+    # generic rule reads a 44-character base64 value as one. Exact values only.
+    '''qFefWoEcrH8p8yNgYjmKWU\+/qyYla7rB8bLSdB8i47o=''',
+    '''uWhxBteD/Eh0qu0ua2crDexSK4FZI9OGm\+G/DiYWFq0=''',
+    '''WzaX78xTTkiYAip39aUhdVJfft8Eg5LR8VjGretUpbs=''',
   ]
