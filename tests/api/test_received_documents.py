@@ -89,6 +89,8 @@ class TestReceivedDocuments:
         assert data["format"] == "fedramp"
         assert data["sha256"] == hashlib.sha256(_vdr()).hexdigest()
         assert data["delta"]["first_version"] is True
+        # Uploaded, not pushed: there is no push to have confirmed.
+        assert data["push_confirmed"] is None
 
     @pytest.mark.idempotency
     def test_same_bytes_again_are_unchanged(
