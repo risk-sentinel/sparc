@@ -6,6 +6,8 @@
 #   GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report  (VER-RPT-VDT)
 #   GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info  (VER-RPT-AVI)
 #       [?from=ISO8601&to=ISO8601]   default: the 30 days ending now
+#   GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity      (VER-TFR-MRH, #1390)
+#       [?from=ISO8601&to=ISO8601]   default: the 12 months ending now
 #
 # The response body IS the FedRAMP document (not wrapped), with `$schema`
 # naming the FedRAMP schema it validates against.
@@ -56,12 +58,23 @@ class Api::V1::FedrampReportsController < Api::V1::BaseController
     render json: doc
   end
 
+  # GET .../fedramp/historical_ver_activity
+  def historical_ver_activity
+    doc = FedrampVulnerabilityReportService.historical_ver_activity(@boundary, from: params[:from], to: params[:to])
+    count = doc["activeVulnerabilities"].size + doc["acceptedVulnerabilities"].size
+    audit("fedramp_historical_ver_activity_exported", doc, count)
+    render json: doc
+  end
+
   private
 
+  # The historical activity carries no reportPeriod; its generatedAt is
+  # recorded instead.
   def audit(action, doc, count)
     audit_log(action, subject: @boundary,
               metadata: { authorization_boundary_id: @boundary.id, vulnerabilities: count,
-                          from: doc.dig("reportPeriod", "from"), to: doc.dig("reportPeriod", "to") })
+                          from: doc.dig("reportPeriod", "from"), to: doc.dig("reportPeriod", "to"),
+                          generated_at: doc["generatedAt"] }.compact)
   end
 
   def set_boundary

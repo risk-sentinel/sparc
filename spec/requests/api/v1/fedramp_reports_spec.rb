@@ -2,8 +2,9 @@
 
 require "rails_helper"
 
-# #1354 / #1384 — GET /api/v1/authorization_boundaries/:id/fedramp/
-# vulnerability_detail_report and .../accepted_vulnerability_info.
+# #1354 / #1384 / #1390 — GET /api/v1/authorization_boundaries/:id/fedramp/
+# vulnerability_detail_report, .../accepted_vulnerability_info and
+# .../historical_ver_activity.
 # evidence.read on the boundary; each download audited; 422 without the
 # boundary's package overview address; 502, never the document, when SPARC's
 # own report fails validation.
@@ -37,8 +38,10 @@ RSpec.describe "API v1 FedRAMP reports", type: :request do
                                           approval_status: "approved", approved_at: 1.day.ago, reason: "AO waiver.")
   end
 
-  [ [ "vulnerability_detail_report", "fedramp_vulnerability_detail_report_exported" ],
-    [ "accepted_vulnerability_info", "fedramp_accepted_vulnerability_info_exported" ] ].each do |report, action|
+  # [report, audit action, vulnerabilities it lists here, carries a reportPeriod]
+  [ [ "vulnerability_detail_report", "fedramp_vulnerability_detail_report_exported", 1, true ],
+    [ "accepted_vulnerability_info", "fedramp_accepted_vulnerability_info_exported", 1, true ],
+    [ "historical_ver_activity", "fedramp_historical_ver_activity_exported", 2, false ] ].each do |report, action, count, period|
     describe report do
       let(:path) { "#{base}/#{report}" }
 
@@ -65,8 +68,12 @@ RSpec.describe "API v1 FedRAMP reports", type: :request do
         expect(response).to have_http_status(:ok)
         event = AuditEvent.where(action: action).last
         expect(event.user).to eq(reader)
-        expect(event.metadata).to include("authorization_boundary_id" => boundary.id, "vulnerabilities" => 1,
-                                          "from" => "2026-01-01T00:00:00Z")
+        expect(event.metadata).to include("authorization_boundary_id" => boundary.id, "vulnerabilities" => count)
+        if period
+          expect(event.metadata).to include("from" => "2026-01-01T00:00:00Z")
+        else
+          expect(event.metadata["generated_at"]).to eq(response.parsed_body["generatedAt"])
+        end
       end
 
       it "serves an instance administrator, by slug" do
@@ -113,5 +120,14 @@ RSpec.describe "API v1 FedRAMP reports", type: :request do
     entry = response.parsed_body["acceptedVulnerabilities"].sole
     expect(entry).to include("acceptanceRationale" => "AO waiver.")
     expect(entry.dig("vulnerabilityDetail", "providerTrackingId")).to eq("CVE-2026-0002")
+  end
+
+  it "lists both in the historical activity, active and accepted apart" do
+    get "#{base}/historical_ver_activity", headers: headers_for(reader)
+    body = response.parsed_body
+    expect(body["$schema"]).to end_with("fedramp-historical-ver-activity-schema-2026-06-24.json")
+    expect(body["activeVulnerabilities"].map { |v| v["providerTrackingId"] }).to eq([ "CVE-2026-0001" ])
+    expect(body["acceptedVulnerabilities"].sole.dig("vulnerabilityDetail", "providerTrackingId")).to eq("CVE-2026-0002")
+    expect(body).not_to have_key("reportPeriod")
   end
 end

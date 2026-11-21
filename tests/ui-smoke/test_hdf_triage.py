@@ -316,9 +316,10 @@ def test_disposition_form_nist_poam_fields(authed_page, base_url):
 
 
 def test_fedramp_report_downloads(authed_page, base_url):
-    """#1354 / #1384 — the FedRAMP report card: with a package overview address,
-    each button downloads its report as JSON with zero CSP violations; without
-    one, the card says why and offers no button."""
+    """#1354 / #1384 / #1390 — the FedRAMP report card: with a package overview
+    address, each control downloads its report as JSON with zero CSP violations
+    (the historical activity included); without one, the card says why and
+    offers none."""
     page = authed_page
     record_csp(page)
 
@@ -330,12 +331,16 @@ def test_fedramp_report_downloads(authed_page, base_url):
 
     if card.locator("[data-testid='triage-fedramp-reports-unavailable']").count() == 1:
         assert card.locator("button").count() == 0, "report button offered, no package address"
+        assert card.locator("[data-testid='triage-download-fedramp-ver-history']").count() == 0, (
+            "historical activity offered, no package address"
+        )
         assert_no_csp_violations(page, during="HDF triage FedRAMP reports (no package address)")
         return
 
     for testid, suffix in (
         ("triage-download-fedramp-vdr", "fedramp-vdr.json"),
         ("triage-download-fedramp-avi", "fedramp-avi.json"),
+        ("triage-download-fedramp-ver-history", "fedramp-ver-history.json"),
     ):
         with page.expect_download() as download_info:
             card.locator(f"[data-testid='{testid}']").click()

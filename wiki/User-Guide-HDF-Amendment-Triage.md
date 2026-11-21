@@ -240,6 +240,16 @@ FedRAMP's reports also name the system's **FedRAMP package overview address**,
 which you set on the boundary's **Edit** page (see
 [Authorization Boundaries](User-Guide-Authorization-Boundaries)).
 
+Once it's set, the **FedRAMP vulnerability reports** card on the triage page
+downloads them:
+
+- **Vulnerability Detail Report** and **Accepted Vulnerability Info**, for the
+  dates you pick (by default the last 30 days);
+- **Historical Vulnerability Activity** (VER-TFR-MRH, #1390): both lists in one
+  snapshot, for the 12 months ending now.
+
+See [Integrations](Integrations) for what each contains.
+
 ---
 
 ## 3. Export amendments for your pipeline

@@ -66,10 +66,11 @@ class ExchangeIndexService
         download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/hdf_system" } ]
   end
 
-  # Built on request; listed only when they can be built (#1354, #1384).
+  # Built on request; listed only when they can be built (#1354, #1384, #1390).
   FEDRAMP_REPORTS = {
     FedrampVulnerabilityReportService::VDR => [ "vulnerability_detail_report", "Vulnerability Detail Report" ],
-    FedrampVulnerabilityReportService::AVI => [ "accepted_vulnerability_info", "Accepted Vulnerability Info" ]
+    FedrampVulnerabilityReportService::AVI => [ "accepted_vulnerability_info", "Accepted Vulnerability Info" ],
+    FedrampVulnerabilityReportService::HISTORICAL => [ "historical_ver_activity", "Historical Vulnerability Activity" ]
   }.freeze
 
   def fedramp_reports

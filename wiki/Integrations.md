@@ -359,10 +359,11 @@ The API is in [API Reference](API-Reference). Permissions: `connections.manage`,
 
 ### FedRAMP reports (v1.17.11)
 
-SPARC writes a boundary's FedRAMP **Vulnerability Detail Report** (rule VER-RPT-VDT) and **Accepted Vulnerability Info** (VER-RPT-AVI), from its scanner findings, its finding dispositions and the provider's FedRAMP evaluation of each vulnerability. Download them from the boundary's triage page, for a chosen period, or over the API ([API Reference](API-Reference)). Both are listed in the boundary's exchange index.
+SPARC writes a boundary's FedRAMP **Vulnerability Detail Report** (rule VER-RPT-VDT), **Accepted Vulnerability Info** (VER-RPT-AVI) and **Historical Vulnerability Activity** (VER-TFR-MRH), from its scanner findings, its finding dispositions and the provider's FedRAMP evaluation of each vulnerability. Download them from the boundary's triage page or over the API ([API Reference](API-Reference)). All three are listed in the boundary's exchange index.
 
-- **Before you start:** both reports name the boundary's FedRAMP Certification Package Overview address. A boundary without one gets no report, and the triage page says so.
-- **Period:** each report covers a period, by default the 30 days ending now. It lists every vulnerability active at any time in the period, or resolved within it, in its state at the end of the period.
+- **Before you start:** every report names the boundary's FedRAMP Certification Package Overview address. A boundary without one gets no report, and the triage page says so.
+- **Period:** the two reports cover a period you choose, by default the 30 days ending now. Each lists every vulnerability active at any time in the period, or resolved within it, in its state at the end of the period.
+- **Historical activity:** one snapshot of both lists, the Vulnerability Detail Report's entries as active and the Accepted Vulnerability Info's as accepted, for the 12 months ending now. It's the document FedRAMP asks providers to make available for automated retrieval, and it carries when it was generated instead of a period.
 - **A vulnerability** is a control whose scan results ever failed. Its tracking identifier is the control id, which stays the same across scans. It was detected at its first failing result.
 - **Accepted vulnerabilities** appear only in the Accepted Vulnerability Info, never in the Vulnerability Detail Report. A vulnerability is accepted when an approved disposition accepts the risk (a waiver, an operational requirement, or a NIST risk marked `accepted`), or when it isn't remediated within 192 days of its evaluation (VER-TFR-MAV).
 - **Final disposition:** an approved false positive is `False Positive`; a control whose newest result passes is `Remediated`; an approved risk adjustment that is still detected is `Partially Mitigated`. Otherwise the vulnerability is still active.
