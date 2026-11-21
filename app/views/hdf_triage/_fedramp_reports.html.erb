@@ -34,6 +34,14 @@
           Dates are UTC, inclusive. Accepted vulnerabilities are listed only in the Accepted Vulnerability Info.
         </div>
       <% end %>
+      <%# #1390 — VER-TFR-MRH: both lists in one snapshot, for the 12 months ending now. %>
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">
+        <%= link_to "Download Historical Vulnerability Activity",
+              triage_fedramp_historical_ver_activity_authorization_boundary_path(boundary),
+              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+              data: { turbo: false, testid: "triage-download-fedramp-ver-history" } %>
+        <span class="text-muted small">Active and accepted vulnerabilities together, for the 12 months ending now.</span>
+      </div>
     <% end %>
   </div>
 </div>

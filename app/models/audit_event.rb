@@ -400,6 +400,7 @@ class AuditEvent < ApplicationRecord
     disposition_poam_exported
     fedramp_vulnerability_detail_report_exported
     fedramp_accepted_vulnerability_info_exported
+    fedramp_historical_ver_activity_exported
 
     hdf_system_exported
 
@@ -626,9 +627,11 @@ class AuditEvent < ApplicationRecord
                                 disposition_poam_exported],
     # #1179 — the boundary exported as an HDF hdf-system document.
     "HDF System" => %w[hdf_system_exported],
-    # #1354 / #1384 — FedRAMP's VER-RPT-VDT and VER-RPT-AVI reports downloaded.
+    # #1354 / #1384 / #1390 — FedRAMP's VER-RPT-VDT, VER-RPT-AVI and
+    # VER-TFR-MRH documents downloaded.
     "FedRAMP Reports" => %w[fedramp_vulnerability_detail_report_exported
-                            fedramp_accepted_vulnerability_info_exported],
+                            fedramp_accepted_vulnerability_info_exported
+                            fedramp_historical_ver_activity_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
                             ksi_validation_deleted ksi_catalog_imported
                             ksi_catalog_import_refused],
