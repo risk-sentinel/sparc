@@ -3,8 +3,8 @@
   <div>
     <h1 class="h3 fw-bold mb-0">Connections</h1>
     <p class="text-body-secondary mb-0 small">
-      Other systems SPARC pulls FedRAMP, OSCAL, HDF and XCCDF documents from. Each document lands in
-      its boundary's Received documents, where it waits for review.
+      Other systems SPARC pulls FedRAMP, OSCAL, HDF and XCCDF documents from, or that push them to SPARC. Each
+      document lands in its boundary's Received documents, where it waits for review.
     </p>
   </div>
   <div class="d-flex gap-2">
@@ -36,7 +36,12 @@
             <td><%= link_to connection.name, admin_exchange_connection_path(connection) %></td>
             <td><%= connection.authorization_boundary&.name || "—" %></td>
             <td><%= connection.fedramp_id.present? ? tag.code(connection.fedramp_id) : "—" %></td>
-            <td><%= [ connection.certification_class.presence && "Class #{connection.certification_class}", connection.certification_type.presence ].compact.join(" · ").presence || "—" %></td>
+            <td>
+              <%= [ connection.certification_class.presence && "Class #{connection.certification_class}", connection.certification_type.presence ].compact.join(" · ").presence || "—" %>
+              <% if connection.class_a? && connection.class_a_expired? %>
+                <br><%= class_a_badge(connection) %>
+              <% end %>
+            </td>
             <td>
               <% if connection.enabled? %>
                 <span class="sparc-status sparc-status--success">Enabled</span>
@@ -51,6 +56,9 @@
               <% end %>
               <% if connection.last_error.present? %>
                 <br><small class="text-danger" data-testid="connection-last-error"><%= connection.last_error.truncate(120) %></small>
+              <% end %>
+              <% if connection.last_push_status == "unconfirmed" %>
+                <br><span class="sparc-status sparc-status--warning" data-testid="connection-unconfirmed-push">Last push unconfirmed</span>
               <% end %>
             </td>
             <td><%= @document_counts.fetch(connection.id, 0) %></td>

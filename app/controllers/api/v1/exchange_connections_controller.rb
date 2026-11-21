@@ -11,6 +11,15 @@
 #   POST   /api/v1/exchange_connections/:id/pull             pull every enabled document now
 #   POST   /api/v1/exchange_connections/:id/discover         list the root's document links; stores nothing
 #   POST   /api/v1/exchange_connections/:id/test_connection  fetch and validate each document; stores nothing
+#   GET    /api/v1/exchange_connections/:id/push_receipts    the provider's pushes, newest first
+#
+# Push (`push_public_keys`): the Ed25519 public keys, at most two, a provider
+# signs its pushes with (ExchangePushService). Public halves only; SPARC
+# never holds a provider's private key.
+#
+# Class A (`class_a_framework`, `class_a_certified_on`): the alternative
+# security framework a Class A certification rests on (FRC-CLA-ASF) and its
+# date; `class_a.expires_on` is 12 months later and read-only.
 #
 # Instance-level authority: `connections.manage` held across the instance, or
 # an instance administrator. A grant on one boundary is not enough: a
@@ -28,8 +37,8 @@
 # audited).
 class Api::V1::ExchangeConnectionsController < Api::V1::BaseController
   CONNECTION_FIELDS = %i[name authorization_boundary_id fedramp_id certification_class certification_type
-                         root_url auth_scheme auth_header_name enabled].freeze
-  LIST_FIELDS = %i[spki_sha256 allowed_cidrs].freeze
+                         root_url auth_scheme auth_header_name enabled class_a_framework class_a_certified_on].freeze
+  LIST_FIELDS = %i[spki_sha256 allowed_cidrs push_public_keys].freeze
 
   before_action :authorize_manage!
   before_action :set_connection, except: %i[index create]
@@ -103,6 +112,12 @@ class Api::V1::ExchangeConnectionsController < Api::V1::BaseController
     render json: { data: { connection: serialize(@connection.reload), results: results } }
   end
 
+  # GET /api/v1/exchange_connections/:id/push_receipts
+  def push_receipts
+    result = paginate(@connection.push_receipts.recent)
+    render json: { data: result[:data].map { |r| Api::V1::ExchangePushesController.serialize(r) }, meta: result[:meta] }
+  end
+
   # POST /api/v1/exchange_connections/:id/discover
   def discover
     found = ExchangeConnectionProbe.discover(@connection)
@@ -148,7 +163,7 @@ class Api::V1::ExchangeConnectionsController < Api::V1::BaseController
 
   def connection_params
     permitted = permit_strictly(:exchange_connection, *CONNECTION_FIELDS, *LIST_FIELDS,
-                                spki_sha256: [], allowed_cidrs: [], also_accepts: %i[credential])
+                                spki_sha256: [], allowed_cidrs: [], push_public_keys: [], also_accepts: %i[credential])
     if permitted.key?(:authorization_boundary_id)
       permitted[:authorization_boundary_id] = boundary_id_param(permitted[:authorization_boundary_id])
     end
@@ -204,6 +219,13 @@ class Api::V1::ExchangeConnectionsController < Api::V1::BaseController
       last_pulled_at: connection.last_pulled_at&.utc&.iso8601,
       last_pull_status: connection.last_pull_status,
       last_error: connection.last_error,
+      # Public keys only; a provider's private key never reaches SPARC.
+      push_public_keys: connection.push_public_keys,
+      push_key_fingerprints: connection.push_public_keys.map { |k| ExchangeConnection.key_fingerprint(k) },
+      push_enabled: connection.push_enabled?,
+      last_pushed_at: connection.last_pushed_at&.utc&.iso8601,
+      last_push_status: connection.last_push_status,
+      class_a: class_a(connection),
       document_source_count: connection.document_sources.size,
       created_at: connection.created_at.utc.iso8601,
       updated_at: connection.updated_at.utc.iso8601
@@ -214,6 +236,14 @@ class Api::V1::ExchangeConnectionsController < Api::V1::BaseController
       end
     end
     data
+  end
+
+  def class_a(connection)
+    return nil unless connection.class_a?
+
+    { framework: connection.class_a_framework, framework_label: connection.class_a_framework_label,
+      certified_on: connection.class_a_certified_on&.iso8601, expires_on: connection.class_a_expires_on&.iso8601,
+      expired: connection.class_a_expired?, days_left: connection.class_a_days_left }
   end
 
   def authorize_manage!

@@ -160,6 +160,23 @@ Rack::Attack.throttle("csp-reports/min/ip",
   req.ip if rack_attack_csp_report_request?(req)
 end
 
+# #1354 — a provider's signed push (no token, so api/writes/min/token never
+# sees it). Each carries a whole document and starts a pull, so it is capped
+# per connection, whoever sends it, and per IP, whichever connection it names.
+EXCHANGE_PUSH_PATH = %r{\A/api/v1/exchange_connections/(\d+)/document_sources/\d+/push\z}
+
+Rack::Attack.throttle("exchange/pushes/min/connection",
+                      limit: ->(_req) { SparcConfig.rate_limit_exchange_pushes_per_minute },
+                      period: 1.minute) do |req|
+  req.path[EXCHANGE_PUSH_PATH, 1] if req.request_method == "POST"
+end
+
+Rack::Attack.throttle("exchange/pushes/min/ip",
+                      limit: ->(_req) { SparcConfig.rate_limit_exchange_pushes_per_minute },
+                      period: 1.minute) do |req|
+  req.ip if req.request_method == "POST" && req.path.match?(EXCHANGE_PUSH_PATH)
+end
+
 # ── 429 response ───────────────────────────────────────────────────────────
 
 Rack::Attack.throttled_responder = lambda do |request|

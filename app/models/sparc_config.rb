@@ -912,6 +912,9 @@ module SparcConfig
   # or hostile client can't flood the log sink. Generous default — a page with
   # several violations fires a burst legitimately.
   def rate_limit_csp_reports_per_minute    = ENV.fetch("SPARC_RATE_LIMIT_CSP_REPORTS_PER_MIN", "60").to_i
+  # #1354 — a provider's signed push carries a whole document and starts a
+  # pull, so it gets its own cap, per connection and per IP.
+  def rate_limit_exchange_pushes_per_minute = ENV.fetch("SPARC_RATE_LIMIT_EXCHANGE_PUSHES_PER_MIN", "30").to_i
 
   def rate_limit_safelist_cidrs
     ENV.fetch("SPARC_RATE_LIMIT_SAFELIST_CIDRS", "127.0.0.1,::1").split(",").map(&:strip).reject(&:empty?)

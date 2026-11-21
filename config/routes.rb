@@ -585,6 +585,7 @@ Rails.application.routes.draw do
         post :test_connection, to: "exchange_connections#test_connection"
       end
       resources :document_sources, controller: "exchange_document_sources", only: [ :create, :edit, :update, :destroy ]
+      resources :certification_materials, controller: "exchange_certification_materials", only: [ :create ]
     end
 
     # #860 — unmatched IdP grants (read-only queue).
@@ -1230,7 +1231,12 @@ Rails.application.routes.draw do
           post :discover,        to: "exchange_connections#discover"
           post :test_connection, to: "exchange_connections#test_connection"
         end
-        resources :document_sources, controller: "exchange_document_sources", only: [ :index, :create, :update, :destroy ]
+        resources :document_sources, controller: "exchange_document_sources", only: [ :index, :create, :update, :destroy ] do
+          # A provider's signed push (no token; ExchangePushesController).
+          member { post :push, to: "exchange_pushes#create" }
+        end
+        get :push_receipts, on: :member, to: "exchange_connections#push_receipts"
+        resources :certification_materials, controller: "exchange_certification_materials", only: [ :index, :create ]
       end
 
       # Admin credential rotation (#403) — receives a new admin password

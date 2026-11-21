@@ -94,12 +94,14 @@
           <% versions.each do |doc| %>
             <tr data-received-document-id="<%= doc.id %>">
               <td><%= exchange_time(doc.received_at) %></td>
-              <td><%= received_state_badge(doc.state) %></td>
+              <td><%= received_state_badge(doc.state) %><%= unconfirmed_push_badge(doc) %></td>
               <td><%= exchange_format_label(doc.format) %> <span class="text-body-secondary"><%= doc.document_type %></span></td>
               <td><%= received_source_label(doc) %></td>
               <td><%= doc.received_by&.display_label || "—" %></td>
               <td class="text-nowrap">
-                <% if doc.valid_document? %>
+                <% if doc.certification_material? %>
+                  <span class="text-body-secondary">Not compared</span>
+                <% elsif doc.valid_document? %>
                   <span class="text-danger" title="Regressions"><%= doc.regression_count %> regressions</span> ·
                   <span class="text-success" title="Improvements"><%= doc.improvement_count %> improvements</span> ·
                   <span class="text-body-secondary" title="Neutral"><%= doc.neutral_count %> neutral</span>
