@@ -344,6 +344,8 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - SPARC can crawl the root address and list the documents it finds, but it pulls only the documents set on the connection.
   - Pulls run hourly, each on its document's own interval, or on **Pull now**.
   - A person can also upload a document into a boundary by drag and drop.
+  - **Push:** the provider can push a changed document, signed with an Ed25519 key pinned on the connection. SPARC accepts it only within 5 minutes of its timestamp, once per signature and from the connection's IP ranges, then pulls the document fresh from its registered address. The same bytes confirm the push; anything else is received as an unconfirmed push, flagged and never accepted without a person.
+  - **Class A:** a Class A connection records the framework its certification rests on and its date, and is flagged expired 12 months later. Its assessment materials are added on the connection and reviewed on the boundary.
 - **Trust:** SPARC reaches only the hosts of the addresses registered on the connection. It refuses private and internal addresses, checks the TLS certificate and, when pinned, its public key, and follows no redirects. The credential SPARC presents is encrypted and never shown again.
 - **Review:** every document received is validated (see Document validation above) and kept by SHA-256, never overwritten.
   - A document that fails validation is stored with its errors shown, and can't take effect.
@@ -351,7 +353,7 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - Only a byte-identical re-delivery needs no review; it's recorded as unchanged.
   - The person who uploaded a document can't decide it.
   - An accepted HDF document also goes into the boundary's findings.
-- **Out:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists the boundary's documents for another system to pull: its OSCAL SSP, SAP, SAR, POA&M and CDEFs, its HDF system document, its FedRAMP vulnerability reports (once it has a package overview address, see FedRAMP reports below), and the documents it has accepted, each with its download address. Accepted documents carry their SHA-256. SPARC's own exports are built on request, so the index gives no SHA-256 for them. Each read of the index is recorded in the audit log.
+- **Out:** `GET /api/v1/authorization_boundaries/:id/exchange_index` lists the boundary's documents for another system to pull: its OSCAL SSP, SAP, SAR, POA&M and CDEFs, its HDF system document, its FedRAMP vulnerability reports (once it has a package overview address, see FedRAMP reports below), and the documents it has accepted (except Class A materials, which are the provider's), each with its download address. Accepted documents carry their SHA-256. SPARC's own exports are built on request, so the index gives no SHA-256 for them. Each read of the index is recorded in the audit log.
 
 The API is in [API Reference](API-Reference). Permissions: `connections.manage`, `exchange.upload` and `exchange.review` ([RBAC](RBAC)).
 

@@ -132,6 +132,8 @@ keeps every version, and serves its own documents back out.
 | Endpoints | What they do | Permission |
 |---|---|---|
 | `/api/v1/exchange_connections` (CRUD), `…/:id/pull`, `…/:id/discover`, `…/:id/test_connection`, `…/:exchange_connection_id/document_sources` (CRUD) | Register a connection (its boundary, root trust-center address, credential and trust pins) and the documents it pulls; pull now; list the root's document links; fetch and validate each document without storing it | `connections.manage` across the instance |
+| `/api/v1/exchange_connections/:id/push_receipts`, `…/:exchange_connection_id/certification_materials` (list, add) | A connection's pushes and their outcome; its Class A materials, each then reviewed on the boundary | `connections.manage` across the instance |
+| `POST /api/v1/exchange_connections/:exchange_connection_id/document_sources/:id/push` | A provider's push of a changed document. **No token:** an Ed25519 signature checked against keys pinned on the connection ([how to sign](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/exchange-connections.md#push)) | The signature |
 | `/api/v1/authorization_boundaries/:id/received_documents` (list, upload), `…/:id`, `…/:id/file` | Every version the boundary received, its validation result and what changed since the version in effect; the exact bytes, with `X-Content-SHA256` | `evidence.read`; upload `exchange.upload` |
 | `…/received_documents/:id/accept`, `…/respond`, `…/reject` | The reviewer's decision | `exchange.review` |
 | `/api/v1/authorization_boundaries/:id/exchange_index` | The boundary's current documents (SPARC's exports and its accepted received versions), each with its download URL | `evidence.read` |
