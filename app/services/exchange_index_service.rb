@@ -13,7 +13,9 @@
 #     Vulnerability Info (VER-RPT-AVI), also built on request (sha256 null),
 #     listed only when the boundary has a FedRAMP Certification Package
 #     Overview address, which both reports require;
-#   - every received document the boundary has ACCEPTED, with its SHA-256.
+#   - every received document the boundary has ACCEPTED, with its SHA-256 —
+#     except Class A certification materials, which are the provider's to
+#     share, not the boundary's.
 #
 # The downloads are the existing authenticated endpoints: a caller needs a
 # token that may read each one. Reading the index is recorded in the audit
@@ -81,7 +83,7 @@ class ExchangeIndexService
   end
 
   def received
-    @boundary.received_documents.in_effect.order(:received_at).map do |doc|
+    @boundary.received_documents.documents.in_effect.order(:received_at).map do |doc|
       { origin: "received", format: doc.format, document_type: doc.document_type, id: doc.id,
         name: doc.filename, fedramp_id: doc.fedramp_id, updated_at: doc.reviewed_at&.utc&.iso8601,
         received_at: doc.received_at.utc.iso8601, sha256: doc.sha256,

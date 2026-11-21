@@ -186,6 +186,9 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
       byte_size: doc.byte_size,
       state: doc.state,
       valid: doc.valid_document,
+      # #1354 — true: a push the fresh pull confirmed; false: pushed bytes it
+      # did not (flagged, never auto-accepted); null: not from a push.
+      push_confirmed: doc.push_confirmed,
       counts: { regression: doc.regression_count, improvement: doc.improvement_count, neutral: doc.neutral_count },
       received_at: doc.received_at&.utc&.iso8601,
       received_by: person(doc.received_by),

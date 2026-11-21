@@ -16,7 +16,10 @@ module ExchangeHelper
 
   PULL_STATUS_VARIANTS = { "stored" => "success", "unchanged" => "neutral", "failed" => "danger" }.freeze
 
-  FORMAT_LABELS = { "fedramp" => "FedRAMP", "oscal" => "OSCAL", "hdf" => "HDF", "xccdf" => "XCCDF" }.freeze
+  PUSH_STATUS_VARIANTS = { "pending" => "info", "confirmed" => "success", "unconfirmed" => "warning" }.freeze
+
+  FORMAT_LABELS = { "fedramp" => "FedRAMP", "oscal" => "OSCAL", "hdf" => "HDF", "xccdf" => "XCCDF",
+                    ReceivedDocument::MATERIAL_FORMAT => "Class A material" }.freeze
 
   CHANGE_KIND_VARIANTS = { "regression" => "danger", "improvement" => "success", "neutral" => "neutral" }.freeze
 
@@ -33,6 +36,33 @@ module ExchangeHelper
 
     tag.span(status.to_s.humanize, class: "sparc-status sparc-status--#{PULL_STATUS_VARIANTS.fetch(status.to_s, 'neutral')}",
                                    data: { pull_status: status })
+  end
+
+  def push_status_badge(status)
+    return tag.span("Never pushed", class: "text-body-secondary") if status.blank?
+
+    tag.span(status.to_s.humanize, class: "sparc-status sparc-status--#{PUSH_STATUS_VARIANTS.fetch(status.to_s, 'neutral')}",
+                                   data: { push_status: status })
+  end
+
+  # Pushed bytes the fresh pull from the registered address did not confirm.
+  def unconfirmed_push_badge(document)
+    return unless document.unconfirmed_push?
+
+    tag.span("Unconfirmed push", class: "sparc-status sparc-status--warning ms-1", data: { testid: "unconfirmed-push" },
+                                 title: "The registered address did not return these bytes when SPARC pulled it")
+  end
+
+  # A Class A connection's certification: current, expired, or not recorded.
+  def class_a_badge(connection)
+    return tag.span("Not Class A", class: "sparc-status sparc-status--neutral") unless connection.class_a?
+    return tag.span("Not recorded", class: "sparc-status sparc-status--warning") unless connection.class_a_recorded?
+
+    if connection.class_a_expired?
+      tag.span("Expired", class: "sparc-status sparc-status--danger", data: { testid: "class-a-expired" })
+    else
+      tag.span("Current", class: "sparc-status sparc-status--success")
+    end
   end
 
   def exchange_format_label(format) = FORMAT_LABELS.fetch(format.to_s, format.to_s.upcase)
@@ -54,6 +84,11 @@ module ExchangeHelper
   # A stream: one pulled document address, or a boundary's uploads of one
   # format and document type.
   def received_stream_label(document)
+    if document.certification_material?
+      material = ExchangeConnection::CLASS_A_MATERIALS.fetch(document.document_type, document.document_type)
+      return "Class A material · #{material} for #{document.exchange_connection&.name || 'a connection'}"
+    end
+
     kind = [ exchange_format_label(document.format), document.document_type.presence ].compact.join(" · ")
     if document.exchange_document_source
       "#{kind} from #{document.exchange_connection&.name || 'a connection'} (#{document.exchange_document_source.url})"

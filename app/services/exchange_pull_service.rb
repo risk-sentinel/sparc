@@ -37,12 +37,23 @@ class ExchangePullService
       document_source: @source, format: @source.format, document_type: @source.document_type,
       filename: File.basename(URI(@source.url).path.presence || "document"), content_type: fetched.content_type
     )
+    confirm_pushed(outcome.document)
     finish(outcome.unchanged? ? :unchanged : :stored, document: outcome.document)
   rescue ExchangeFetcher::Error, ReceivedDocumentService::Error => e
     finish(:failed, error: e.message)
   end
 
   private
+
+  # An unconfirmed push (#1354) whose bytes the registered address now serves
+  # is confirmed by this pull: the address vouches for them.
+  def confirm_pushed(document)
+    return unless document&.unconfirmed_push?
+
+    document.update_columns(push_confirmed: true, updated_at: Time.current)
+    AuditEvent.log(action: "exchange_push_confirmed", user: @user, subject: @connection,
+                   metadata: { received_document_id: document.id, sha256: document.sha256, by: "pull" })
+  end
 
   # ExchangeFetcher refuses settings it cannot enforce (no host, a malformed
   # pin or range) with ArgumentError. That is the connection's configuration,

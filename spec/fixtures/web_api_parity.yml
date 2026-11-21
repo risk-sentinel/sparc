@@ -889,6 +889,9 @@ controllers:
       - reason: "HTML form pages; the API takes the same fields as a JSON body (the credential write-only)"
         actions: [new, edit]
 
+  admin/exchange_certification_materials:
+    mapped:
+      create: ["POST /api/v1/exchange_connections/:exchange_connection_id/certification_materials"]
   admin/exchange_document_sources:
     mapped:
       create: ["POST /api/v1/exchange_connections/:exchange_connection_id/document_sources"]

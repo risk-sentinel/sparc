@@ -15,6 +15,9 @@
 #   [keys]          the caller holds ANY of these permissions, at any boundary
 #                   ("role:<name>" means the caller holds that role)
 #   { all: [keys] } the caller holds ALL of them
+#   :signed         no token: the request's own signature is the credential
+#                   (a provider's push, #1354). Never advertised to a token,
+#                   an administrator's included, since no token can use it
 #
 # Each controller sets `read` and `write` (for ApiEndpointCatalog's access
 # level of the route) and may override single actions. A route whose
@@ -156,6 +159,10 @@ module ApiRoutePermissions
     # passes. Discover and test fetch and store nothing, but still need it.
     "exchange_connections"      => { read: CONNECTIONS_MANAGE, write: CONNECTIONS_MANAGE },
     "exchange_document_sources" => { read: CONNECTIONS_MANAGE, write: CONNECTIONS_MANAGE },
+    # A connection's Class A materials; each is then reviewed on the boundary.
+    "exchange_certification_materials" => { read: CONNECTIONS_MANAGE, write: CONNECTIONS_MANAGE },
+    # A provider's push: signed with a key pinned on the connection, no token.
+    "exchange_pushes"           => { write: :signed },
     # Received documents are checked against the boundary in the path.
     "received_documents"        => { read: [ "evidence.read" ], write: [ "exchange.upload" ],
                                      actions: { "accept"  => EXCHANGE_REVIEW,
@@ -199,7 +206,7 @@ module ApiRoutePermissions
 
   # Does `user` meet `rule`? Instance administrators meet every rule.
   def satisfied?(user, rule)
-    return false if user.nil? || rule.nil?
+    return false if user.nil? || rule.nil? || rule == :signed
     return true if user.instance_administrator?
 
     case rule
