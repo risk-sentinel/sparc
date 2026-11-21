@@ -155,7 +155,11 @@ class ReceivedDocumentsController < ApplicationController
     end
   end
 
+  # A Class A material is whatever file the provider supplied (a PDF, most
+  # often); every other version is JSON or XML.
   def download_type(bytes)
+    return @document.content_type.presence || "application/octet-stream" if @document.certification_material?
+
     bytes.lstrip.start_with?("<") ? "application/xml" : "application/json"
   end
 

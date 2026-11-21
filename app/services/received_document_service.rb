@@ -28,11 +28,14 @@ class ReceivedDocumentService
 
   def self.call(**) = new(**).call
 
-  # @param source [String] "pull" or "upload"
+  # @param source [String] "pull", "upload" or "push"
   # @param format [String, nil] the format the caller declares (a pull's
   #   document source names one); detected when nil
+  # @param push_confirmed [Boolean, nil] false for pushed bytes the fresh
+  #   pull did not confirm (ExchangePushConfirmService): flagged, and never
+  #   auto-accepted
   def initialize(boundary:, bytes:, source:, filename: nil, content_type: nil, connection: nil,
-                 document_source: nil, received_by: nil, format: nil, document_type: nil)
+                 document_source: nil, received_by: nil, format: nil, document_type: nil, push_confirmed: nil)
     @boundary = boundary
     @bytes = bytes.to_s.b
     @source = source.to_s
@@ -43,10 +46,14 @@ class ReceivedDocumentService
     @received_by = received_by
     @format = format.presence
     @document_type = document_type.presence
+    @push_confirmed = push_confirmed
   end
 
   def call
     raise Error, "Empty document" if @bytes.strip.empty?
+    # Class A materials are received by CertificationMaterialService, never
+    # as a schema-checked document.
+    raise Error, "Class A materials are added on the connection" if @format == ReceivedDocument::MATERIAL_FORMAT
 
     max = SparcConfig.max_upload_bytes
     raise Error, "Document exceeds the #{max}-byte upload limit" if @bytes.bytesize > max
@@ -76,7 +83,7 @@ class ReceivedDocumentService
         regression_count: delta ? delta.counts[:regression].to_i : 0,
         improvement_count: delta ? delta.counts[:improvement].to_i : 0,
         neutral_count: delta ? delta.counts[:neutral].to_i : 0,
-        received_at: Time.current, received_by: @received_by
+        received_at: Time.current, received_by: @received_by, push_confirmed: @push_confirmed
       )
       doc.file.attach(io: StringIO.new(@bytes), filename: @filename.presence || "#{format}-document",
                       content_type: @content_type.presence || "application/octet-stream")
@@ -84,7 +91,7 @@ class ReceivedDocumentService
     end
 
     audit("received_document_stored", document)
-    ReceivedDocumentReviewService.auto_accept(document) if delta&.auto_acceptable?
+    ReceivedDocumentReviewService.auto_accept(document) if delta&.auto_acceptable? && @push_confirmed != false
     Outcome.new(document: document.reload, status: :stored)
   end
 

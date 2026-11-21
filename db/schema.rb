@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -725,6 +725,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
     t.bigint "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "push_public_keys", default: [], null: false
+    t.datetime "last_pushed_at"
+    t.string "last_push_status"
+    t.string "class_a_framework"
+    t.date "class_a_certified_on"
+    t.date "class_a_expires_on"
     t.index ["authorization_boundary_id"], name: "index_exchange_connections_on_authorization_boundary_id"
     t.index ["created_by_id"], name: "index_exchange_connections_on_created_by_id"
     t.index ["name"], name: "index_exchange_connections_on_name", unique: true
@@ -745,6 +751,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
     t.datetime "updated_at", null: false
     t.index ["exchange_connection_id", "url"], name: "idx_on_exchange_connection_id_url_5193a90e65", unique: true
     t.index ["exchange_connection_id"], name: "index_exchange_document_sources_on_exchange_connection_id"
+  end
+
+  create_table "exchange_push_receipts", force: :cascade do |t|
+    t.bigint "exchange_connection_id", null: false
+    t.bigint "exchange_document_source_id"
+    t.bigint "received_document_id"
+    t.string "sha256", null: false
+    t.bigint "byte_size", default: 0, null: false
+    t.string "content_type"
+    t.string "signature_sha256", null: false
+    t.string "key_fingerprint", null: false
+    t.datetime "signed_at", null: false
+    t.string "remote_ip"
+    t.string "status", default: "pending", null: false
+    t.text "reason"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["exchange_connection_id"], name: "index_exchange_push_receipts_on_exchange_connection_id"
+    t.index ["exchange_document_source_id"], name: "index_exchange_push_receipts_on_exchange_document_source_id"
+    t.index ["received_document_id"], name: "index_exchange_push_receipts_on_received_document_id"
+    t.index ["signature_sha256"], name: "index_exchange_push_receipts_on_signature_sha256", unique: true
   end
 
   create_table "federation_peers", force: :cascade do |t|
@@ -1271,6 +1299,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
     t.bigint "scan_run_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "push_confirmed"
     t.index ["authorization_boundary_id"], name: "index_received_documents_on_authorization_boundary_id"
     t.index ["exchange_connection_id"], name: "index_received_documents_on_exchange_connection_id"
     t.index ["exchange_document_source_id"], name: "index_received_documents_on_exchange_document_source_id"
@@ -2059,6 +2088,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_120000) do
   add_foreign_key "exchange_connections", "authorization_boundaries"
   add_foreign_key "exchange_connections", "users", column: "created_by_id"
   add_foreign_key "exchange_document_sources", "exchange_connections"
+  add_foreign_key "exchange_push_receipts", "exchange_connections"
+  add_foreign_key "exchange_push_receipts", "exchange_document_sources", on_delete: :nullify
+  add_foreign_key "exchange_push_receipts", "received_documents", on_delete: :nullify
   add_foreign_key "fedramp_vulnerability_evaluations", "authorization_boundaries"
   add_foreign_key "fedramp_vulnerability_evaluations", "users", column: "evaluated_by_id"
   add_foreign_key "finding_dispositions", "authorization_boundaries"

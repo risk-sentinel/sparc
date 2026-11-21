@@ -212,15 +212,155 @@
               <% @recent_documents.each do |doc| %>
                 <tr>
                   <td><%= link_to exchange_time(doc.received_at),
-                        authorization_boundary_received_document_path(doc.authorization_boundary_id, doc) %></td>
+                        authorization_boundary_received_document_path(doc.authorization_boundary, doc) %></td>
                   <td><%= exchange_format_label(doc.format) %> <%= doc.document_type %></td>
-                  <td><%= received_state_badge(doc.state) %></td>
+                  <td>
+                    <%= received_state_badge(doc.state) %>
+                    <%= unconfirmed_push_badge(doc) %>
+                  </td>
                 </tr>
               <% end %>
             </tbody>
           </table>
         <% else %>
           <p class="text-body-secondary mb-0">Nothing received yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-0">
+  <div class="col-lg-6">
+    <div class="card h-100" data-testid="push-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Push</h5>
+        <% if connection.push_enabled? %>
+          <span class="sparc-status sparc-status--success">Accepting pushes</span>
+        <% else %>
+          <span class="sparc-status sparc-status--neutral">Not accepting pushes</span>
+        <% end %>
+      </div>
+      <div class="card-body">
+        <p class="small text-body-secondary">
+          The provider sends a changed document, signed with an Ed25519 key pinned here. SPARC pulls it fresh from the
+          registered address: the same bytes confirm the push; anything else is received as an unconfirmed push and
+          waits for a reviewer.
+        </p>
+        <table class="table table-sm mb-3">
+          <tr><th>Pinned keys</th><td data-testid="push-keys">
+            <% if connection.push_public_keys.any? %>
+              <% connection.push_public_keys.each do |key| %>
+                <code class="d-block" title="<%= key %>">SHA-256 <%= ExchangeConnection.key_fingerprint(key) %></code>
+              <% end %>
+            <% else %>
+              <span class="text-body-secondary">None. Add a key on Edit to take pushes.</span>
+            <% end %>
+          </td></tr>
+          <tr><th>Push address</th><td class="text-break">
+            <code><%= "/api/v1/exchange_connections/#{connection.id}/document_sources/" %><em>document</em>/push</code>
+            <small class="d-block text-body-secondary">Each document's number is shown under Documents pulled.</small>
+          </td></tr>
+          <tr><th>Last push</th><td>
+            <%= push_status_badge(connection.last_push_status) %>
+            <% if connection.last_pushed_at %><small class="text-body-secondary ms-1"><%= exchange_time(connection.last_pushed_at) %></small><% end %>
+          </td></tr>
+        </table>
+        <% if @push_receipts.any? %>
+          <table class="table table-sm align-middle mb-0" data-testid="push-receipts">
+            <thead><tr><th>Received</th><th>Document</th><th>Outcome</th></tr></thead>
+            <tbody>
+              <% @push_receipts.each do |receipt| %>
+                <tr>
+                  <td><%= exchange_time(receipt.created_at) %></td>
+                  <td>
+                    <% if receipt.exchange_document_source %>#<%= receipt.exchange_document_source_id %><% else %>—<% end %>
+                    <code class="d-block small" title="<%= receipt.sha256 %>"><%= receipt.sha256.first(12) %>…</code>
+                  </td>
+                  <td>
+                    <%= push_status_badge(receipt.status) %>
+                    <% if receipt.received_document %>
+                      <%= link_to "version", authorization_boundary_received_document_path(receipt.received_document.authorization_boundary, receipt.received_document), class: "small ms-1" %>
+                    <% end %>
+                    <% if receipt.reason.present? %><small class="d-block text-body-secondary"><%= receipt.reason %></small><% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="text-body-secondary mb-0">No pushes received.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100" id="class-a" data-testid="class-a-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Class A certification</h5>
+        <%= class_a_badge(connection) %>
+      </div>
+      <div class="card-body">
+        <% if connection.class_a? %>
+          <table class="table table-sm mb-3" data-testid="class-a-settings">
+            <tr><th>Framework</th><td><%= connection.class_a_framework_label || "Not recorded" %></td></tr>
+            <tr><th>Certified on</th><td><%= connection.class_a_certified_on&.iso8601 || "—" %></td></tr>
+            <tr><th>Expires on</th><td data-testid="class-a-expiry">
+              <%= connection.class_a_expires_on&.iso8601 || "—" %>
+              <% if connection.class_a_expires_on %>
+                <small class="d-block <%= connection.class_a_expired? ? 'text-danger' : 'text-body-secondary' %>">
+                  <%= connection.class_a_expired? ? "Expired: FedRAMP asks for a certification within the past 12 months." : "#{pluralize(connection.class_a_days_left, 'day')} left" %>
+                </small>
+              <% end %>
+            </td></tr>
+          </table>
+
+          <h6 class="fw-semibold">Materials</h6>
+          <p class="small text-body-secondary">
+            The assessment materials behind the certification (FedRAMP FRC-CLA-EAM). They are kept by SHA-256 and
+            reviewed on <%= link_to connection.authorization_boundary.name, authorization_boundary_received_documents_path(connection.authorization_boundary) %>
+            like any received document. They are not schema-checked, and never served back out.
+          </p>
+          <% if @materials.any? %>
+            <table class="table table-sm align-middle" data-testid="class-a-materials">
+              <thead><tr><th>Material</th><th>File</th><th>State</th></tr></thead>
+              <tbody>
+                <% @materials.each do |doc| %>
+                  <tr>
+                    <td><%= ExchangeConnection::CLASS_A_MATERIALS.fetch(doc.document_type, doc.document_type) %></td>
+                    <td>
+                      <%= link_to (doc.filename.presence || doc.sha256.first(12)), authorization_boundary_received_document_path(doc.authorization_boundary, doc) %>
+                      <small class="d-block text-body-secondary"><%= number_to_human_size(doc.byte_size) %> · <%= exchange_time(doc.received_at) %></small>
+                    </td>
+                    <td><%= received_state_badge(doc.state) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+          <%= form_with url: admin_exchange_connection_certification_materials_path(connection), local: true, multipart: true,
+                data: { testid: "class-a-material-form" } do %>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-5">
+                <%= label_tag :kind, "Material", class: "form-label small fw-semibold" %>
+                <%= select_tag :kind, options_for_select(ExchangeConnection::CLASS_A_MATERIALS.map { |key, label| [ label, key ] }),
+                      class: "form-select form-select-sm" %>
+              </div>
+              <div class="col-md-5">
+                <%= label_tag :file, "File", class: "form-label small fw-semibold" %>
+                <%= file_field_tag :file, class: "form-control form-control-sm", required: true %>
+              </div>
+              <div class="col-md-2">
+                <%= submit_tag "Add", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
+                      data: { testid: "add-class-a-material" } %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-body-secondary mb-0">
+            Recorded only for a Class A connection. Set the certification class to Class A on Edit.
+          </p>
         <% end %>
       </div>
     </div>
@@ -241,6 +381,7 @@
             <% @sources.each do |source| %>
               <tr data-document-source-id="<%= source.id %>">
                 <td class="text-break">
+                  <small class="text-body-secondary">#<%= source.id %></small>
                   <code><%= source.url %></code>
                   <% unless source.enabled? %><span class="sparc-status sparc-status--neutral ms-1">Disabled</span><% end %>
                 </td>

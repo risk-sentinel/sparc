@@ -20,10 +20,19 @@
 #   superseded     — was accepted; a later version replaced it
 #   invalid        — failed validation; on record with its errors
 #
+# A version from a push carries push_confirmed: true once the fresh pull
+# from the registered address returned the same bytes, false when it did not
+# (an unconfirmed push, flagged and never auto-accepted).
+#
 # NIST SP 800-53: CA-3, SI-10, SI-7 and AU-10 (bytes and SHA-256 fixed at
 # receipt), AU-12, CA-7.
 class ReceivedDocument < ApplicationRecord
   STATES = %w[pending_review accepted responded rejected superseded invalid].freeze
+  # A Class A certification material (FRC-CLA-EAM): a file FedRAMP gives no
+  # schema for, received on a connection and reviewed, never schema-checked
+  # (CertificationMaterialService).
+  MATERIAL_FORMAT = "class_a_material"
+  FORMATS = (DocumentValidationService::FORMATS + [ MATERIAL_FORMAT ]).freeze
   SOURCES = %w[pull upload push].freeze
   REVIEW_ACTIONS = %w[accept respond reject auto_accept].freeze
   OPEN_STATES = %w[pending_review responded].freeze
@@ -41,7 +50,7 @@ class ReceivedDocument < ApplicationRecord
 
   validates :source, inclusion: { in: SOURCES }
   validates :state, inclusion: { in: STATES }
-  validates :format, inclusion: { in: DocumentValidationService::FORMATS }
+  validates :format, inclusion: { in: FORMATS }
   validates :sha256, format: { with: /\A\h{64}\z/ }
   validates :stream_key, presence: true
   validates :review_action, inclusion: { in: REVIEW_ACTIONS }, allow_nil: true
@@ -49,9 +58,14 @@ class ReceivedDocument < ApplicationRecord
   scope :recent, -> { order(received_at: :desc, id: :desc) }
   scope :in_effect, -> { where(state: "accepted") }
   scope :awaiting_review, -> { where(state: OPEN_STATES) }
+  scope :certification_materials, -> { where(format: MATERIAL_FORMAT) }
+  scope :documents, -> { where.not(format: MATERIAL_FORMAT) }
 
   def open? = OPEN_STATES.include?(state)
   def in_effect? = state == "accepted"
+  def certification_material? = format == MATERIAL_FORMAT
+  # Pushed bytes the fresh pull from the registered address did not confirm.
+  def unconfirmed_push? = push_confirmed == false
 
   # The version now in effect for this one's stream, if any.
   def in_effect_version
