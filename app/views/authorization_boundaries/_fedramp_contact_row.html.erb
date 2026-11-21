@@ -1,0 +1,24 @@
+<%# #1390 — one FedRAMP contact row (FedrampPackageOverview::CONTACT_KEYS). %>
+<div class="repeater-row row g-2 mb-2 align-items-center" data-testid="boundary-fedramp-contact">
+  <div class="col-md-2">
+    <%= select_tag "authorization_boundary[fedramp_contacts][][contact_type]",
+          options_for_select(FedrampPackageOverview::CONTACT_TYPES, contact["contact_type"]),
+          id: nil, class: "form-select form-select-sm", "aria-label": "Contact type" %>
+  </div>
+  <div class="col-md-3">
+    <%= text_field_tag "authorization_boundary[fedramp_contacts][][name]", contact["name"], id: nil,
+          class: "form-control form-control-sm", placeholder: "Name or role", "aria-label": "Contact name" %>
+  </div>
+  <div class="col-md-3">
+    <%= email_field_tag "authorization_boundary[fedramp_contacts][][email]", contact["email"], id: nil,
+          class: "form-control form-control-sm", placeholder: "Email", "aria-label": "Contact email" %>
+  </div>
+  <div class="col-md-3">
+    <%= telephone_field_tag "authorization_boundary[fedramp_contacts][][phone]", contact["phone"], id: nil,
+          class: "form-control form-control-sm", placeholder: "202-555-0123", "aria-label": "Contact phone" %>
+  </div>
+  <div class="col-md-1">
+    <button type="button" data-action="click->oscal-repeater#remove"
+            class="btn btn-sm btn-outline-danger" aria-label="Remove contact">×</button>
+  </div>
+</div>

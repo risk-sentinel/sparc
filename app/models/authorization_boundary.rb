@@ -5,6 +5,8 @@ class AuthorizationBoundary < ApplicationRecord
   # (SSP/SAP/SAR/POA&M). Included before the `dependent:` associations so the
   # guard's before_destroy runs first and aborts before any nullify fires.
   include SafeDestroyable
+  # #1390 — the FedRAMP Certification Package Overview's fields and address.
+  include FedrampPackageOverview
   belongs_to :organization, optional: true
   belongs_to :profile_document, optional: true   # #395 P3: one baseline per system
   has_many :boundaries, dependent: :destroy

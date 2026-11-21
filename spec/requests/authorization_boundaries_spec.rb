@@ -282,7 +282,7 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
       html = Nokogiri::HTML(response.body)
       expect(html.at_css("input[name='authorization_boundary[fedramp_package_overview_uri]']")).to be_present
       expect(html.css("button.sparc-field-help").map { |b| b["data-bs-title"] })
-        .to include("The address of this system's FedRAMP Certification Package Overview. FedRAMP's reports name it.")
+        .to include("Where your trust center publishes this system's FedRAMP Certification Package Overview. FedRAMP's reports name it.")
     end
 
     it "is saved from the form" do
@@ -296,6 +296,69 @@ RSpec.describe "AuthorizationBoundaries", type: :request do
             params: { authorization_boundary: { fedramp_package_overview_uri: "ftp://example.gov/overview" } }
       expect(response).to have_http_status(:unprocessable_content)
       expect(ab.reload.fedramp_package_overview_uri).to be_nil
+    end
+  end
+
+  # #1390 — the fields the Certification Package Overview is written from, and
+  # its contacts, a list on the boundary separate from SPARC users.
+  describe "FedRAMP package overview fields" do
+    before { sign_in_as(user) }
+
+    let(:form_fields) do
+      { fedramp_overview_from_sparc: "false", fedramp_contacts_listed: "1",
+        fedramp_package: { package_id: "FR2400000001", provider_name: "Example Provider", service_name: "Example Cloud",
+                           service_acronym: "EXC", service_description: "A cloud service.", certification_type: "Rev5",
+                           website: "https://provider.example", logo: "https://provider.example/logo.png",
+                           service_types: [ "", "SaaS", "IaaS" ], deployment_model: "Hybrid Cloud",
+                           business_categories: [ "" ], trust_center_authentication_required: "false" },
+        fedramp_contacts: [ { contact_type: "Security", name: "Sec", email: "sec@provider.example", phone: "" },
+                            { contact_type: "Sales", name: "Sales", email: "", phone: "202-555-0123" } ] }
+    end
+
+    it "renders every field, the address choice and the contact rows" do
+      ab.update!(fedramp_contacts: [ { contact_type: "Sales", name: "Sales" } ])
+      get edit_authorization_boundary_path(ab)
+      html = Nokogiri::HTML(response.body)
+      section = html.at_css("[data-testid='boundary-fedramp-package']")
+      FedrampPackageOverview::FIELDS.each_key do |key|
+        expect(section.at_css("[name^='authorization_boundary[fedramp_package][#{key}]']")).to be_present, key
+      end
+      expect(section.css("input[name='authorization_boundary[fedramp_overview_from_sparc]']").map { |r| r["value"] })
+        .to eq(%w[false true])
+      expect(section.css("[data-oscal-repeater-target='rows'] [data-testid='boundary-fedramp-contact']").size).to eq(1)
+      expect(section.css("select[name='authorization_boundary[fedramp_package][certification_type]'] option").map(&:text))
+        .to eq([ "", "20x", "Rev5" ])
+    end
+
+    it "saves the fields and contacts the form posts, readying the overview" do
+      patch authorization_boundary_path(ab), params: { authorization_boundary: form_fields }
+      expect(response).to redirect_to(authorization_boundary_path(ab))
+      ab.reload
+      expect(ab.fedramp_value("service_types")).to eq(%w[SaaS IaaS])
+      expect(ab.fedramp_value("business_categories")).to be_nil
+      expect(ab.fedramp_contacts.map { |c| c["contact_type"] }).to eq(%w[Security Sales])
+      expect(ab).to be_fedramp_overview_ready
+    end
+
+    it "clears the contacts when every row is removed" do
+      ab.update!(fedramp_contacts: [ { contact_type: "Sales", name: "Sales" } ])
+      patch authorization_boundary_path(ab), params: { authorization_boundary: { name: ab.name, fedramp_contacts_listed: "1" } }
+      expect(ab.reload.fedramp_contacts).to eq([])
+    end
+
+    it "leaves the contacts alone when the form does not list them" do
+      ab.update!(fedramp_contacts: [ { contact_type: "Sales", name: "Sales" } ])
+      patch authorization_boundary_path(ab), params: { authorization_boundary: { name: ab.name } }
+      expect(ab.reload.fedramp_contacts.size).to eq(1)
+    end
+
+    it "re-renders with the reason when a value is not one FedRAMP allows" do
+      form_fields[:fedramp_package][:logo] = "https://provider.example/logo.txt"
+      patch authorization_boundary_path(ab), params: { authorization_boundary: form_fields }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(flash[:error]).to include("FedRAMP package overview: Logo address must be")
+      expect(Nokogiri::HTML(response.body).at_css("[data-testid='boundary-fedramp-package']")["open"]).not_to be_nil
+      expect(ab.reload.fedramp_package).to eq({})
     end
   end
 end

@@ -9,10 +9,13 @@
 #     the boundary as an HDF system document. These are built on request, so
 #     the index cannot give their SHA-256 without building every export each
 #     time it is read; `sha256` is null for them;
-#   - its FedRAMP Vulnerability Detail Report (VER-RPT-VDT) and Accepted
-#     Vulnerability Info (VER-RPT-AVI), also built on request (sha256 null),
-#     listed only when the boundary has a FedRAMP Certification Package
-#     Overview address, which both reports require;
+#   - its FedRAMP Vulnerability Detail Report (VER-RPT-VDT), Accepted
+#     Vulnerability Info (VER-RPT-AVI) and Historical Vulnerability Activity
+#     (VER-TFR-MRH), also built on request (sha256 null), listed only when
+#     the boundary has a FedRAMP Certification Package Overview address,
+#     which each report names;
+#   - its FedRAMP Certification Package Overview (FRC-CSO-PKG, #1390), built
+#     on request, listed once the boundary records every field it requires;
 #   - every received document the boundary has ACCEPTED, with its SHA-256 —
 #     except Class A certification materials, which are the provider's to
 #     share, not the boundary's.
@@ -72,11 +75,14 @@ class ExchangeIndexService
     FedrampVulnerabilityReportService::AVI => [ "accepted_vulnerability_info", "Accepted Vulnerability Info" ],
     FedrampVulnerabilityReportService::HISTORICAL => [ "historical_ver_activity", "Historical Vulnerability Activity" ]
   }.freeze
+  # #1390 — listed once the boundary records everything it requires; it
+  # names no overview address, so it does not need one.
+  FEDRAMP_OVERVIEW = [ "certification_package_overview", "Certification Package Overview" ].freeze
 
   def fedramp_reports
-    return [] if @boundary.fedramp_package_overview_uri.blank?
-
-    FEDRAMP_REPORTS.map do |document_type, (path, title)|
+    reports = @boundary.fedramp_overview_address.blank? ? {} : FEDRAMP_REPORTS
+    reports = { FedrampPackageOverview::DOCUMENT_TYPE => FEDRAMP_OVERVIEW }.merge(reports) if @boundary.fedramp_overview_ready?
+    reports.map do |document_type, (path, title)|
       { origin: "sparc", format: "fedramp", document_type: document_type, id: @boundary.id,
         name: "#{@boundary.name} FedRAMP #{title}", updated_at: Time.current.utc.iso8601, sha256: nil,
         download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/fedramp/#{path}" }

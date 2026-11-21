@@ -163,6 +163,41 @@ RSpec.describe "Api::V1::AuthorizationBoundaries", type: :request do
       expect(boundary.reload.fedramp_package_overview_uri).to eq(uri)
     end
 
+    # #1390 — the overview's fields and contacts, read back as written.
+    it "saves the FedRAMP overview fields by merging, and the contacts as a list" do
+      boundary = create(:authorization_boundary, fedramp_package: { "service_name" => "Example Cloud" })
+
+      patch api_v1_authorization_boundary_path(boundary.slug),
+            params: { authorization_boundary: {
+              fedramp_package: { service_acronym: "EXC", service_types: [ "PaaS" ] },
+              fedramp_contacts: [ { contact_type: "Security", email: "sec@provider.example" } ]
+            } }, headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body["data"]
+      expect(data["fedramp_package"]).to eq("service_name" => "Example Cloud", "service_acronym" => "EXC",
+                                            "service_types" => [ "PaaS" ])
+      expect(data["fedramp_contacts"]).to eq([ { "contact_type" => "Security", "email" => "sec@provider.example" } ])
+      expect(data).to include("fedramp_overview_from_sparc" => false, "fedramp_overview_address" => nil)
+    end
+
+    it "clears the FedRAMP contacts with an empty list" do
+      boundary = create(:authorization_boundary, fedramp_contacts: [ { "contact_type" => "Sales", "name" => "S" } ])
+      patch api_v1_authorization_boundary_path(boundary.slug),
+            params: { authorization_boundary: { fedramp_contacts: [] } }, headers: auth_headers, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(boundary.reload.fedramp_contacts).to eq([])
+    end
+
+    it "refuses a FedRAMP overview value the schema does not allow" do
+      boundary = create(:authorization_boundary)
+      patch api_v1_authorization_boundary_path(boundary.slug),
+            params: { authorization_boundary: { fedramp_package: { deployment_model: "Private Cloud" } } },
+            headers: auth_headers, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Deployment model must be one of")
+    end
+
     it "refuses a FedRAMP package overview address that is not https" do
       boundary = create(:authorization_boundary)
 

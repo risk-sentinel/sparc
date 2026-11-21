@@ -135,7 +135,7 @@ Records the evaluation. Only the fields sent change. Send them under `fedramp_ev
 
 ## The boundary's FedRAMP package overview
 
-FedRAMP's reports also name the address of the system's FedRAMP Certification Package Overview. It is the boundary's `fedramp_package_overview_uri`, set with [`PATCH /api/v1/authorization_boundaries/:id`](authorization-boundaries.md).
+FedRAMP's reports also name the address of the system's FedRAMP Certification Package Overview. It is the boundary's `fedramp_package_overview_uri`, or SPARC's own overview endpoint when `fedramp_overview_from_sparc` is set (#1390), both set with [`PATCH /api/v1/authorization_boundaries/:id`](authorization-boundaries.md). See [FedRAMP Reports](fedramp-reports.md#the-overview-address).
 
 ## Related
 

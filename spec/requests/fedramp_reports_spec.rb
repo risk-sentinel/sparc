@@ -105,5 +105,45 @@ RSpec.describe "FedRAMP report downloads", type: :request do
       expect(page.at_css("[data-testid='triage-download-fedramp-vdr']")).to be_nil
       expect(page.at_css("[data-testid='triage-download-fedramp-ver-history']")).to be_nil
     end
+
+    it "offers the overview download once the boundary records every field it requires (#1390)" do
+      boundary.update!(fedramp_package_overview_uri: nil,
+                       **attributes_for(:authorization_boundary, :fedramp_overview_ready).slice(:fedramp_package, :fedramp_contacts))
+      sign_in_as(create(:user, :admin))
+      get triage_authorization_boundary_path(boundary)
+      page = Nokogiri::HTML(response.body)
+      link = page.at_css("[data-testid='triage-download-fedramp-overview']")
+      expect(link["href"]).to eq(triage_fedramp_certification_package_overview_authorization_boundary_path(boundary))
+      expect(page.at_css("[data-testid='triage-fedramp-overview-unavailable']")).to be_nil
+    end
+
+    it "lists what the overview still needs, without a download" do
+      sign_in_as(create(:user, :admin))
+      get triage_authorization_boundary_path(boundary)
+      page = Nokogiri::HTML(response.body)
+      note = page.at_css("[data-testid='triage-fedramp-overview-unavailable']")
+      expect(note.text).to include("FedRAMP ID", "a Security contact, and a Sales contact")
+      expect(page.at_css("[data-testid='triage-download-fedramp-overview']")).to be_nil
+    end
+  end
+
+  describe "the Certification Package Overview (#1390)" do
+    let(:path) { triage_fedramp_certification_package_overview_authorization_boundary_path(boundary) }
+    let(:action) { "fedramp_certification_package_overview_exported" }
+
+    it "sends it as a JSON attachment and audits it" do
+      boundary.update!(attributes_for(:authorization_boundary, :fedramp_overview_ready).slice(:fedramp_package, :fedramp_contacts))
+      sign_in_as(user_with({ "evidence.read" => true }))
+      expect { get path }.to change { AuditEvent.where(action: action).count }.by(1)
+      expect(response.headers["Content-Disposition"]).to include("attachment", "fedramp-package-overview.json")
+      expect(JSON.parse(response.body).dig("serviceIdentification", "fedRampPackageId")).to eq("FR2400000001")
+    end
+
+    it "says what is missing instead of sending an incomplete overview" do
+      sign_in_as(create(:user, :admin))
+      expect { get path }.not_to(change { AuditEvent.where(action: action).count })
+      expect(response).to redirect_to(triage_authorization_boundary_path(boundary))
+      expect(flash[:error]).to include("FedRAMP report not produced", "Missing: FedRAMP ID")
+    end
   end
 end

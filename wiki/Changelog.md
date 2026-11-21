@@ -27,11 +27,12 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - The triage page records the provider's FedRAMP evaluation of each failing finding: internet-reachable, likely exploitable, the Potential Agency Impact N-rating (N0–N5) and its history, and the planned next reduction.
   - From these, the findings and their dispositions, SPARC writes the boundary's FedRAMP **Vulnerability Detail Report** and **Accepted Vulnerability Info** (FedRAMP VER-RPT-VDT and VER-RPT-AVI, effective 2026-12-07), validated before they are returned.
   - SPARC also writes the boundary's **Historical Vulnerability Activity** (VER-TFR-MRH): active and accepted vulnerabilities in one snapshot, by default for the 12 months ending now, from the triage page, the API and the exchange index.
-  - A boundary records its Certification Package Overview address, which the reports name.
+  - A boundary records its Certification Package Overview address, which the reports name: its trust center's address, or SPARC's own overview endpoint.
+  - SPARC writes the boundary's **Certification Package Overview** (FRC-CSO-PKG) from new FedRAMP fields and contacts on the boundary's Edit page, validated before it is returned, from the triage page, the API and the exchange index.
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
 
-**Upgrading:** an image swap from v1.17.10. Three migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+**Upgrading:** an image swap from v1.17.10. Four migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
 
