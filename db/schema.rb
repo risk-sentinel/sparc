@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -136,6 +136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
     t.boolean "fedramp_overview_from_sparc", default: false, null: false
     t.boolean "fedramp_enabled", default: false, null: false
     t.integer "fedramp_sdr_version", default: 0, null: false
+    t.jsonb "fedramp_active_agencies", default: [], null: false
     t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
     t.index ["profile_document_id"], name: "index_authorization_boundaries_on_profile_document_id"
     t.index ["slug"], name: "index_authorization_boundaries_on_slug", unique: true
@@ -828,6 +829,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
     t.index ["created_by_id"], name: "index_fedramp_incidents_on_created_by_id"
     t.index ["updated_by_id"], name: "index_fedramp_incidents_on_updated_by_id"
     t.index ["uuid"], name: "index_fedramp_incidents_on_uuid", unique: true
+  end
+
+  create_table "fedramp_ongoing_reports", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.date "period_from", null: false
+    t.date "period_to", null: false
+    t.jsonb "recommendations", default: [], null: false
+    t.jsonb "document", null: false
+    t.string "sha256", null: false
+    t.bigint "issued_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id"], name: "index_fedramp_ongoing_reports_on_authorization_boundary_id"
+    t.index ["issued_by_id"], name: "index_fedramp_ongoing_reports_on_issued_by_id"
+    t.index ["uuid"], name: "index_fedramp_ongoing_reports_on_uuid", unique: true
   end
 
   create_table "fedramp_significant_changes", force: :cascade do |t|
@@ -2187,6 +2204,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
   add_foreign_key "fedramp_incidents", "authorization_boundaries"
   add_foreign_key "fedramp_incidents", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "fedramp_incidents", "users", column: "updated_by_id", on_delete: :nullify
+  add_foreign_key "fedramp_ongoing_reports", "authorization_boundaries"
+  add_foreign_key "fedramp_ongoing_reports", "users", column: "issued_by_id", on_delete: :nullify
   add_foreign_key "fedramp_significant_changes", "authorization_boundaries"
   add_foreign_key "fedramp_significant_changes", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "fedramp_significant_changes", "users", column: "updated_by_id", on_delete: :nullify

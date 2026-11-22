@@ -409,6 +409,8 @@ class AuditEvent < ApplicationRecord
     fedramp_incident_recorded
     fedramp_incident_report_recorded
     fedramp_incident_report_exported
+    fedramp_ongoing_report_issued
+    fedramp_ongoing_report_exported
 
     hdf_system_exported
 
@@ -647,7 +649,9 @@ class AuditEvent < ApplicationRecord
                             fedramp_significant_change_notification_exported
                             fedramp_incident_recorded
                             fedramp_incident_report_recorded
-                            fedramp_incident_report_exported],
+                            fedramp_incident_report_exported
+                            fedramp_ongoing_report_issued
+                            fedramp_ongoing_report_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
                             ksi_validation_deleted ksi_catalog_imported
                             ksi_catalog_import_refused],

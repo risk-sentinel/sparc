@@ -1,0 +1,39 @@
+<%# #1390 — an Ongoing Certification Report in human-readable form
+    (CCM-OCR-AVL asks for one). Locals: doc (the report's JSON). %>
+<% list = lambda do |items, empty| %>
+  <% if Array(items).any? %>
+    <ul class="mb-0"><% items.each do |item| %><li><%= item %></li><% end %></ul>
+  <% else %>
+    <span class="text-muted"><%= empty %></span>
+  <% end %>
+<% end %>
+<dl class="row small mb-0" data-testid="fedramp-ocr-document">
+  <dt class="col-sm-3">Period</dt>
+  <dd class="col-sm-9"><%= doc.dig("reportPeriod", "from") %> to <%= doc.dig("reportPeriod", "to") %></dd>
+  <dt class="col-sm-3">Changes to certification data</dt>
+  <dd class="col-sm-9"><% list.(doc["certificationDataChanges"], "None") %></dd>
+  <dt class="col-sm-3">Planned changes through <%= doc.dig("plannedCertificationDataChanges", "planningHorizonThrough") %></dt>
+  <dd class="col-sm-9"><% list.(doc.dig("plannedCertificationDataChanges", "changes"), "None planned") %></dd>
+  <dt class="col-sm-3">Accepted vulnerabilities</dt>
+  <dd class="col-sm-9"><%= doc["acceptedVulnerabilities"] %></dd>
+  <dt class="col-sm-3">Transformative changes</dt>
+  <dd class="col-sm-9"><% list.(doc["transformativeChanges"], "None") %></dd>
+  <dt class="col-sm-3">Updated recommendations</dt>
+  <dd class="col-sm-9"><% list.(doc["updatedRecommendations"], "None") %></dd>
+  <dt class="col-sm-3">Agencies using the service</dt>
+  <dd class="col-sm-9"><% list.(doc["activeAgencies"], "None listed; add them in the boundary's FedRAMP section") %></dd>
+  <dt class="col-sm-3">FedRAMP Reportable Incidents</dt>
+  <dd class="col-sm-9" data-testid="fedramp-ocr-incidents">
+    <% incidents = Array(doc.dig("reportableIncidents", "incidents")) %>
+    <% if incidents.empty? %>
+      None occurred in the period (the report attests to this).
+    <% else %>
+      <ul class="mb-0">
+        <% incidents.each do |i| %>
+          <li><%= i["summary"] %> — <%= i["occurredAt"] %><%= " to #{i['resolvedAt']}" if i["resolvedAt"] %>
+            <% if Array(i["incidentLessonsLearned"]).any? %><br><span class="text-muted">Lessons: <%= i["incidentLessonsLearned"].join("; ") %></span><% end %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </dd>
+</dl>
