@@ -10,6 +10,9 @@
 #       [?from=ISO8601&to=ISO8601]   default: the 12 months ending now
 #   GET /api/v1/authorization_boundaries/:id/fedramp/certification_package_overview (FRC-CSO-PKG, #1390)
 #       written by FedrampPackageOverviewService; names no overview address
+#   GET /api/v1/authorization_boundaries/:id/fedramp/security_decision_record      (SDR-CSO-FRR, #1390)
+#       written by FedrampSecurityDecisionRecordService from what is recorded;
+#       the X-SPARC-SDR-Gaps header counts what FedRAMP still requires of it
 #
 # The response body IS the FedRAMP document (not wrapped), with `$schema`
 # naming the FedRAMP schema it validates against.
@@ -78,6 +81,18 @@ class Api::V1::FedrampReportsController < Api::V1::BaseController
     doc = FedrampPackageOverviewService.call(@boundary)
     audit_log("fedramp_certification_package_overview_exported", subject: @boundary,
               metadata: { authorization_boundary_id: @boundary.id, contacts: doc["contactInformation"].size })
+    render json: doc
+  end
+
+  # GET .../fedramp/security_decision_record
+  def security_decision_record
+    service = FedrampSecurityDecisionRecordService.new(@boundary)
+    doc = service.call
+    gaps = service.gaps
+    audit_log("fedramp_security_decision_record_exported", subject: @boundary,
+              metadata: { authorization_boundary_id: @boundary.id, version: doc.dig("metadata", "version"),
+                          requirements: doc["fedRampRequirements"].size, gaps: gaps.size })
+    response.headers["X-SPARC-SDR-Gaps"] = gaps.size.to_s
     render json: doc
   end
 

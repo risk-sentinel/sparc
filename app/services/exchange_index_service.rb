@@ -14,6 +14,8 @@
 #     (VER-TFR-MRH), also built on request (sha256 null), listed only when
 #     the boundary has a FedRAMP Certification Package Overview address,
 #     which each report names;
+#   - its FedRAMP Security Decision Record (SDR-CSO-FRR, #1390), listed with
+#     the reports above, which also name the overview address;
 #   - its FedRAMP Certification Package Overview (FRC-CSO-PKG, #1390), built
 #     on request, listed once the boundary records every field it requires;
 #   - every received document the boundary has ACCEPTED, with its SHA-256 —
@@ -73,7 +75,8 @@ class ExchangeIndexService
   FEDRAMP_REPORTS = {
     FedrampVulnerabilityReportService::VDR => [ "vulnerability_detail_report", "Vulnerability Detail Report" ],
     FedrampVulnerabilityReportService::AVI => [ "accepted_vulnerability_info", "Accepted Vulnerability Info" ],
-    FedrampVulnerabilityReportService::HISTORICAL => [ "historical_ver_activity", "Historical Vulnerability Activity" ]
+    FedrampVulnerabilityReportService::HISTORICAL => [ "historical_ver_activity", "Historical Vulnerability Activity" ],
+    FedrampStatement::DOCUMENT_TYPE => [ "security_decision_record", "Security Decision Record" ]
   }.freeze
   # #1390 — listed once the boundary records everything it requires; it
   # names no overview address, so it does not need one.

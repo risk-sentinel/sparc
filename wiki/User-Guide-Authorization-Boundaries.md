@@ -187,8 +187,15 @@ Decision Record carries.
   Implemented, Not Implemented) and how it is implemented, validated and
   verified. A KSI also takes its tests (one per line) and evidence entries
   (**+ Add evidence**).
-- The counts at the top show how many are answered, by status. The **Security
-  Decision Record version** counts up with every change.
+- The counts show how many are answered, by status. The **Security Decision
+  Record version** counts up with every change.
+- The **Security Decision Record** card downloads the record, written from these
+  answers and from the SSP's controls, parameters, ports and protocols (FedRAMP's
+  assigned parameter values fill any the SSP leaves unset, for Rev5). It needs
+  the overview address. Beside it, SPARC lists what FedRAMP still requires: the
+  rules not yet answered, the KSIs for 20x, the Rev5 baseline controls missing
+  from the SSP, and ports and protocols. Record ports and protocols on the SSP's
+  components; OSCAL needs them there anyway.
 - Viewing needs `evidence.read` on the boundary; recording needs
   `evidence.write`. Each change is audited.
 
