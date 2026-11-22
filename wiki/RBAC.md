@@ -244,6 +244,9 @@ own rather than following `evidence.*`:
   and to the **Authorizing Official**, **Agency Authorizing Official** and
   **CISO**.
 
+The Ongoing Certification Report summarizes incidents, so reading it needs
+`incident.read` as well as `evidence.read`.
+
 No assessor or view-only role holds either, and the instance-wide read-only
 roles (Global Viewer and the like) do not include `incident.read`. Grant it
 from **Admin → Roles**. Instance Admins hold both.

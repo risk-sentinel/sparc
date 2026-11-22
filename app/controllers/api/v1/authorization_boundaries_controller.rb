@@ -168,7 +168,9 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
                     # FedRAMP's reports name (https:// only; the model refuses others).
                     :fedramp_package_overview_uri,
                     # #1390 — the Certification Package Overview's fields and contacts.
-                    :fedramp_enabled, :fedramp_overview_from_sparc, **AuthorizationBoundary::PERMITTED_PARAMS)
+                    :fedramp_enabled, :fedramp_overview_from_sparc,
+                    # #1390 — the Ongoing Certification Report's activeAgencies.
+                    fedramp_active_agencies: [], **AuthorizationBoundary::PERMITTED_PARAMS)
   end
 
   def serialize_boundary(ab, detailed: false)
@@ -202,6 +204,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       fedramp_overview_address: ab.fedramp_overview_address,
       fedramp_package: ab.fedramp_package,
       fedramp_contacts: ab.fedramp_contacts,
+      fedramp_active_agencies: ab.fedramp_active_agencies,
       created_at: ab.created_at.iso8601,
       updated_at: ab.updated_at.iso8601
     }

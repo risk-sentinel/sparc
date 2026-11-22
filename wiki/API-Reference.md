@@ -204,7 +204,7 @@ Key Security Indicator: what its Security Decision Record carries.
 Details in
 [`fedramp-statements.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-statements.md).
 
-**FedRAMP significant changes and incidents (v1.17.11, #1390).** Every change
+**FedRAMP significant changes, incidents and ongoing reports (v1.17.11, #1390).** Every change
 the provider evaluated, with its notice deadlines in federal business days and
 its Significant Change Notification (SCN-CSO-INF); and every incident, with its
 report deadlines by class and N-rating and its Initial, Ongoing and Final
@@ -217,11 +217,13 @@ it is returned; recording one sent keeps it as sent.
 | `GET …/fedramp_significant_changes/:change_id/notification`, `POST …/:change_id/notices` | The notification (`422` for a routine change); record a notice sent | `evidence.read` / `evidence.write` |
 | `GET`/`POST /api/v1/authorization_boundaries/:id/fedramp_incidents`, `GET`/`PUT …/:incident_id` | List, record and update incidents, each with its deadlines | `incident.read` / `incident.write` |
 | `GET …/fedramp_incidents/:incident_id/report?type=Initial\|Ongoing\|Final`, `POST …/:incident_id/reports` | A report (the Final needs the resolution); record a report sent | `incident.read` / `incident.write` |
+| `GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports`, `…/draft`, `POST …`, `GET …/:report_id` | The Ongoing Certification Report (CCM-OCR-AVL): the reports issued, the report for a period, issue it (kept as issued), one issued | `evidence.read` and `incident.read` / `evidence.write` |
 
 Details in
 [`fedramp-significant-changes.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-significant-changes.md)
+[`fedramp-incidents.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-incidents.md)
 and
-[`fedramp-incidents.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-incidents.md).
+[`fedramp-ongoing-reports.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-ongoing-reports.md).
 
 **Record the FedRAMP evaluation of each vulnerability (v1.17.11, #1354).**
 FedRAMP asks a provider to evaluate every detected vulnerability (FRR.VER).
