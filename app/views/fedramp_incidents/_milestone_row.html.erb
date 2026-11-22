@@ -1,0 +1,16 @@
+<%# #1390 — one milestone of an incident's timeline (FedrampIncident::MILESTONE_KEYS). %>
+<% occurred = item["occurred_at"].presence && (Time.iso8601(item["occurred_at"]) rescue nil) %>
+<div class="repeater-row row g-2 mb-2 align-items-center" data-testid="fedramp-incident-milestone">
+  <div class="col-md-4">
+    <%= datetime_local_field_tag "fedramp_incident[milestones][][occurred_at]", occurred&.in_time_zone&.strftime("%Y-%m-%dT%H:%M"),
+          id: nil, class: "form-control form-control-sm", "aria-label": "Milestone time (UTC)" %>
+  </div>
+  <div class="col-md-7">
+    <%= text_field_tag "fedramp_incident[milestones][][description]", item["description"], id: nil,
+          class: "form-control form-control-sm", placeholder: "What happened", "aria-label": "Milestone description" %>
+  </div>
+  <div class="col-md-1">
+    <button type="button" data-action="click->oscal-repeater#remove"
+            class="btn btn-sm btn-outline-danger" aria-label="Remove milestone">×</button>
+  </div>
+</div>

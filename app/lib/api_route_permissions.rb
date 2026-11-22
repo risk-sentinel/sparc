@@ -133,6 +133,10 @@ module ApiRoutePermissions
     # #1390 — the boundary's answer to each FedRAMP rule and KSI (the SDR),
     # checked against the boundary in the path, as its FedRAMP evaluations are.
     "fedramp_statements"     => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
+    # #1390 — significant changes (SCN) follow evidence.*; incidents are
+    # sensitive and have permissions of their own.
+    "fedramp_significant_changes" => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
+    "fedramp_incidents"      => { read: [ "incident.read" ], write: [ "incident.write" ] },
     "disposition_poams"      => { read: [ "evidence.read" ] }, # #1368
     "hdf_packages"           => { read: [ "evidence.read" ] },
     "ksi_validations"        => { read: [ "evidence.read" ], write: [ "evidence.write" ],

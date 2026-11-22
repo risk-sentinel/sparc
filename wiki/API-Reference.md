@@ -204,6 +204,25 @@ Key Security Indicator: what its Security Decision Record carries.
 Details in
 [`fedramp-statements.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-statements.md).
 
+**FedRAMP significant changes and incidents (v1.17.11, #1390).** Every change
+the provider evaluated, with its notice deadlines in federal business days and
+its Significant Change Notification (SCN-CSO-INF); and every incident, with its
+report deadlines by class and N-rating and its Initial, Ongoing and Final
+Incident Reports (IEC-CSO-IIR, -OIR, -FIR). Each document is validated before
+it is returned; recording one sent keeps it as sent.
+
+| Endpoints | What they do | Permission |
+|---|---|---|
+| `GET`/`POST /api/v1/authorization_boundaries/:id/fedramp_significant_changes`, `GET`/`PUT …/:change_id` | List, record and update changes (Routine, Adaptive, Transformative), each with its deadlines | `evidence.read` / `evidence.write` |
+| `GET …/fedramp_significant_changes/:change_id/notification`, `POST …/:change_id/notices` | The notification (`422` for a routine change); record a notice sent | `evidence.read` / `evidence.write` |
+| `GET`/`POST /api/v1/authorization_boundaries/:id/fedramp_incidents`, `GET`/`PUT …/:incident_id` | List, record and update incidents, each with its deadlines | `incident.read` / `incident.write` |
+| `GET …/fedramp_incidents/:incident_id/report?type=Initial\|Ongoing\|Final`, `POST …/:incident_id/reports` | A report (the Final needs the resolution); record a report sent | `incident.read` / `incident.write` |
+
+Details in
+[`fedramp-significant-changes.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-significant-changes.md)
+and
+[`fedramp-incidents.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-incidents.md).
+
 **Record the FedRAMP evaluation of each vulnerability (v1.17.11, #1354).**
 FedRAMP asks a provider to evaluate every detected vulnerability (FRR.VER).
 SPARC keeps one evaluation per vulnerability in a boundary, keyed by the

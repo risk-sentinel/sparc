@@ -1,0 +1,29 @@
+<%# #1390 — the heading and tabs every page of the boundary's FedRAMP area
+    shares. The Incidents tab shows only to holders of incident.read.
+    Locals: boundary, active ("frr", "ksi", "changes", "incidents"). %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">FedRAMP</h1>
+    <p class="text-muted mb-0"><%= boundary.name %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to "Back to Boundary", authorization_boundary_path(boundary),
+          class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
+  </div>
+</div>
+<% tabs = [
+     [ FedrampRules::FRR, "FedRAMP rules", boundary.fedramp_applicable_rules.size, fedramp_authorization_boundary_path(boundary, kind: FedrampRules::FRR) ],
+     [ FedrampRules::KSI, "Key Security Indicators", FedrampRules.ksis.size, fedramp_authorization_boundary_path(boundary, kind: FedrampRules::KSI) ],
+     [ "changes", "Significant changes", boundary.fedramp_significant_changes.count, fedramp_significant_changes_authorization_boundary_path(boundary) ]
+   ] %>
+<% if boundary_permission?("incident.read") %>
+  <% tabs << [ "incidents", "Incidents", boundary.fedramp_incidents.count, fedramp_incidents_authorization_boundary_path(boundary) ] %>
+<% end %>
+<ul class="nav nav-tabs mb-3" role="tablist" data-testid="fedramp-tabs">
+  <% tabs.each do |key, label, count, href| %>
+    <li class="nav-item">
+      <%= link_to "#{label} (#{count})", href, class: "nav-link#{' active' if active == key}",
+            "aria-current": (active == key ? "page" : nil), data: { testid: "fedramp-tab-#{key}" } %>
+    </li>
+  <% end %>
+</ul>

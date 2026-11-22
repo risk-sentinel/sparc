@@ -15,7 +15,7 @@
 # NIST SP 800-53: PL-2, CA-2, AC-3 / AC-6 (boundary-scoped permission),
 # AU-12 (each change audited).
 class FedrampStatementsController < ApplicationController
-  include RequiresFedramp
+  include FedrampPage
 
   before_action :set_boundary
   before_action :authorize_read!, only: :index
@@ -26,11 +26,9 @@ class FedrampStatementsController < ApplicationController
     @kind = FedrampRules::KINDS.include?(params[:kind]) ? params[:kind] : FedrampRules::FRR
     service = FedrampStatementService.new(@boundary)
     @entries = service.entries(@kind)
-    @counts = FedrampRules::KINDS.index_with { |k| k == @kind ? @entries.size : service.entries(k).size }
     @summary = @entries.group_by(&:status).transform_values(&:size)
     @sdr_gaps = FedrampSecurityDecisionRecordService.new(@boundary).gaps
-    @may_edit = !SparcConfig.any_auth_enabled? ||
-                current_user&.has_permission?("evidence.write", authorization_boundary_id: @boundary.id)
+    @may_edit = boundary_permission?("evidence.write")
   end
 
   def update
@@ -66,11 +64,6 @@ class FedrampStatementsController < ApplicationController
     extra["tests"] = form[:tests_text].to_s.lines.map(&:strip) unless form[:tests_text].nil?
     extra["evidence"] = [] if form[:evidence_listed].present? && form[:evidence].nil?
     extra
-  end
-
-  def set_boundary
-    key = params[:id]
-    @boundary = key.to_s.match?(/\A\d+\z/) ? AuthorizationBoundary.find(key) : AuthorizationBoundary.find_by!(slug: key)
   end
 
   def authorize_read!

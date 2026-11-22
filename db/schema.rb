@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -792,6 +792,76 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
     t.jsonb "public_metadata", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_federation_peers_on_name", unique: true
+  end
+
+  create_table "fedramp_incidents", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.string "tracking_id", null: false
+    t.boolean "reportable", default: true, null: false
+    t.string "coordinator"
+    t.text "description"
+    t.datetime "started_at"
+    t.datetime "detected_at"
+    t.string "detection_source"
+    t.datetime "evaluation_completed_at"
+    t.jsonb "milestones", default: [], null: false
+    t.jsonb "ratings", default: [], null: false
+    t.text "evaluation_notes"
+    t.text "functional_impact"
+    t.text "recovery_plan"
+    t.jsonb "affected_agencies", default: [], null: false
+    t.text "observed_activity"
+    t.jsonb "indicators", default: [], null: false
+    t.jsonb "related_cve_ids", default: [], null: false
+    t.text "root_cause"
+    t.text "response_activities"
+    t.datetime "resolved_at"
+    t.jsonb "lessons_learned", default: [], null: false
+    t.jsonb "reports", default: [], null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id", "tracking_id"], name: "idx_fedramp_incidents_tracking", unique: true
+    t.index ["authorization_boundary_id"], name: "index_fedramp_incidents_on_authorization_boundary_id"
+    t.index ["created_by_id"], name: "index_fedramp_incidents_on_created_by_id"
+    t.index ["updated_by_id"], name: "index_fedramp_incidents_on_updated_by_id"
+    t.index ["uuid"], name: "index_fedramp_incidents_on_uuid", unique: true
+  end
+
+  create_table "fedramp_significant_changes", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.string "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.string "change_type", null: false
+    t.text "description", null: false
+    t.text "type_explanation"
+    t.text "reason"
+    t.text "customer_impact"
+    t.text "plan_summary"
+    t.date "planned_start"
+    t.date "planned_completion"
+    t.jsonb "milestones", default: [], null: false
+    t.jsonb "impacted_controls", default: [], null: false
+    t.text "impact_analysis"
+    t.string "assessor_name"
+    t.string "related_vulnerability"
+    t.string "approver_name"
+    t.string "approver_title"
+    t.text "new_risks"
+    t.boolean "emergency", default: false, null: false
+    t.date "started_on"
+    t.date "finished_on"
+    t.date "verified_on"
+    t.jsonb "notices", default: [], null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id"], name: "index_fedramp_significant_changes_on_authorization_boundary_id"
+    t.index ["created_by_id"], name: "index_fedramp_significant_changes_on_created_by_id"
+    t.index ["updated_by_id"], name: "index_fedramp_significant_changes_on_updated_by_id"
+    t.index ["uuid"], name: "index_fedramp_significant_changes_on_uuid", unique: true
   end
 
   create_table "fedramp_statements", force: :cascade do |t|
@@ -2114,6 +2184,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
   add_foreign_key "exchange_push_receipts", "exchange_connections"
   add_foreign_key "exchange_push_receipts", "exchange_document_sources", on_delete: :nullify
   add_foreign_key "exchange_push_receipts", "received_documents", on_delete: :nullify
+  add_foreign_key "fedramp_incidents", "authorization_boundaries"
+  add_foreign_key "fedramp_incidents", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "fedramp_incidents", "users", column: "updated_by_id", on_delete: :nullify
+  add_foreign_key "fedramp_significant_changes", "authorization_boundaries"
+  add_foreign_key "fedramp_significant_changes", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "fedramp_significant_changes", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "fedramp_statements", "authorization_boundaries"
   add_foreign_key "fedramp_statements", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "fedramp_vulnerability_evaluations", "authorization_boundaries"

@@ -1,0 +1,48 @@
+<%# #1390 — the Significant changes tab of the boundary's FedRAMP page: every
+    change evaluated, newest first, and (with evidence.write) the form that
+    records one. FedrampSignificantChangesController. %>
+<% content_for :title, "FedRAMP significant changes — #{@boundary.name}" %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "changes" %>
+
+<p class="small text-muted">
+  FedRAMP requires a provider to evaluate every potential significant change and keep an auditable record of that
+  evaluation (SCN-CSO-EVA, SCN-CSO-MAR). Adaptive and Transformative changes need Significant Change Notifications;
+  SPARC computes when each is due, in federal business days, and keeps 12 months of them (SCN-CSO-HIS).
+</p>
+
+<% if @may_edit %>
+  <details class="card mb-3" data-testid="fedramp-change-new" <%= "open" if @changes.empty? %>>
+    <summary class="card-header">Record a change</summary>
+    <div class="card-body">
+      <%= render "fedramp_significant_changes/form", boundary: @boundary, change: @change,
+                 url: fedramp_significant_changes_authorization_boundary_path(@boundary), method: :post %>
+    </div>
+  </details>
+<% end %>
+
+<% if @changes.empty? %>
+  <p class="text-muted" data-testid="fedramp-changes-empty">No changes recorded yet.</p>
+<% else %>
+  <div class="card">
+    <div class="table-responsive" role="region" aria-label="Significant changes" tabindex="0">
+      <table class="table table-sm mb-0 align-middle" data-testid="fedramp-changes">
+        <thead>
+          <tr><th scope="col">Type</th><th scope="col">Change</th><th scope="col">Planned start</th>
+              <th scope="col">Finished</th><th scope="col">Notices sent</th><th scope="col">Recorded</th></tr>
+        </thead>
+        <tbody>
+          <% @changes.each do |change| %>
+            <tr data-testid="fedramp-change-row" data-change="<%= change.uuid %>">
+              <td><span class="badge bg-<%= change.transformative? ? 'danger' : change.routine? ? 'secondary' : 'info text-dark' %>"><%= change.change_type %></span></td>
+              <td><%= link_to change.description.truncate(90), fedramp_significant_change_authorization_boundary_path(@boundary, change) %></td>
+              <td><%= change.planned_start || "—" %></td>
+              <td><%= change.finished_on || "—" %></td>
+              <td><%= change.routine? ? "Not needed" : Array(change.notices).size %></td>
+              <td class="small text-muted"><%= change.created_at.to_date %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
