@@ -87,6 +87,7 @@ GET /api/v1/authorization_boundaries/:id/exchange_index
 GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info
 GET /api/v1/authorization_boundaries/:id/fedramp/certification_package_overview
 GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity
+GET /api/v1/authorization_boundaries/:id/fedramp/security_decision_record
 GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report
 GET /api/v1/authorization_boundaries/:id/fedramp_statements
 GET /api/v1/authorization_boundaries/:id/fedramp_statements/:kind/:rule_id

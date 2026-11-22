@@ -10,6 +10,8 @@
 #   GET /authorization_boundaries/:id/triage/fedramp/historical_ver_activity      (VER-TFR-MRH, #1390)
 #       [?from=&to=]  default the 12 months ending now
 #   GET /authorization_boundaries/:id/triage/fedramp/certification_package_overview (FRC-CSO-PKG, #1390)
+#   GET /authorization_boundaries/:id/fedramp/security_decision_record               (SDR-CSO-FRR, #1390)
+#       from the boundary's FedRAMP page, which it returns to on a refusal
 #
 # A report that cannot be written (no package overview address, a bad
 # period) or that fails its own validation is never sent; the triage page
@@ -46,6 +48,17 @@ class FedrampReportsController < ApplicationController
     refuse(e)
   end
 
+  def security_decision_record
+    service = FedrampSecurityDecisionRecordService.new(@boundary)
+    doc = service.call
+    audit_log("fedramp_security_decision_record_exported", subject: @boundary,
+              metadata: { authorization_boundary_id: @boundary.id, version: doc.dig("metadata", "version"),
+                          requirements: doc["fedRampRequirements"].size, gaps: service.gaps.size })
+    send_document(doc, "sdr")
+  rescue FedrampVulnerabilityReportService::Error => e
+    refuse(e, back: fedramp_authorization_boundary_path(@boundary))
+  end
+
   private
 
   def send_document(doc, suffix)
@@ -54,13 +67,12 @@ class FedrampReportsController < ApplicationController
               type: "application/json", disposition: "attachment"
   end
 
-  def refuse(error)
+  def refuse(error, back: triage_authorization_boundary_path(@boundary))
     if error.is_a?(FedrampVulnerabilityReportService::InvalidReport)
       messages = error.errors.first(3).map { |err| "#{err[:pointer]} #{err[:message]}".strip }
-      redirect_to triage_authorization_boundary_path(@boundary),
-                  error: "SPARC produced an invalid report and did not send it: #{messages.join('; ')}"
+      redirect_to back, error: "SPARC produced an invalid report and did not send it: #{messages.join('; ')}"
     else
-      redirect_to triage_authorization_boundary_path(@boundary), error: "FedRAMP report not produced: #{error.message}"
+      redirect_to back, error: "FedRAMP report not produced: #{error.message}"
     end
   end
 

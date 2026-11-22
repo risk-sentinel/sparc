@@ -8,6 +8,15 @@ A boundary's FedRAMP reports (#1354, #1384, #1390). The vulnerability reports ar
 
 The **Certification Package Overview** (FRC-CSO-PKG), against `fedramp-certification-package-overview-schema-2026-06-24.json`, is written from the boundary's FedRAMP fields and contacts (`fedramp_package`, `fedramp_contacts`; see [Authorization Boundaries](authorization-boundaries.md)). It includes service identification, service properties, the trust center and the contacts. It does not yet include the assessor, advisors, certified services or third-party information resources.
 
+The **Security Decision Record** (SDR-CSO-FRR, SDR-CSO-MTD, SDR-CSX-KSI), against `fedramp-security-decision-record-schema-2026-06-24.json`, is written from what is recorded:
+
+- `metadata`: `version` is the boundary's `fedramp_sdr_version`, which counts each change to its [FedRAMP statements](fedramp-statements.md); `lastUpdated` the newest statement or SSP change; `updateSource` this SPARC and the boundary's UUID;
+- `portsAndProtocols`: one entry per OSCAL protocol and port range on the SSP's components, with the component's `encryption` property and its purpose (or description) when recorded;
+- `securityControls`: the SSP's controls, each with a status from its statements (`implemented` / `alternative` → Implemented; `partial`, or in place mixed with `planned` → Partially Implemented; only `planned` → Not Implemented; `not-applicable` items do not count), its implementation prose, and its set-parameters. For Rev5, FedRAMP's assigned value fills any parameter the SSP leaves unset (FRC-CSF-ACP);
+- `fedRampRequirements` and `keySecurityIndicators`: the boundary's answered rules that apply to its profile, and its answered KSIs; each paragraph of a text field is one statement.
+
+The record is written from whatever is recorded. What FedRAMP still requires of it (unanswered rules, unanswered KSIs for 20x, Rev5 baseline controls missing from the SSP per FRC-CSF-BSL, ports and protocols) is counted in the `X-SPARC-SDR-Gaps` response header and listed on the boundary's FedRAMP page.
+
 The response body is the FedRAMP document itself, with `$schema` naming the schema it validates against. SPARC validates every report against that pinned schema, and checks that every required field is filled in, before returning it.
 
 ## Endpoints
@@ -18,6 +27,7 @@ The response body is the FedRAMP document itself, with `$schema` naming the sche
 | GET | `/api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info` | The Accepted Vulnerability Info for a period |
 | GET | `/api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity` | The Historical Vulnerability Activity: active and accepted vulnerabilities together, by default for the 12 months ending now |
 | GET | `/api/v1/authorization_boundaries/:id/fedramp/certification_package_overview` | The Certification Package Overview. It takes no parameters |
+| GET | `/api/v1/authorization_boundaries/:id/fedramp/security_decision_record` | The Security Decision Record. It takes no parameters |
 
 The boundary may be named by id, slug or UUID. The three vulnerability reports are also listed in the boundary's [exchange index](exchange-index.md) once the boundary has a FedRAMP Certification Package Overview address. The overview is listed once the boundary records every field it requires.
 
@@ -34,7 +44,7 @@ The boundary's `fedramp_overview_address` gives the address in effect.
 
 A valid Bearer token whose user holds `evidence.read` on the boundary (or across the instance), or an instance administrator.
 
-Each download is recorded in the audit log as `fedramp_vulnerability_detail_report_exported`, `fedramp_accepted_vulnerability_info_exported` or `fedramp_historical_ver_activity_exported`, with who downloaded it, the period (or, for the historical activity, its `generatedAt`) and how many vulnerabilities it listed. The overview is recorded as `fedramp_certification_package_overview_exported`, with how many contacts it listed.
+Each download is recorded in the audit log as `fedramp_vulnerability_detail_report_exported`, `fedramp_accepted_vulnerability_info_exported` or `fedramp_historical_ver_activity_exported`, with who downloaded it, the period (or, for the historical activity, its `generatedAt`) and how many vulnerabilities it listed. The overview is recorded as `fedramp_certification_package_overview_exported`, with how many contacts it listed; the SDR as `fedramp_security_decision_record_exported`, with its version, how many rules it carries and how many gaps remain.
 
 ## Parameters
 
