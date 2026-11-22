@@ -93,6 +93,8 @@ class Role < ApplicationRecord
     amendment.approve
     exchange.upload
     exchange.review
+    incident.read
+    incident.write
     connections.manage
     admin.rotate_credentials
     admin.administer
@@ -117,6 +119,7 @@ class Role < ApplicationRecord
     "back_matter" => "Back-Matter Resources",
     "amendment" => "HDF Amendments",
     "exchange" => "Received Documents",
+    "incident" => "FedRAMP Incidents",
     "connections" => "Connections",
     "admin" => "Instance Administration"
   }.freeze

@@ -19,6 +19,9 @@ spec/services/fedramp_vulnerability_report_service_spec.rb).
 Each test works on a throwaway phase2 boundary, removed afterwards.
 """
 
+# api-inventory: covers fedramp_reports#security_decision_record (exercised in
+# test_fedramp_statements.py, which records the answers the record carries)
+
 from __future__ import annotations
 
 import uuid

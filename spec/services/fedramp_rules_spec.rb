@@ -68,6 +68,15 @@ RSpec.describe FedrampRules do
     expect(described_class.control_parameters.fetch("ac-6.1")).to include("ac-06.01_odp.02" => "all functions not publicly accessible")
   end
 
+  it "reads a rule's deadline, and an incident report's by class and N-rating with the class's force" do
+    expect(described_class.timeframe("SCN-TRF-NIP")).to eq([ "bizdays", 30 ])
+    expect(described_class.incident_timeframe("IEC-CSO-IIR", "A", 1)).to eq([ "bizdays", 1, "SHOULD" ])
+    expect(described_class.incident_timeframe("IEC-CSO-IIR", "D", 5)).to eq([ "hours", 0.25, "MUST" ])
+    expect(described_class.incident_timeframe("IEC-CSO-IIR", "C", 0)).to be_nil
+    expect { described_class.timeframe("XXX-YYY-ZZZ") }.to raise_error(KeyError)
+    expect(described_class.definition("FRD-TRF")["term"]).to eq("Transformative Change")
+  end
+
   it "maps FedRAMP control ids to catalog ids" do
     expect(described_class.control_id("AC-02 (01)")).to eq("ac-2.1")
     expect(described_class.control_id("SC-07")).to eq("sc-7")

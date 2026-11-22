@@ -1,0 +1,114 @@
+<%# #1390 — one incident: what its reports carry, when each report is due,
+    the reports sent, their JSON downloads, and (with incident.write) its form.
+    FedrampIncidentsController. %>
+<% content_for :title, "FedRAMP incident — #{@boundary.name}" %>
+<% status_badge = { "sent" => "bg-success", "late" => "bg-warning text-dark", "overdue" => "bg-danger",
+                    "due" => "bg-info text-dark", "waiting" => "bg-secondary", "not_needed" => "bg-secondary",
+                    "untimed" => "bg-secondary" } %>
+<% status_text = { "sent" => "Sent", "late" => "Sent late", "overdue" => "Overdue", "due" => "Due",
+                   "waiting" => "Waiting for its time", "not_needed" => "Not needed (resolved)",
+                   "untimed" => "No deadline for this rating" } %>
+<% when_text = { "Initial" => "after the reportable evaluation", "Ongoing" => "after the last report",
+                 "Final" => "after resolution" } %>
+<% utc = ->(t) { t && "#{t.utc.to_fs(:long)} UTC" } %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "incidents" %>
+
+<p class="mb-2"><%= link_to "← All incidents", fedramp_incidents_authorization_boundary_path(@boundary) %></p>
+
+<div class="card mb-3" data-testid="fedramp-incident">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <code data-testid="fedramp-incident-tracking"><%= @incident.tracking_id %></code>
+    <span class="badge <%= @incident.reportable? ? 'bg-danger' : 'bg-secondary' %>"><%= @incident.reportable? ? "FedRAMP Reportable" : "Not reportable" %></span>
+    <span class="badge bg-secondary" data-testid="fedramp-incident-rating"><%= @incident.current_rating ? "N#{@incident.current_rating}" : "Not rated (treated as N5)" %></span>
+    <span class="badge <%= @incident.resolved? ? 'bg-success' : 'bg-warning text-dark' %>"><%= @incident.resolved? ? "Resolved" : "Open" %></span>
+  </div>
+  <div class="card-body">
+    <dl class="row small mb-0">
+      <% [ [ "Description", @incident.description ], [ "Federal incident response coordinator", @incident.coordinator ],
+           [ "Started", utc.(@incident.started_at) ], [ "Detected", utc.(@incident.detected_at) ],
+           [ "Detection source", @incident.detection_source ],
+           [ "Reportable evaluation completed", utc.(@incident.evaluation_completed_at) ],
+           [ "N-rating history", Array(@incident.ratings).map { |r| "N#{r['rating']} (#{r['rated_at']})" }.join(", ").presence ],
+           [ "Rating notes", @incident.evaluation_notes ], [ "Functional impact", @incident.functional_impact ],
+           [ "Likely affected agencies", Array(@incident.affected_agencies).join(", ").presence ],
+           [ "Recovery plan", @incident.recovery_plan ], [ "Observed activity", @incident.observed_activity ],
+           [ "Indicators of compromise", Array(@incident.indicators).join("\n").presence ],
+           [ "Related CVEs", Array(@incident.related_cve_ids).join(", ").presence ], [ "Root cause", @incident.root_cause ],
+           [ "Response and recovery", @incident.response_activities ], [ "Resolved", utc.(@incident.resolved_at) ],
+           [ "Lessons learned", Array(@incident.lessons_learned).join("\n").presence ] ].each do |label, value| %>
+        <% next if value.blank? %>
+        <dt class="col-sm-3"><%= label %></dt><dd class="col-sm-9 sparc-pre-line"><%= value %></dd>
+      <% end %>
+      <% if Array(@incident.milestones).any? %>
+        <dt class="col-sm-3">Milestones</dt>
+        <dd class="col-sm-9"><ul class="mb-0">
+          <% @incident.milestones.each do |m| %><li><%= m["occurred_at"] %> — <%= m["description"] %></li><% end %>
+        </ul></dd>
+      <% end %>
+    </dl>
+  </div>
+</div>
+
+<div class="card mb-3" data-testid="fedramp-incident-reports">
+  <div class="card-header">Incident reports</div>
+  <% if @no_deadlines %>
+    <p class="small text-muted m-3" data-testid="fedramp-incident-no-deadlines"><%= @no_deadlines %></p>
+  <% else %>
+    <% if @boundary.fedramp_overview_address.blank? %>
+      <p class="small text-muted mx-3 mt-2 mb-0" data-testid="fedramp-incident-no-overview">
+        A report names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
+      </p>
+    <% end %>
+    <div class="table-responsive" role="region" aria-label="Incident reports" tabindex="0">
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th scope="col">Report</th><th scope="col">Rule</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Sent</th></tr></thead>
+        <tbody>
+          <% @deadlines.each do |d| %>
+            <tr data-testid="fedramp-incident-deadline" data-report-type="<%= d.report_type %>">
+              <td><%= d.report_type %></td>
+              <td><code><%= d.rule_id %></code> <% if d.force %><span class="badge bg-secondary"><%= d.force %></span><% end %>
+                <% if d.timeframe %><span class="small text-muted d-block"><%= FedrampTimeframe.describe(*d.timeframe) %> <%= when_text[d.report_type] %></span><% end %></td>
+              <td><%= utc.(d.due_at) || "—" %></td>
+              <td><span class="badge <%= status_badge[d.status] %>" data-testid="fedramp-incident-deadline-status"><%= status_text[d.status] %></span></td>
+              <td>
+                <% sent = @incident.reports_of(d.report_type) %>
+                <% if sent.any? %>
+                  <span class="small"><%= sent.size %> sent, last <%= sent.map { |r| r["sent_at"] }.max %></span>
+                <% end %>
+                <% if @boundary.fedramp_overview_address.present? && (d.report_type != "Final" || @incident.resolved?) %>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    <%= link_to "Download", fedramp_incident_report_authorization_boundary_path(@boundary, @incident, type: d.report_type),
+                          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+                          data: { turbo: false, testid: "fedramp-incident-download-#{d.report_type.downcase}" } %>
+                    <% if @may_edit %>
+                      <%= form_with url: fedramp_incident_reports_authorization_boundary_path(@boundary, @incident), method: :post,
+                            local: true, class: "d-flex gap-1", data: { testid: "fedramp-incident-report-form" } do %>
+                        <%= hidden_field_tag :report_type, d.report_type, id: nil %>
+                        <%= datetime_local_field_tag :sent_at, Time.current.utc.strftime("%Y-%m-%dT%H:%M"), id: "sent_at_#{d.report_type}",
+                              class: "form-control form-control-sm", "aria-label": "#{d.report_type} report: time sent (UTC)" %>
+                        <%= submit_tag "Record sent", class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+                      <% end %>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="small text-muted mx-3 my-2">
+      Business days exclude weekends and US federal holidays. Recording a report keeps the report exactly as it was sent.
+    </p>
+  <% end %>
+</div>
+
+<% if @may_edit %>
+  <details class="card mb-3" data-testid="fedramp-incident-edit">
+    <summary class="card-header">Edit the incident</summary>
+    <div class="card-body">
+      <%= render "fedramp_incidents/form", boundary: @boundary, incident: @incident,
+                 url: fedramp_incident_authorization_boundary_path(@boundary, @incident), method: :patch %>
+    </div>
+  </details>
+<% end %>

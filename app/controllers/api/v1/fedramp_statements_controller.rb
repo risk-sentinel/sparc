@@ -18,9 +18,7 @@
 #
 # NIST SP 800-53: PL-2, CA-2, AC-3 / AC-6, AU-12.
 class Api::V1::FedrampStatementsController < Api::V1::BaseController
-  include RequiresFedramp
-
-  UUID_FORMAT = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
+  include FedrampApiResource
 
   before_action :set_boundary
   before_action :authorize_read!, only: %i[index show]
@@ -83,29 +81,11 @@ class Api::V1::FedrampStatementsController < Api::V1::BaseController
     })
   end
 
-  def set_boundary
-    key = params[:id].to_s
-    @boundary =
-      if key.match?(/\A\d+\z/)
-        AuthorizationBoundary.find(key)
-      elsif key.match?(UUID_FORMAT)
-        AuthorizationBoundary.find_by(uuid: key.downcase) || AuthorizationBoundary.find_by!(slug: key)
-      else
-        AuthorizationBoundary.find_by!(slug: key)
-      end
-  end
-
   def authorize_read!
-    return if current_user.instance_administrator?
-    return if current_user.has_permission?("evidence.read", authorization_boundary_id: @boundary.id)
-
-    raise NotAuthorizedError, "Not authorized to read this boundary's FedRAMP statements"
+    authorize_boundary_permission!("evidence.read", "Not authorized to read this boundary's FedRAMP statements")
   end
 
   def authorize_write!
-    return if current_user.instance_administrator?
-    return if current_user.has_permission?("evidence.write", authorization_boundary_id: @boundary.id)
-
-    raise NotAuthorizedError, "Not authorized to record this boundary's FedRAMP statements"
+    authorize_boundary_permission!("evidence.write", "Not authorized to record this boundary's FedRAMP statements")
   end
 end
