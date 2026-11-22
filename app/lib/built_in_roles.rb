@@ -20,7 +20,9 @@
 # NIST 800-53: AC-2 (account management), AC-3 (access enforcement), AC-5
 # (separation of duties), AC-6 (least privilege), CM-6 (configuration settings).
 module BuiltInRoles
-  PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") }
+  # #1390 — every read but incident.read: incidents are sensitive, and reading
+  # them is granted by name (INCIDENT_READER_ROLES), never as part of "all".
+  PERM_ALL_READ = Role::PERMISSION_KEYS.select { |k| k.end_with?(".read") && k != "incident.read" }
                                         .each_with_object({}) { |k, h| h[k] = true }.freeze
 
   # Permission keys that recur across the role defaults below. Named once so the
@@ -422,6 +424,14 @@ module BuiltInRoles
     "authorization_boundaries.manage_members" => true
   }.freeze
 
+  # #1390 — a boundary's FedRAMP incidents (IEC) are sensitive, so they have
+  # permissions of their own rather than following evidence.*. Recording one
+  # is security operations: the roles that run the system's security day to
+  # day. Reading adds the officials who answer for its risk. Assessors and
+  # view-only members see neither.
+  INCIDENT_WRITER_ROLES = %w[cloud_service_provider issm isso so_iso system_operator_admin].freeze
+  INCIDENT_READER_ROLES = (INCIDENT_WRITER_ROLES + %w[agency_ao ao ciso]).freeze
+
   # CDEF approval is not purely a boundary concern, so the policy team holds it
   # alongside the boundary security leads.
   CDEF_APPROVER_ROLES = %w[issm isso so_iso].freeze
@@ -466,6 +476,8 @@ module BuiltInRoles
     granted.merge!(PERM_BACK_MATTER_INSTANCE) if BACK_MATTER_INSTANCE_ROLES.include?(attrs[:name])
     granted.merge!(PERM_ROSTER_MANAGER)       if ROSTER_MANAGER_ROLES.include?(attrs[:name])
     granted["cdef.approve"] = true            if CDEF_APPROVER_ROLES.include?(attrs[:name])
+    granted["incident.read"] = true           if INCIDENT_READER_ROLES.include?(attrs[:name])
+    granted["incident.write"] = true          if INCIDENT_WRITER_ROLES.include?(attrs[:name])
 
     attrs.slice(:name, :display_name, :scope, :sort_order, :description).merge(
       permissions: Role::PERMISSION_KEYS.to_h { |key| [ key, granted[key] == true ] }.freeze

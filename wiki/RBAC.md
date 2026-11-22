@@ -201,11 +201,13 @@ SPARC defines **36 permission keys** across 16 resource areas (`Role::PERMISSION
 | `amendment.approve` | Approve / reject an HDF Amendment (a scanner-finding disposition) so it suppresses its finding |
 | `exchange.upload` | Upload a FedRAMP, OSCAL, HDF or XCCDF document into a boundary's received documents (on that boundary). An upload never takes effect until a reviewer accepts it |
 | `exchange.review` | Accept, respond to or reject a received document version (on that boundary). The person who uploaded a version cannot decide it; the break-glass administrator is exempt |
+| `incident.read` | Read a boundary's FedRAMP incidents and their reports (on that boundary). Not part of any "all read" role |
+| `incident.write` | Record a boundary's FedRAMP incidents and the reports sent (on that boundary) |
 | `connections.manage` | Register and manage connections to other systems (their addresses, credential and trust pins), pull now, discover and test. Instance-level only: a grant on one boundary does not count |
 | `admin.rotate_credentials` | Rotate instance credentials / master secrets |
 | `admin.administer` | **Instance-administrator authority.** Opens every administrative screen and satisfies every other permission check. Intended to be granted by an identity provider for a **bounded window** (see below) rather than held permanently |
 
-**Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, HDF Amendments, Instance Administration.
+**Resource groups** (`Role::RESOURCE_LABELS`): Control Catalogs, Baselines / Profiles, Authorization Boundaries, System Security Plans, Security Assessment Results, Security Assessment Plans, POA&Ms, Component Definitions, Evidence, Control Mappings, Converters, Back-Matter Resources, HDF Amendments, Received Documents, FedRAMP Incidents, Connections, Instance Administration.
 
 ### `amendment.approve` (#809)
 
@@ -228,6 +230,23 @@ Reading received documents uses `evidence.read`. **Separation of duties:** the
 person who uploaded a version cannot decide it, even when they hold
 `exchange.review`; Instance Admins are exempt (break-glass). See
 [User Guide: Connections & Received Documents](User-Guide-Connections-and-Received-Documents).
+
+### FedRAMP incidents (v1.17.11, #1390)
+
+A boundary's FedRAMP incidents are sensitive, so they have permissions of their
+own rather than following `evidence.*`:
+
+- `incident.write` (per boundary) records incidents and the reports sent. The
+  seeds grant it to the roles that run the system's security day to day:
+  **Cloud Service Provider**, **ISSM**, **ISSO**, **System Owner / ISO** and
+  **System Operator / Administrator**.
+- `incident.read` (per boundary) reads them. The seeds grant it to those roles
+  and to the **Authorizing Official**, **Agency Authorizing Official** and
+  **CISO**.
+
+No assessor or view-only role holds either, and the instance-wide read-only
+roles (Global Viewer and the like) do not include `incident.read`. Grant it
+from **Admin → Roles**. Instance Admins hold both.
 
 ### Who may attest to evidence
 

@@ -18,6 +18,8 @@
 #     the reports above, which also name the overview address;
 #   - its FedRAMP Certification Package Overview (FRC-CSO-PKG, #1390), built
 #     on request, listed once the boundary records every field it requires;
+#   - 12 months of its Significant Change Notifications (SCN-CSO-HIS, #1390),
+#     built on request, listed with the reports that name the overview address;
 #   - every received document the boundary has ACCEPTED, with its SHA-256 —
 #     except Class A certification materials, which are the provider's to
 #     share, not the boundary's.
@@ -91,6 +93,21 @@ class ExchangeIndexService
       { origin: "sparc", format: "fedramp", document_type: document_type, id: @boundary.id,
         name: "#{@boundary.name} FedRAMP #{title}", updated_at: Time.current.utc.iso8601, sha256: nil,
         download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/fedramp/#{path}" }
+    end + significant_change_notifications
+  end
+
+  # #1390 — 12 months of Significant Change Notifications (SCN-CSO-HIS), one
+  # per Adaptive or Transformative change, built on request. They name the
+  # overview address too. Incident reports are not listed: they go to the
+  # affected parties, not to everyone who may read the index.
+  def significant_change_notifications
+    return [] if @boundary.fedramp_overview_address.blank?
+
+    FedrampSignificantChangeService.new(@boundary).history.map do |change|
+      { origin: "sparc", format: "fedramp", document_type: FedrampSignificantChange::DOCUMENT_TYPE, id: change.uuid,
+        name: "#{@boundary.name} FedRAMP Significant Change Notification: #{change.description.truncate(80)}",
+        updated_at: change.updated_at.utc.iso8601, sha256: nil,
+        download_url: "/api/v1/authorization_boundaries/#{@boundary.id}/fedramp_significant_changes/#{change.uuid}/notification" }
     end
   end
 

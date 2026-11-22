@@ -93,3 +93,78 @@ def test_fedramp_page_answers_and_sdr(authed_page, base_url, boundary):
     assert ksi_entry["ksiEvidence"][0]["evidenceDescription"] == "LMS completion report"
     assert doc["metadata"]["version"] == "2", doc["metadata"]
     assert_no_csp_violations(page, during="FedRAMP SDR download")
+
+
+def test_fedramp_significant_change_and_notice(authed_page, base_url, boundary):
+    """Records an adaptive change with a milestone (Stimulus repeater), sees its
+    notice deadline, records the notice sent and downloads the notification."""
+    page = authed_page
+    record_csp(page)
+    fedramp = f"{base_url}/authorization_boundaries/{boundary['slug']}/fedramp"
+    page.goto(fedramp, wait_until="networkidle")
+    page.locator("[data-testid='fedramp-tab-changes']").click()
+    page.wait_for_url("**/fedramp/changes", timeout=10000)
+
+    form = page.locator("[data-testid='fedramp-change-new'] [data-testid='fedramp-change-form']")
+    form.locator("#fedramp_change_new_type").select_option("Adaptive")
+    form.locator("#fedramp_change_new_description").fill("New reporting dashboard")
+    form.locator("#fedramp_change_new_plan_summary").fill("Ship behind a feature flag")
+    form.locator("#fedramp_change_new_finished_on").fill("2026-11-20")
+    form.locator("[data-testid='fedramp-change-add-milestone']").click()
+    milestone = form.locator(
+        "[data-oscal-repeater-target='rows'] [data-testid='fedramp-change-milestone']"
+    )
+    assert milestone.count() == 1, "the milestone repeater added no row"
+    milestone.locator("input[aria-label='Milestone description']").fill("Beta")
+    form.locator("[data-testid='fedramp-change-save']").click()
+    page.get_by_text("Recorded the adaptive change.").wait_for(timeout=10000)
+
+    deadline = page.locator("[data-testid='fedramp-change-deadline'][data-stage='after_finish']")
+    assert "SCN-ADP-NTF" in deadline.inner_text()
+    assert "2026-12-07" in deadline.inner_text()
+    deadline.get_by_role("button", name="Record sent").click()
+    page.get_by_text("Recorded the notice sent on").wait_for(timeout=10000)
+    assert_no_csp_violations(page, during="FedRAMP significant change")
+
+    with page.expect_download() as download_info:
+        page.locator("[data-testid='fedramp-change-download']").click()
+    with open(download_info.value.path(), encoding="utf-8") as f:
+        doc = json.load(f)
+    assert doc["changeType"] == "Adaptive"
+    assert doc["planAndTimeline"]["milestones"] == [{"milestoneDescription": "Beta"}]
+
+
+def test_fedramp_incident_and_report(authed_page, base_url, boundary):
+    """Records an incident with an N-rating, sees its report deadlines and
+    downloads the Initial Incident Report."""
+    page = authed_page
+    record_csp(page)
+    fedramp = f"{base_url}/authorization_boundaries/{boundary['slug']}/fedramp"
+    page.goto(fedramp, wait_until="networkidle")
+    page.locator("[data-testid='fedramp-tab-incidents']").click()
+    page.wait_for_url("**/fedramp/incidents", timeout=10000)
+
+    form = page.locator(
+        "[data-testid='fedramp-incident-new'] [data-testid='fedramp-incident-form']"
+    )
+    form.locator("#fedramp_incident_new_tracking_id").fill("INC-SMOKE-1")
+    form.locator("#fedramp_incident_new_description").fill("Credential stuffing against the portal")
+    form.locator("#fedramp_incident_new_evaluation_completed_at").fill("2026-11-20T10:00")
+    form.locator("#fedramp_incident_new_current_rating").select_option("2")
+    form.locator("[data-testid='fedramp-incident-save']").click()
+    page.get_by_text("Recorded incident INC-SMOKE-1.").wait_for(timeout=10000)
+
+    rating = page.locator("[data-testid='fedramp-incident-rating']").inner_text().strip()
+    assert rating == "N2", rating
+    initial = page.locator("[data-testid='fedramp-incident-deadline'][data-report-type='Initial']")
+    assert "IEC-CSO-IIR" in initial.inner_text()
+    assert "MUST" in initial.inner_text()
+    assert_no_csp_violations(page, during="FedRAMP incident")
+
+    with page.expect_download() as download_info:
+        page.locator("[data-testid='fedramp-incident-download-initial']").click()
+    with open(download_info.value.path(), encoding="utf-8") as f:
+        doc = json.load(f)
+    assert doc["reportType"] == "Initial"
+    assert doc["providerTrackingId"] == "INC-SMOKE-1"
+    assert doc["potentialImpact"]["currentRating"] == 2

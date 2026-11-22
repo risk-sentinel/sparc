@@ -75,6 +75,9 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :fedramp_vulnerability_evaluations, dependent: :destroy
   # #1390 — its answer to each FedRAMP rule and KSI (the SDR).
   has_many :fedramp_statements, dependent: :destroy
+  # #1390 — its significant changes (SCN) and incidents (IEC).
+  has_many :fedramp_significant_changes, dependent: :destroy
+  has_many :fedramp_incidents, dependent: :destroy
   has_many :scanner_findings, dependent: :destroy
   has_many :finding_dispositions, dependent: :destroy
   has_many :risk_assessments, dependent: :destroy

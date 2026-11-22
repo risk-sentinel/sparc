@@ -30,7 +30,9 @@ module SeedRunner
     # (BuiltInRoleSeeder), so it no longer discards local role amendments.
     # #1354 — 1.6.0: exchange.upload (roles holding evidence.write) and
     # exchange.review (roles holding amendment.approve) for received documents.
-    "roles"                => "1.6.0",
+    # #1390 — 1.7.0: incident.read and incident.write (BuiltInRoles
+    # INCIDENT_READER_ROLES / INCIDENT_WRITER_ROLES).
+    "roles"                => "1.7.0",
     "admin_user"           => "1.1.0",
     # #1115 — built from the vendored FedRAMP/rules snapshot by
     # FedrampKsiImportService instead of the hand-written seed; re-keys an

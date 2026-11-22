@@ -229,6 +229,20 @@ RSpec.describe BuiltInRoleSeeder do
   # never takes effect on its own); exchange.review follows amendment.approve
   # (the other act of accepting what a provider asserts); connections.manage
   # is granted to no built-in role (an instance administrator grants it).
+  # #1390 — roles 1.7.0: incidents have permissions of their own.
+  describe "the FedRAMP incident permissions (#1390)" do
+    def holders(key) = BuiltInRoles.all.select { |_name, d| d[:permissions][key] }.keys.sort
+
+    it "ships incident.write to the security operations roles and incident.read to them and the officials" do
+      expect(holders("incident.write")).to eq(%w[cloud_service_provider issm isso so_iso system_operator_admin])
+      expect(holders("incident.read")).to eq(%w[agency_ao ao ciso cloud_service_provider issm isso so_iso system_operator_admin])
+    end
+
+    it "gives no assessor or view-only member either" do
+      expect(holders("incident.read")).not_to include("assessor_3pao", "view_only")
+    end
+  end
+
   describe "the received-document permissions (#1354)" do
     def holders(key) = BuiltInRoles.all.select { |_name, d| d[:permissions][key] }.keys.sort
 

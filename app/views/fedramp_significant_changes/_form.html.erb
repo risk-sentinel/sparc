@@ -1,0 +1,120 @@
+<%# #1390 — what a significant change records (FedrampSignificantChange): its
+    evaluation, what its notification carries, and its dates.
+    Locals: boundary, change, url, method. %>
+<% field = ->(name) { "fedramp_change_#{change.uuid || 'new'}_#{name}" } %>
+<%= form_with model: change, scope: :fedramp_significant_change, url: url, method: method, local: true,
+      data: { testid: "fedramp-change-form" } do |f| %>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <%= f.label :change_type, "Type", for: field.("type"), class: "form-label small fw-semibold" %>
+      <%= f.select :change_type, FedrampSignificantChange.change_types, {}, id: field.("type"), class: "form-select form-select-sm" %>
+      <div class="form-text">
+        Routine recurring changes are recorded as evaluated and need no notification (SCN-RTR-NNR).
+        <%= FedrampRules.definition("FRD-ADP")&.fetch("definition") %>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <%= f.label :description, "Short description of the change", for: field.("description"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :description, rows: 2, id: field.("description"), class: "form-control form-control-sm", required: true %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :type_explanation, "Why this type", for: field.("type_explanation"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :type_explanation, rows: 2, id: field.("type_explanation"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :reason, "Reason for the change", for: field.("reason"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :reason, rows: 2, id: field.("reason"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :customer_impact, "Customer impact (services and customer configuration responsibilities)",
+            for: field.("customer_impact"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :customer_impact, rows: 2, id: field.("customer_impact"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :new_risks, "New risks or vulnerabilities from the change", for: field.("new_risks"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :new_risks, rows: 2, id: field.("new_risks"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :impact_analysis, "Business or security impact analysis (text or address)",
+            for: field.("impact_analysis"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :impact_analysis, rows: 2, id: field.("impact_analysis"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6">
+      <%= f.label :impacted_controls, "Impacted KSIs or Rev5 controls (one per line or comma)",
+            for: field.("impacted_controls"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :impacted_controls, value: Array(change.impacted_controls).join("\n"), rows: 2,
+            id: field.("impacted_controls"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :assessor_name, "Assessor", for: field.("assessor_name"), class: "form-label small fw-semibold" %>
+      <%= f.text_field :assessor_name, id: field.("assessor_name"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :related_vulnerability, "Related vulnerability", for: field.("related_vulnerability"), class: "form-label small fw-semibold" %>
+      <%= f.text_field :related_vulnerability, id: field.("related_vulnerability"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :approver_name, "Approver name", for: field.("approver_name"), class: "form-label small fw-semibold" %>
+      <%= f.text_field :approver_name, id: field.("approver_name"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :approver_title, "Approver title", for: field.("approver_title"), class: "form-label small fw-semibold" %>
+      <%= f.text_field :approver_title, id: field.("approver_title"), class: "form-control form-control-sm" %>
+    </div>
+
+    <div class="col-12"><hr class="my-1"><span class="small fw-semibold">Plan and timeline</span></div>
+    <div class="col-12">
+      <%= f.label :plan_summary, "Summary of the plan, including verification of the impacted KSIs or controls",
+            for: field.("plan_summary"), class: "form-label small fw-semibold" %>
+      <%= f.text_area :plan_summary, rows: 2, id: field.("plan_summary"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :planned_start, "Planned start", for: field.("planned_start"), class: "form-label small fw-semibold" %>
+      <%= f.date_field :planned_start, id: field.("planned_start"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-3">
+      <%= f.label :planned_completion, "Planned completion", for: field.("planned_completion"), class: "form-label small fw-semibold" %>
+      <%= f.date_field :planned_completion, id: field.("planned_completion"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+      <div class="form-check">
+        <%= f.check_box :emergency, id: field.("emergency"), class: "form-check-input" %>
+        <%= f.label :emergency, "Made during an emergency or incident; notices given afterwards (SCN-CSO-EMG)",
+              for: field.("emergency"), class: "form-check-label small" %>
+      </div>
+    </div>
+    <div class="col-12">
+      <%= hidden_field_tag :milestones_listed, "1", id: nil %>
+      <div data-controller="oscal-repeater">
+        <span class="form-label small fw-semibold d-block">Milestones</span>
+        <template data-oscal-repeater-target="template"><%= render "fedramp_significant_changes/milestone_row", item: {} %></template>
+        <div data-oscal-repeater-target="rows">
+          <% Array(change.milestones).each do |item| %>
+            <%= render "fedramp_significant_changes/milestone_row", item: item %>
+          <% end %>
+        </div>
+        <button type="button" data-action="click->oscal-repeater#add" data-testid="fedramp-change-add-milestone"
+                class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm">Add milestone</button>
+      </div>
+    </div>
+
+    <div class="col-12"><hr class="my-1"><span class="small fw-semibold">What happened</span></div>
+    <div class="col-md-4">
+      <%= f.label :started_on, "Started", for: field.("started_on"), class: "form-label small fw-semibold" %>
+      <%= f.date_field :started_on, id: field.("started_on"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :finished_on, "Finished", for: field.("finished_on"), class: "form-label small fw-semibold" %>
+      <%= f.date_field :finished_on, id: field.("finished_on"), class: "form-control form-control-sm" %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :verified_on, "Verification, assessment or validation completed", for: field.("verified_on"),
+            class: "form-label small fw-semibold" %>
+      <%= f.date_field :verified_on, id: field.("verified_on"), class: "form-control form-control-sm" %>
+    </div>
+  </div>
+  <div class="mt-3">
+    <%= f.submit change.new_record? ? "Record change" : "Save change",
+          class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm", data: { testid: "fedramp-change-save" } %>
+  </div>
+<% end %>

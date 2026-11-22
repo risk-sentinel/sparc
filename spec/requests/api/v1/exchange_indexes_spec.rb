@@ -107,6 +107,24 @@ RSpec.describe "API v1 exchange index", type: :request do
     expect(response).to have_http_status(:ok)
   end
 
+  # #1390 — 12 months of Significant Change Notifications (SCN-CSO-HIS); never
+  # a routine change, and never an incident report.
+  it "lists the boundary's recent Significant Change Notifications, each downloadable" do
+    admin = create(:user, :admin)
+    boundary.update!(fedramp_enabled: true, fedramp_package_overview_uri: "https://provider.example/package/cpo.json")
+    service = FedrampSignificantChangeService.new(boundary)
+    change = service.record(attributes: { change_type: "Adaptive", description: "Dashboard" }, user: nil).change
+    service.record(attributes: { change_type: "Routine", description: "Patching" }, user: nil)
+    FedrampIncidentService.new(boundary).record(attributes: { tracking_id: "INC-1" }, user: nil)
+
+    get path, headers: headers_for(admin)
+    scns = response.parsed_body.dig("data", "documents").select { |d| d["document_type"] == "significant-change-notifications" }
+    expect(scns.map { |d| d["id"] }).to eq([ change.uuid ])
+    expect(response.parsed_body.dig("data", "documents").map { |d| d["document_type"] }).not_to include("incident-report")
+    get scns.sole["download_url"], headers: headers_for(admin)
+    expect(response.parsed_body).to include("changeType" => "Adaptive")
+  end
+
   it "takes the boundary's slug" do
     get "/api/v1/authorization_boundaries/#{boundary.slug}/exchange_index", headers: headers_for(create(:user, :admin))
     expect(response).to have_http_status(:ok)

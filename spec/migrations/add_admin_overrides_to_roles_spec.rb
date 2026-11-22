@@ -28,7 +28,7 @@ RSpec.describe AddAdminOverridesToRoles do
   # Permission keys added after #1259 shipped. An editor save from before
   # #1259 could not have written them, and this migration runs on such a
   # database before anyone can (#1354).
-  def keys_added_since = %w[exchange.upload exchange.review connections.manage]
+  def keys_added_since = %w[exchange.upload exchange.review connections.manage incident.read incident.write]
 
   # What the role editor and API wrote before #1259: every key of the time,
   # true or false.

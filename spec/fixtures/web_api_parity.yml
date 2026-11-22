@@ -774,6 +774,23 @@ controllers:
     mapped:
       index: ["GET /api/v1/authorization_boundaries/:id/fedramp_statements"]
       update: ["PUT /api/v1/authorization_boundaries/:id/fedramp_statements/:kind/:rule_id"]
+  # #1390 — the FedRAMP page's Significant changes and Incidents tabs.
+  fedramp_significant_changes:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes"]
+      create: ["POST /api/v1/authorization_boundaries/:id/fedramp_significant_changes"]
+      show: ["GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id"]
+      update: ["PUT /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id"]
+      notification: ["GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id/notification"]
+      record_notice: ["POST /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id/notices"]
+  fedramp_incidents:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries/:id/fedramp_incidents"]
+      create: ["POST /api/v1/authorization_boundaries/:id/fedramp_incidents"]
+      show: ["GET /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id"]
+      update: ["PUT /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id"]
+      report: ["GET /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/report"]
+      record_report: ["POST /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/reports"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

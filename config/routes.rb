@@ -119,6 +119,22 @@ Rails.application.routes.draw do
                                                 as: :fedramp_security_decision_record
       patch "fedramp/statements/:kind/:rule_id", to: "fedramp_statements#update", as: :fedramp_statement,
                                                  constraints: { kind: /frr|ksi/, rule_id: /[A-Z]{3}(-[A-Z]{2,4}){1,2}/ }
+      # #1390 — the FedRAMP page's Significant changes (SCN) and Incidents (IEC) tabs.
+      get   "fedramp/changes", to: "fedramp_significant_changes#index", as: :fedramp_significant_changes
+      post  "fedramp/changes", to: "fedramp_significant_changes#create"
+      get   "fedramp/changes/:change_id", to: "fedramp_significant_changes#show", as: :fedramp_significant_change
+      patch "fedramp/changes/:change_id", to: "fedramp_significant_changes#update"
+      get   "fedramp/changes/:change_id/notification", to: "fedramp_significant_changes#notification",
+                                                       as: :fedramp_significant_change_notification
+      post  "fedramp/changes/:change_id/notices", to: "fedramp_significant_changes#record_notice",
+                                                  as: :fedramp_significant_change_notices
+      get   "fedramp/incidents", to: "fedramp_incidents#index", as: :fedramp_incidents
+      post  "fedramp/incidents", to: "fedramp_incidents#create"
+      get   "fedramp/incidents/:incident_id", to: "fedramp_incidents#show", as: :fedramp_incident
+      patch "fedramp/incidents/:incident_id", to: "fedramp_incidents#update"
+      get   "fedramp/incidents/:incident_id/report", to: "fedramp_incidents#report", as: :fedramp_incident_report
+      post  "fedramp/incidents/:incident_id/reports", to: "fedramp_incidents#record_report",
+                                                      as: :fedramp_incident_reports
       # #1390 — FRC-CSO-PKG, the Certification Package Overview.
       get "triage/fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview",
                                                            as: :triage_fedramp_certification_package_overview
@@ -1141,6 +1157,19 @@ Rails.application.routes.draw do
           # rule are checked (an unknown one is 422), as the contract sweep requires.
           get "fedramp_statements/:kind/:rule_id", to: "fedramp_statements#show"
           put "fedramp_statements/:kind/:rule_id", to: "fedramp_statements#update"
+          # #1390 — significant changes (SCN) and incidents (IEC).
+          get  "fedramp_significant_changes", to: "fedramp_significant_changes#index"
+          post "fedramp_significant_changes", to: "fedramp_significant_changes#create"
+          get  "fedramp_significant_changes/:change_id", to: "fedramp_significant_changes#show"
+          put  "fedramp_significant_changes/:change_id", to: "fedramp_significant_changes#update"
+          get  "fedramp_significant_changes/:change_id/notification", to: "fedramp_significant_changes#notification"
+          post "fedramp_significant_changes/:change_id/notices", to: "fedramp_significant_changes#record_notice"
+          get  "fedramp_incidents", to: "fedramp_incidents#index"
+          post "fedramp_incidents", to: "fedramp_incidents#create"
+          get  "fedramp_incidents/:incident_id", to: "fedramp_incidents#show"
+          put  "fedramp_incidents/:incident_id", to: "fedramp_incidents#update"
+          get  "fedramp_incidents/:incident_id/report", to: "fedramp_incidents#report"
+          post "fedramp_incidents/:incident_id/reports", to: "fedramp_incidents#record_report"
         end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was
