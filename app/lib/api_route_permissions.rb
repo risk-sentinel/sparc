@@ -137,6 +137,9 @@ module ApiRoutePermissions
     # sensitive and have permissions of their own.
     "fedramp_significant_changes" => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
     "fedramp_incidents"      => { read: [ "incident.read" ], write: [ "incident.write" ] },
+    # The Ongoing Certification Report summarizes incidents: the controller
+    # also requires incident.read.
+    "fedramp_ongoing_reports" => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
     "disposition_poams"      => { read: [ "evidence.read" ] }, # #1368
     "hdf_packages"           => { read: [ "evidence.read" ] },
     "ksi_validations"        => { read: [ "evidence.read" ], write: [ "evidence.write" ],

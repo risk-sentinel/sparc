@@ -130,6 +130,7 @@ module FedrampPackageOverview
 
   included do
     validate :fedramp_package_is_valid, if: :fedramp_package_changed?
+    validates :fedramp_active_agencies, length: { maximum: 500, message: "may list at most 500 agencies" }
     validate :fedramp_profile_is_offered, if: -> { fedramp_package_changed? || fedramp_enabled_changed? }
     validate :fedramp_contacts_are_valid, if: :fedramp_contacts_changed?
     validate :fedramp_overview_from_sparc_is_usable, if: -> { fedramp_overview_from_sparc_changed? && fedramp_overview_from_sparc? }
@@ -150,6 +151,13 @@ module FedrampPackageOverview
       end
     end
     super(merged)
+  end
+
+  # #1390 — the agencies directly using the service (the Ongoing
+  # Certification Report's activeAgencies): a list, or text one per line.
+  def fedramp_active_agencies=(value)
+    list = value.is_a?(String) ? value.lines : Array(value)
+    super(list.map { |v| v.to_s.strip }.compact_blank.uniq)
   end
 
   # Accepts an array of hashes, or the index-keyed hash a form posts.

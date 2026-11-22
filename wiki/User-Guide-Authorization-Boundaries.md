@@ -199,6 +199,8 @@ reports name for it (#1354, #1390).
 - **Contacts**: the provider's contacts as FedRAMP should list them. Use
   **+ Add contact** for each one. They need no SPARC account. The overview
   needs a **Security** and a **Sales** contact.
+- **Agencies using the service**: every agency directly using it, one per
+  line, for the Ongoing Certification Report.
 
 Once every required field and both contacts are saved, the boundary's
 **Amendments** page offers **Download Certification Package Overview** (see
@@ -299,6 +301,28 @@ boundary; recording needs **`incident.write`** (see [RBAC](RBAC)).
   it was sent.
 - Incident reports are never listed in the exchange index. Incidents are never
   deleted.
+
+#### Ongoing reports
+
+The **Ongoing reports** tab writes the Ongoing Certification Report FedRAMP
+requires every 3 months, covering the whole period since the previous one
+(CCM-OCR-AVL). It shows to holders of `incident.read` (the report summarizes
+incidents) who also hold `evidence.read`; issuing needs `evidence.write`.
+
+- The period runs from the day after the last report issued (or 3 months back,
+  for the first) to today. Change **From** and **To** to choose another.
+- SPARC fills in the changes to FedRAMP answers and the significant changes
+  finished in the period, the changes planned for the next 3 months, a summary
+  of accepted vulnerabilities, the Transformative changes, the agencies using
+  the service, and the FedRAMP Reportable Incidents with their lessons learned
+  (an empty list attests that none occurred).
+- Type the **updated recommendations or best practices** for this report, and
+  any other changes to add, then **Show report** to see it.
+- **Download JSON** writes it, validated against FedRAMP's schema. **Issue
+  report** keeps it exactly as issued; the next report is then due 3 months
+  after the period ends. An issued report is never changed.
+- List the **Agencies using the service** in the boundary's FedRAMP section on
+  the Edit page, one per line.
 
 ## How to add an environment
 

@@ -793,6 +793,13 @@ controllers:
       update: ["PUT /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id"]
       report: ["GET /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/report"]
       record_report: ["POST /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/reports"]
+  fedramp_ongoing_reports:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports"]
+      draft: ["GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports/draft"]
+      create: ["POST /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports"]
+      show: ["GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports/:report_id"]
+      document: ["GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports/:report_id"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

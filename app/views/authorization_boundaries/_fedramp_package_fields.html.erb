@@ -166,4 +166,13 @@
     <button type="button" data-action="click->oscal-repeater#add" data-testid="boundary-fedramp-add-contact"
             class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm mt-1">+ Add contact</button>
   </div>
+
+  <%# #1390 — activeAgencies in the Ongoing Certification Report (CCM-OCR-AVL). %>
+  <h3 class="fs-6 fw-semibold mt-4">Agencies using the service</h3>
+  <label for="authorization_boundary_fedramp_active_agencies" class="form-label small">
+    Every agency directly using the service, one per line. The Ongoing Certification Report lists them.
+  </label>
+  <%= text_area_tag "authorization_boundary[fedramp_active_agencies]", Array(boundary.fedramp_active_agencies).join("\n"),
+        id: "authorization_boundary_fedramp_active_agencies", rows: 3, class: "form-control form-control-sm",
+        data: { testid: "boundary-fedramp-active-agencies" } %>
 </details>
