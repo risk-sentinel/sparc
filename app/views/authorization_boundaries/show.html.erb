@@ -62,6 +62,10 @@
             <%# #447 — HDF Amendment triage for scanner findings on this boundary. %>
             <% if boundary_permission?("evidence.read", boundary) %>
               <li><%= link_to "Amendments", triage_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "amendments" } %></li>
+              <%# #1390 — its answers to the FedRAMP rules and KSIs (owner-approved menu entry). %>
+              <% if boundary.fedramp_enabled? %>
+                <li><%= link_to "FedRAMP", fedramp_authorization_boundary_path(boundary), class: "dropdown-item", data: { boundary_action: "fedramp" } %></li>
+              <% end %>
             <% end %>
             <%# #904 — which CDEFs this boundary needs, from the Terraform it is built from. %>
             <% if !SparcConfig.any_auth_enabled? || current_user&.has_permission?("cdef.read") %>

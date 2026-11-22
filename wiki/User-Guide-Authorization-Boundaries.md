@@ -125,12 +125,25 @@ authorization date is included in the boundary's HDF system document.
 
 ![The Authorization date and Next decision date fields on the boundary Edit page](images/boundary-decision-dates.png)
 
-### FedRAMP package overview
+### FedRAMP
 
-The **FedRAMP package overview** section of the **Edit** page holds what SPARC
-needs to write this system's FedRAMP Certification Package Overview, and the
-address FedRAMP's reports name for it (v1.17.11, #1354, #1390). Open it to fill
-it in.
+FedRAMP is something a boundary turns on (v1.17.11, #1390). Open the
+**FedRAMP** section of the **Edit** page and tick **FedRAMP applies to this
+system**. Until you do, the boundary shows no FedRAMP features: no FedRAMP page,
+no FedRAMP card or evaluation column on its Amendments page, and no FedRAMP
+documents in its exchange index. Turning it off again hides them without
+removing anything. (A boundary that already used FedRAMP before v1.17.11 is
+turned on by the upgrade.)
+
+**Certification profile.** Choose the **Certification type** (20x or Rev5),
+**Path** (Program or Agency) and **Class** (A–D). Together they decide which
+FedRAMP rules apply. FedRAMP offers Class A only as a 20x Program
+certification, and the Agency path only for Rev5; SPARC refuses other
+combinations.
+
+**Package overview.** The rest of the section holds what SPARC needs to write
+this system's FedRAMP Certification Package Overview, and the address FedRAMP's
+reports name for it (#1354, #1390).
 
 - **Overview address in FedRAMP reports.** Choose **The address below**
   (normally your trust center, which FedRAMP requires) and enter the
@@ -155,6 +168,29 @@ Once every required field and both contacts are saved, the boundary's
 **Amendments** page offers **Download Certification Package Overview** (see
 [HDF Amendment Triage](User-Guide-HDF-Amendment-Triage)). Until then, it lists
 what is missing.
+
+### The FedRAMP page
+
+With FedRAMP on, the boundary's **More** menu opens **FedRAMP**: the system's
+answer to each FedRAMP rule and Key Security Indicator, which its Security
+Decision Record carries.
+
+- **FedRAMP rules** lists every rule that applies to the certification profile,
+  grouped by rule family, each with its force (MUST, SHOULD, MAY, …). Where a
+  rule's wording differs by class, you see your class's. For Class A, the rules
+  FedRAMP lists for it as mandatory, recommended and optional are included,
+  with that force. Until the profile is complete, the tab asks you to set it.
+- **Key Security Indicators** lists all of them, with the NIST SP 800-53
+  controls each relates to. A 20x Security Decision Record requires them; a
+  Rev5 system may record them too.
+- Open a rule or KSI to record its **Status** (Implemented, Partially
+  Implemented, Not Implemented) and how it is implemented, validated and
+  verified. A KSI also takes its tests (one per line) and evidence entries
+  (**+ Add evidence**).
+- The counts at the top show how many are answered, by status. The **Security
+  Decision Record version** counts up with every change.
+- Viewing needs `evidence.read` on the boundary; recording needs
+  `evidence.write`. Each change is audited.
 
 ## How to add an environment
 

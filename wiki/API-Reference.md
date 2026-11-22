@@ -184,6 +184,25 @@ boundary's FedRAMP fields and contacts.
 Details in
 [`fedramp-reports.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-reports.md).
 
+**FedRAMP statements (v1.17.11, #1390).** A boundary's answer to each FedRAMP
+rule that applies to its certification profile (type, path, class), and to each
+Key Security Indicator: what its Security Decision Record carries.
+
+| Endpoints | What they do | Permission |
+|---|---|---|
+| `GET /api/v1/authorization_boundaries/:id/fedramp_statements` | The applicable rules (`?kind=frr`) or the KSIs (`?kind=ksi`), each with its answer | `evidence.read` |
+| `GET …/fedramp_statements/:kind/:rule_id` | One rule or KSI and its answer | `evidence.read` |
+| `PUT …/fedramp_statements/:kind/:rule_id` | Record it: status, implementation, validation, assessment; for a KSI also tests and evidence. `201` the first time, `200` after | `evidence.write` |
+
+- Every FedRAMP endpoint (reports, evaluations, statements) answers `422` while
+  the boundary's `fedramp_enabled` is false.
+- `422` for a rule that does not apply to the profile, or a value the SDR
+  schema does not allow. Each change is audited and counts up the boundary's
+  `fedramp_sdr_version`.
+
+Details in
+[`fedramp-statements.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/api/endpoints/fedramp-statements.md).
+
 **Record the FedRAMP evaluation of each vulnerability (v1.17.11, #1354).**
 FedRAMP asks a provider to evaluate every detected vulnerability (FRR.VER).
 SPARC keeps one evaluation per vulnerability in a boundary, keyed by the

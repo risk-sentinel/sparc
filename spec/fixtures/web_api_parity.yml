@@ -769,6 +769,10 @@ controllers:
       accepted_vulnerability_info: ["GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info"]
       historical_ver_activity: ["GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity"]
       certification_package_overview: ["GET /api/v1/authorization_boundaries/:id/fedramp/certification_package_overview"]
+  fedramp_statements:
+    mapped:
+      index: ["GET /api/v1/authorization_boundaries/:id/fedramp_statements"]
+      update: ["PUT /api/v1/authorization_boundaries/:id/fedramp_statements/:kind/:rule_id"]
   promotion_queue:
     mapped:
       index: ["GET /api/v1/back_matter_resources/promotion_queue"]

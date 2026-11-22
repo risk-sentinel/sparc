@@ -88,6 +88,8 @@ GET /api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info
 GET /api/v1/authorization_boundaries/:id/fedramp/certification_package_overview
 GET /api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity
 GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report
+GET /api/v1/authorization_boundaries/:id/fedramp_statements
+GET /api/v1/authorization_boundaries/:id/fedramp_statements/:kind/:rule_id
 GET /api/v1/available
 GET /api/v1/back_matter_resources
 GET /api/v1/back_matter_resources/:id
@@ -365,6 +367,7 @@ PUT /api/v1/authorization_boundaries/:authorization_boundary_id/fedramp_evaluati
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/ksi_validations/:id
 PUT /api/v1/authorization_boundaries/:authorization_boundary_id/memberships/:id
 PUT /api/v1/authorization_boundaries/:id
+PUT /api/v1/authorization_boundaries/:id/fedramp_statements/:kind/:rule_id
 PUT /api/v1/back_matter_resources/:id
 PUT /api/v1/cdef_documents/:id
 PUT /api/v1/control_catalogs/:control_catalog_id/control_families/:id

@@ -58,7 +58,11 @@ module FedrampPackageOverview
   # The trust center (serviceProperties.trustCenter, a FedRAMP repository).
   TRUST_CENTER_KEYS = %w[trust_center_url trust_center_description
                          trust_center_authentication_required trust_center_access_instructions].freeze
-  PACKAGE_KEYS = (FIELDS.keys + TRUST_CENTER_KEYS).freeze
+  # The certification profile beside the type (certification_type above):
+  # path and class. Not part of the overview, whose schema has no field for
+  # them; they decide which FedRAMP rules apply (FedrampRules).
+  PROFILE_KEYS = %w[certification_path certification_class].freeze
+  PACKAGE_KEYS = (FIELDS.keys + TRUST_CENTER_KEYS + PROFILE_KEYS).freeze
   BUSINESS_CATEGORY_MAX = 10
   LIST_KEYS = FIELDS.select { |_, f| f[4] == :enum_list }.keys.freeze
 
@@ -126,6 +130,7 @@ module FedrampPackageOverview
 
   included do
     validate :fedramp_package_is_valid, if: :fedramp_package_changed?
+    validate :fedramp_profile_is_offered, if: -> { fedramp_package_changed? || fedramp_enabled_changed? }
     validate :fedramp_contacts_are_valid, if: :fedramp_contacts_changed?
     validate :fedramp_overview_from_sparc_is_usable, if: -> { fedramp_overview_from_sparc_changed? && fedramp_overview_from_sparc? }
   end
@@ -163,6 +168,18 @@ module FedrampPackageOverview
   end
 
   def fedramp_value(key) = (fedramp_package || {})[key.to_s]
+
+  # [type, path, class], each nil until recorded.
+  def fedramp_profile = %w[certification_type certification_path certification_class].map { |k| fedramp_value(k) }
+
+  def fedramp_profile_complete? = fedramp_profile.all?(&:present?)
+
+  # The FedRAMP rules that apply to this boundary's profile; none until it is
+  # complete.
+  def fedramp_applicable_rules
+    type, path, klass = fedramp_profile
+    FedrampRules.applicable(type: type, path: path, klass: klass)
+  end
 
   # The address FedRAMP's reports name, or nil when there is none.
   def fedramp_overview_address
@@ -267,6 +284,21 @@ module FedrampPackageOverview
     if pkg["trust_center_authentication_required"] == true && pkg["trust_center_access_instructions"].blank?
       errors.add(:fedramp_package, "Trust center access instructions are needed when it requires sign-in")
     end
+  end
+
+  # FedRAMP offers Class A only as a 20x Program certification, the Agency
+  # path only for Rev5, and Rev5 in Classes B–D (FRC-CLA, FRC-APS, FRC-CSF).
+  def fedramp_profile_is_offered
+    type, path, klass = fedramp_profile
+    choices = FedrampRules.profile_choices
+    { "Certification path" => [ path, choices[:paths] ], "Certification class" => [ klass, choices[:classes] ] }
+      .each do |label, (value, allowed)|
+        errors.add(:fedramp_package, "#{label} must be one of: #{allowed.join(', ')}") if value.present? && !allowed.include?(value)
+      end
+    return if errors.any?
+
+    errors.add(:fedramp_package, "Class A is offered only as a 20x Program certification") if klass == "A" && (type == "Rev5" || path == "Agency")
+    errors.add(:fedramp_package, "The Agency path is offered only for Rev5") if path == "Agency" && type == "20x"
   end
 
   def fedramp_contacts_are_valid

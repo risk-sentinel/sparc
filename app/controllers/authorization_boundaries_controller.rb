@@ -254,7 +254,7 @@ class AuthorizationBoundariesController < ApplicationController
       # replaces it whole, so a form posting two dates would erase the rest.
       # The accessors merge one key at a time.
       *AuthorizationBoundary::BOUNDARY_DATE_KEYS,
-      :fedramp_overview_from_sparc,                               # #1390
+      :fedramp_overview_from_sparc, :fedramp_enabled,             # #1390
       boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS,  # #395 P3
       **AuthorizationBoundary::PERMITTED_PARAMS                          # #1390
     ).tap do |permitted|

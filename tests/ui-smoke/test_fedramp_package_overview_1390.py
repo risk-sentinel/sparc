@@ -1,6 +1,6 @@
 """#1390 — the FedRAMP package overview fields on the boundary edit form, in a browser.
 
-Fills every field the FedRAMP Certification Package Overview requires, adds
+Turns FedRAMP on, fills every field the FedRAMP Certification Package Overview requires, adds
 its Security and Sales contacts with the form's "+ Add contact" control (the
 Stimulus repeater), saves, then downloads the overview from the triage page's
 FedRAMP card and checks it is SPARC's FedRAMP overview. Every step checks for
@@ -55,6 +55,7 @@ def test_overview_fields_saved_and_overview_downloaded(authed_page, base_url, bo
     )
     section.locator("summary").click()
 
+    page.locator("#authorization_boundary_fedramp_enabled").check()
     for key, value in FIELDS.items():
         _field(page, key).fill(value)
     _field(page, "certification_type").select_option("20x")

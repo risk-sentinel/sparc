@@ -339,6 +339,8 @@ RSpec.describe "HdfTriage", type: :request do
   # #1354 / #1384 — the FedRAMP evaluation of each failing finding, through the
   # same FedrampEvaluationService as PUT /api/v1/.../fedramp_evaluations/:control_id.
   describe "FedRAMP evaluation" do
+    before { boundary.update!(fedramp_enabled: true) }
+
     let!(:finding) do
       create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary, control_id: "CVE-1")
     end

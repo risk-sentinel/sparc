@@ -127,7 +127,7 @@ Records the evaluation. Only the fields sent change. Send them under `fedramp_ev
 | `400` | The body is empty |
 | `403` | The caller lacks `evidence.write` on the boundary |
 | `404` | No such boundary |
-| `422` | The boundary has no failing finding for the control (only a detected vulnerability is evaluated); a rating outside N0–N5; a next reduction that is not lower than the current N-rating; a value that is not a yes or no, a time, or a number; a field this endpoint does not accept |
+| `422` | FedRAMP is not enabled for the boundary (`fedramp_enabled`, #1390); the boundary has no failing finding for the control (only a detected vulnerability is evaluated); a rating outside N0–N5; a next reduction that is not lower than the current N-rating; a value that is not a yes or no, a time, or a number; a field this endpoint does not accept |
 
 ```json
 { "error": "Next reduction rating must be lower than the current N-rating" }

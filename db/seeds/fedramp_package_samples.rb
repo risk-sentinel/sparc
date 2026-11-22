@@ -8,12 +8,22 @@
 # recorded as the uploader, so separation of duties does not withhold the
 # review from any seeded reviewer.
 #
+# #1390 — the demo boundary also turns FedRAMP on, with the sample package's
+# profile (20x Program, Class B), unless it already records one, so its
+# FedRAMP page and reports show on a fresh install.
+#
 # Idempotent: a stream that already holds a document's bytes reports it
 # unchanged and stores nothing, so a re-run adds nothing.
 fedramp_samples = Rails.root.join("samples/fedramp-package-demo")
 fedramp_boundary = AuthorizationBoundary.find_by(name: "Cloud Web Application ATO")
 
 if fedramp_boundary
+  unless fedramp_boundary.fedramp_enabled?
+    profile = { "certification_type" => "20x", "certification_path" => "Program", "certification_class" => "B" }
+    fedramp_boundary.update!(fedramp_enabled: true,
+                             fedramp_package: profile.reject { |k, _| fedramp_boundary.fedramp_value(k).present? })
+    puts "  FedRAMP turned on for #{fedramp_boundary.name} (#{fedramp_boundary.fedramp_profile.join(' ')})"
+  end
   manifest = JSON.parse(File.read(fedramp_samples.join("manifest.json")))
   outcomes = manifest.fetch("documents").map do |entry|
     ReceivedDocumentService.call(
