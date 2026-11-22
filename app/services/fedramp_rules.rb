@@ -110,6 +110,33 @@ class FedrampRules
       [ "#{m[1].downcase}-#{m[2]}", m[3] ].compact.join(".")
     end
 
+    # A rule as the rules file records it, whatever it applies to.
+    def raw_rule(id)
+      each_rule.each { |*, rule_id, rule| return rule if rule_id == id }
+      nil
+    end
+
+    # A rule's deadline: [timeframe_type, timeframe_num], e.g. ["bizdays", 10].
+    def timeframe(id)
+      rule = raw_rule(id) or raise KeyError, "FedRAMP rule #{id} is not in the rules file"
+      [ rule.fetch("timeframe_type"), rule.fetch("timeframe_num") ]
+    end
+
+    # An incident report rule's deadline for a class and Potential Agency
+    # Impact N-rating (IEC-CSO-IIR / OIR / FIR pain_timeframes), with the
+    # class's force: [timeframe_type, timeframe_num, force]. Nil when the
+    # rule does not name the class.
+    def incident_timeframe(id, klass, pain)
+      variant = raw_rule(id)&.dig("varies_by_class", klass.to_s.downcase)
+      return nil unless variant
+
+      frame = variant.dig("pain_timeframes", pain.to_s)&.values&.first
+      frame && [ frame.fetch("timeframe_type"), frame.fetch("timeframe_num"), variant["force"] ]
+    end
+
+    # A FedRAMP definition's term and text (FRD), e.g. definition("FRD-ADP").
+    def definition(id) = data.dig("FRD", "data", "all", id)&.slice("term", "definition")
+
     def reset! = (@data = @profile_choices = @ksis = @control_parameters = nil)
 
     private

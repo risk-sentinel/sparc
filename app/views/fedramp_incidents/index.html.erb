@@ -1,0 +1,49 @@
+<%# #1390 — the Incidents tab of the boundary's FedRAMP page (incident.read):
+    every incident evaluated, newest first, and (with incident.write) the form
+    that records one. FedrampIncidentsController. %>
+<% content_for :title, "FedRAMP incidents — #{@boundary.name}" %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "incidents" %>
+
+<p class="small text-muted">
+  FedRAMP requires a provider to evaluate each incident promptly for whether it is a FedRAMP Reportable Incident
+  (IEC-CSO-EFR), and to report one in Initial, Ongoing and Final Incident Reports. When each is due depends on the
+  certification class and the incident's N-rating; SPARC reads both from FedRAMP's rules.
+</p>
+
+<% if @may_edit %>
+  <details class="card mb-3" data-testid="fedramp-incident-new" <%= "open" if @incidents.empty? %>>
+    <summary class="card-header">Record an incident</summary>
+    <div class="card-body">
+      <%= render "fedramp_incidents/form", boundary: @boundary, incident: @incident,
+                 url: fedramp_incidents_authorization_boundary_path(@boundary), method: :post %>
+    </div>
+  </details>
+<% end %>
+
+<% if @incidents.empty? %>
+  <p class="text-muted" data-testid="fedramp-incidents-empty">No incidents recorded.</p>
+<% else %>
+  <div class="card">
+    <div class="table-responsive" role="region" aria-label="Incidents" tabindex="0">
+      <table class="table table-sm mb-0 align-middle" data-testid="fedramp-incidents">
+        <thead>
+          <tr><th scope="col">Tracking ID</th><th scope="col">Description</th><th scope="col">Reportable</th>
+              <th scope="col">N-rating</th><th scope="col">Detected</th><th scope="col">Resolved</th><th scope="col">Reports sent</th></tr>
+        </thead>
+        <tbody>
+          <% @incidents.each do |incident| %>
+            <tr data-testid="fedramp-incident-row" data-incident="<%= incident.uuid %>">
+              <td><%= link_to incident.tracking_id, fedramp_incident_authorization_boundary_path(@boundary, incident) %></td>
+              <td><%= incident.description.to_s.truncate(80).presence || "—" %></td>
+              <td><%= incident.reportable? ? "Yes" : "No" %></td>
+              <td><%= incident.current_rating ? "N#{incident.current_rating}" : "Not rated" %></td>
+              <td><%= incident.detected_at&.utc&.to_fs(:short) || "—" %></td>
+              <td><%= incident.resolved_at&.utc&.to_fs(:short) || "Open" %></td>
+              <td><%= Array(incident.reports).size %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

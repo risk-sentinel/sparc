@@ -1,0 +1,15 @@
+<%# #1390 — one milestone of a change's plan (FedrampSignificantChange::MILESTONE_KEYS). %>
+<div class="repeater-row row g-2 mb-2 align-items-center" data-testid="fedramp-change-milestone">
+  <div class="col-md-8">
+    <%= text_field_tag "fedramp_significant_change[milestones][][description]", item["description"], id: nil,
+          class: "form-control form-control-sm", placeholder: "Milestone", "aria-label": "Milestone description" %>
+  </div>
+  <div class="col-md-3">
+    <%= date_field_tag "fedramp_significant_change[milestones][][target_date]", item["target_date"], id: nil,
+          class: "form-control form-control-sm", "aria-label": "Milestone target date" %>
+  </div>
+  <div class="col-md-1">
+    <button type="button" data-action="click->oscal-repeater#remove"
+            class="btn btn-sm btn-outline-danger" aria-label="Remove milestone">×</button>
+  </div>
+</div>

@@ -235,6 +235,71 @@ Decision Record carries.
 - Viewing needs `evidence.read` on the boundary; recording needs
   `evidence.write`. Each change is audited.
 
+#### Significant changes
+
+The **Significant changes** tab keeps the record FedRAMP requires of every
+change you evaluate (SCN-CSO-EVA, SCN-CSO-MAR).
+
+- **Record a change**: its **Type**, a short description and why it is that
+  type, then what a notification carries: reason, customer impact, new risks,
+  the impact analysis, the impacted KSIs or controls, assessor, related
+  vulnerability, approver, and the plan (summary, planned start and
+  completion, milestones). Tick **Made during an emergency** when you made it
+  first and notify afterwards (SCN-CSO-EMG).
+- A **Routine** recurring change is recorded as evaluated and needs no
+  notification.
+- An **Adaptive** or **Transformative** change lists the notices it needs and
+  when each is due, counted in federal business days (weekends and US federal
+  holidays excluded):
+
+  | Type | Notice | Due |
+  |---|---|---|
+  | Adaptive | After finishing | 10 business days after the finish |
+  | Transformative | Initial plans | 30 business days before the start |
+  | Transformative | Final plans | 10 business days before the start |
+  | Transformative | After finishing | 5 business days after the finish |
+  | Transformative | After verification | 5 business days after verification |
+  | Transformative | Updated documentation published | 30 business days after the finish |
+
+  The start is the actual start once you record it, else the planned start.
+  Record **Started**, **Finished** and **Verification completed** as they
+  happen.
+- **Download notification (JSON)** writes the Significant Change Notification,
+  validated against FedRAMP's schema. The change's page is its human-readable
+  form. Both need the overview address.
+- **Record sent** with the date keeps the notification exactly as it was sent.
+  A notice sent after it was due shows as **Sent late**.
+- The exchange index lists 12 months of notifications. Changes are never
+  deleted. The tab uses `evidence.read` and `evidence.write`.
+
+#### Incidents
+
+The **Incidents** tab shows only to holders of **`incident.read`** on the
+boundary; recording needs **`incident.write`** (see [RBAC](RBAC)).
+`evidence.*` does not open it.
+
+- **Record an incident**: your tracking ID, whether it is a **FedRAMP
+  Reportable Incident** (it affects, or is likely to affect, the
+  confidentiality or integrity of federal customer data), and what the
+  reports carry: coordinator, description, timeline and milestones, the
+  Potential Agency Impact **N-rating**, functional impact, affected agencies,
+  recovery plan, observed activity, indicators of compromise, related CVEs,
+  root cause, response and recovery, resolution, and lessons learned. Times
+  are UTC.
+- Each new N-rating is kept in the incident's history. Until you rate it, a
+  reportable incident is treated as N5, as FedRAMP requires.
+- **Incident reports** lists the Initial, Ongoing and Final reports with when
+  each is due. FedRAMP sets the timeframe by your certification class and the
+  N-rating (from 15 minutes to 3 business days), and whether it is a MUST or a
+  SHOULD. The Initial report counts from the completed reportable evaluation,
+  each Ongoing report from the last report sent until the incident is
+  resolved, and the Final from the resolution.
+- **Download** writes each report, validated against FedRAMP's schema; the
+  Final needs the resolution time. **Record sent** keeps the report exactly as
+  it was sent.
+- Incident reports are never listed in the exchange index. Incidents are never
+  deleted.
+
 ## How to add an environment
 
 Environments (dev, test, prod, …) are the system boundaries within an

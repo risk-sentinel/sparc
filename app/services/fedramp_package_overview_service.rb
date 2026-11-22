@@ -42,13 +42,5 @@ class FedrampPackageOverviewService
 
   private
 
-  def validated!(doc)
-    result = DocumentValidationService.call(JSON.generate(doc), format: "fedramp", document_type: DOCUMENT_TYPE)
-    raise FedrampVulnerabilityReportService::InvalidReport.new(DOCUMENT_TYPE, result.errors) unless result.valid?
-
-    doc
-  rescue DocumentValidationService::Error => e
-    raise FedrampVulnerabilityReportService::InvalidReport.new(DOCUMENT_TYPE,
-                                                                [ { check: "schema", pointer: "", message: e.message } ])
-  end
+  def validated!(doc) = FedrampVulnerabilityReportService.validated!(DOCUMENT_TYPE, doc)
 end

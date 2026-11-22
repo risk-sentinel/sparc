@@ -55,11 +55,13 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - **FedRAMP is turned on per boundary**, with its certification profile (type, path, class). Until it is on, the boundary shows no FedRAMP features. A boundary already using FedRAMP is turned on by the upgrade.
   - A boundary's **FedRAMP page** records its answer to each FedRAMP rule that applies to its profile and to each Key Security Indicator. It's on the boundary's More menu and the API.
   - SPARC writes the boundary's **Security Decision Record** from those answers and its SSP's controls, parameters, ports and protocols, validated before it is returned, and lists what FedRAMP still requires of it.
+  - The FedRAMP page's **Significant changes** tab records every change evaluated (Routine, Adaptive, Transformative), shows when each notice is due in federal business days (weekends and US federal holidays excluded), writes the **Significant Change Notification**, and keeps each notice as sent. The exchange index lists 12 months of them.
+  - Its **Incidents** tab records each incident with its N-rating history, shows when each Initial, Ongoing and Final report is due by class and N-rating, and writes each **Incident Report**. New permissions: `incident.read` and `incident.write`.
   - SPARC writes the boundary's **Certification Package Overview** (FRC-CSO-PKG) from new FedRAMP fields and contacts on the boundary's Edit page, validated before it is returned, from the triage page, the API and the exchange index.
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
 
-**Upgrading:** an image swap from v1.17.10. Five migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+**Upgrading:** an image swap from v1.17.10. Six migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
 

@@ -1,0 +1,113 @@
+<%# #1390 — one significant change: its notification in human-readable form
+    (SCN-CSO-HRM), the notices it needs with when each is due, the notices
+    sent, its JSON download, and (with evidence.write) its form.
+    FedrampSignificantChangesController. %>
+<% content_for :title, "FedRAMP significant change — #{@boundary.name}" %>
+<% status_badge = { "sent" => "bg-success", "late" => "bg-warning text-dark", "overdue" => "bg-danger",
+                    "due" => "bg-info text-dark", "waiting" => "bg-secondary" } %>
+<% status_text = { "sent" => "Sent", "late" => "Sent late", "overdue" => "Overdue", "due" => "Due",
+                   "waiting" => "Waiting for its date" } %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "changes" %>
+
+<p class="mb-2"><%= link_to "← All significant changes", fedramp_significant_changes_authorization_boundary_path(@boundary) %></p>
+
+<div class="card mb-3" data-testid="fedramp-change">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <span class="badge bg-<%= @change.transformative? ? 'danger' : @change.routine? ? 'secondary' : 'info text-dark' %>"
+          data-testid="fedramp-change-type"><%= @change.change_type %></span>
+    <span class="fw-semibold"><%= @change.description %></span>
+    <% if @change.emergency? %><span class="badge bg-warning text-dark">Emergency</span><% end %>
+  </div>
+  <div class="card-body">
+    <dl class="row small mb-0">
+      <% [ [ "Why this type", @change.type_explanation ], [ "Reason", @change.reason ],
+           [ "Customer impact", @change.customer_impact ], [ "New risks or vulnerabilities", @change.new_risks ],
+           [ "Impact analysis", @change.impact_analysis ],
+           [ "Impacted KSIs or controls", Array(@change.impacted_controls).join(", ").presence ],
+           [ "Assessor", @change.assessor_name ], [ "Related vulnerability", @change.related_vulnerability ],
+           [ "Approver", [ @change.approver_name, @change.approver_title ].compact.join(", ").presence ],
+           [ "Plan", @change.plan_summary ],
+           [ "Planned", [ @change.planned_start, @change.planned_completion ].compact.join(" to ").presence ],
+           [ "Started", @change.started_on ], [ "Finished", @change.finished_on ], [ "Verified", @change.verified_on ] ].each do |label, value| %>
+        <% next if value.blank? %>
+        <dt class="col-sm-3"><%= label %></dt><dd class="col-sm-9 sparc-pre-line"><%= value %></dd>
+      <% end %>
+      <% if Array(@change.milestones).any? %>
+        <dt class="col-sm-3">Milestones</dt>
+        <dd class="col-sm-9"><ul class="mb-0">
+          <% @change.milestones.each do |m| %><li><%= m["description"] %><%= " — #{m['target_date']}" if m["target_date"] %></li><% end %>
+        </ul></dd>
+      <% end %>
+      <dt class="col-sm-3">Recorded</dt>
+      <dd class="col-sm-9 text-muted"><%= @change.created_at.utc.to_fs(:long) %> UTC<%= " by #{@change.created_by.display_label}" if @change.created_by %></dd>
+    </dl>
+  </div>
+</div>
+
+<% if @change.routine? %>
+  <p class="text-muted" data-testid="fedramp-change-routine">
+    A routine recurring change: recorded as evaluated, with no Significant Change Notification (SCN-RTR-NNR).
+  </p>
+<% else %>
+  <div class="card mb-3" data-testid="fedramp-change-notices">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Notices</span>
+      <% if @boundary.fedramp_overview_address.present? %>
+        <%= link_to "Download notification (JSON)", fedramp_significant_change_notification_authorization_boundary_path(@boundary, @change),
+              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+              data: { turbo: false, testid: "fedramp-change-download" } %>
+      <% end %>
+    </div>
+    <% if @boundary.fedramp_overview_address.blank? %>
+      <p class="small text-muted mx-3 mt-2 mb-0" data-testid="fedramp-change-no-overview">
+        A notification names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
+      </p>
+    <% end %>
+    <div class="table-responsive" role="region" aria-label="Notices" tabindex="0">
+      <table class="table table-sm mb-0 align-middle">
+        <thead><tr><th scope="col">Notice</th><th scope="col">Rule</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Sent</th></tr></thead>
+        <tbody>
+          <% @deadlines.each do |d| %>
+            <% status = d.status %>
+            <tr data-testid="fedramp-change-deadline" data-stage="<%= d.key %>">
+              <td><%= d.label %></td>
+              <td><code><%= d.rule_id %></code>
+                <span class="small text-muted d-block"><%= FedrampTimeframe.describe(*d.timeframe) %> <%= d.stage.before && !d.retroactive ? "before the start" : "after" %><%= " (emergency: given afterwards)" if d.retroactive %></span></td>
+              <td><%= d.due_on || "—" %></td>
+              <td><span class="badge <%= status_badge[status] %>" data-testid="fedramp-change-deadline-status"><%= status_text[status] %></span></td>
+              <td>
+                <% if d.notice %>
+                  <%= d.notice["sent_on"] %>
+                  <span class="small text-muted d-block">recorded by <%= d.notice["recorded_by"] || "—" %><%= ", SHA-256 #{d.notice['sha256'].first(12)}…" if d.notice["sha256"] %></span>
+                <% end %>
+                <% if @may_edit && (d.notification? ? @boundary.fedramp_overview_address.present? : true) %>
+                  <%= form_with url: fedramp_significant_change_notices_authorization_boundary_path(@boundary, @change), method: :post,
+                        local: true, class: "d-flex gap-1 mt-1", data: { testid: "fedramp-change-notice-form" } do %>
+                    <%= hidden_field_tag :stage, d.key, id: nil %>
+                    <%= date_field_tag :sent_on, Date.current, id: "sent_on_#{d.key}", class: "form-control form-control-sm",
+                          max: Date.current, "aria-label": "#{d.label}: date sent" %>
+                    <%= submit_tag d.notice ? "Re-record" : "Record sent", class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm" %>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="small text-muted mx-3 my-2">
+      Due dates count federal business days (weekends and US federal holidays excluded). Recording a notice keeps the
+      notification exactly as it was sent.
+    </p>
+  </div>
+<% end %>
+
+<% if @may_edit %>
+  <details class="card mb-3" data-testid="fedramp-change-edit">
+    <summary class="card-header">Edit the change</summary>
+    <div class="card-body">
+      <%= render "fedramp_significant_changes/form", boundary: @boundary, change: @change,
+                 url: fedramp_significant_change_authorization_boundary_path(@boundary, @change), method: :patch %>
+    </div>
+  </details>
+<% end %>
