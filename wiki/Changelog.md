@@ -53,7 +53,8 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - SPARC also writes the boundary's **Historical Vulnerability Activity** (VER-TFR-MRH): active and accepted vulnerabilities in one snapshot, by default for the 12 months ending now, from the triage page, the API and the exchange index.
   - A boundary records its Certification Package Overview address, which the reports name: its trust center's address, or SPARC's own overview endpoint.
   - **FedRAMP is turned on per boundary**, with its certification profile (type, path, class). Until it is on, the boundary shows no FedRAMP features. A boundary already using FedRAMP is turned on by the upgrade.
-  - A boundary's **FedRAMP page** records its answer to each FedRAMP rule that applies to its profile and to each Key Security Indicator, for its Security Decision Record. It's on the boundary's More menu and the API.
+  - A boundary's **FedRAMP page** records its answer to each FedRAMP rule that applies to its profile and to each Key Security Indicator. It's on the boundary's More menu and the API.
+  - SPARC writes the boundary's **Security Decision Record** from those answers and its SSP's controls, parameters, ports and protocols, validated before it is returned, and lists what FedRAMP still requires of it.
   - SPARC writes the boundary's **Certification Package Overview** (FRC-CSO-PKG) from new FedRAMP fields and contacts on the boundary's Edit page, validated before it is returned, from the triage page, the API and the exchange index.
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.

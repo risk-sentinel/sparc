@@ -61,6 +61,33 @@ RSpec.describe "Boundary FedRAMP page", type: :request do
     end
   end
 
+  describe "the Security Decision Record card" do
+    before { sign_in_as(create(:user, :admin)) }
+
+    it "offers the download and lists what FedRAMP still requires" do
+      boundary.update!(fedramp_package_overview_uri: "https://trust.example/cpo.json")
+      get page_path
+      link = html.at_css("[data-testid='fedramp-download-sdr']")
+      expect(link["href"]).to eq(fedramp_security_decision_record_authorization_boundary_path(boundary))
+      expect(html.at_css("[data-testid='fedramp-sdr-gaps']").text).to include("FedRAMP rules not answered", "Link an SSP")
+
+      get link["href"]
+      expect(response.headers["Content-Disposition"]).to include("attachment", "fedramp-sdr.json")
+      expect(JSON.parse(response.body)["metadata"]).to include("version" => "0")
+      expect(AuditEvent.where(action: "fedramp_security_decision_record_exported").count).to eq(1)
+    end
+
+    it "explains why there is no download without an overview address, and returns here on a refusal" do
+      get page_path
+      expect(html.at_css("[data-testid='fedramp-sdr-unavailable']")).to be_present
+      expect(html.at_css("[data-testid='fedramp-download-sdr']")).to be_nil
+
+      get fedramp_security_decision_record_authorization_boundary_path(boundary)
+      expect(response).to redirect_to(page_path)
+      expect(flash[:error]).to include("FedRAMP report not produced")
+    end
+  end
+
   describe "PATCH a statement" do
     let(:writer) { user_with({ "evidence.read" => true, "evidence.write" => true }) }
     let(:rule_id) { "SDR-CSO-FRR" }

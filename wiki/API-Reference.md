@@ -169,6 +169,7 @@ boundary's FedRAMP fields and contacts.
 | `/api/v1/authorization_boundaries/:id/fedramp/accepted_vulnerability_info` | The Accepted Vulnerability Info, same period parameters | `evidence.read` |
 | `/api/v1/authorization_boundaries/:id/fedramp/historical_ver_activity` | The Historical Vulnerability Activity (VER-TFR-MRH): active and accepted vulnerabilities together; default the 12 months ending now | `evidence.read` |
 | `/api/v1/authorization_boundaries/:id/fedramp/certification_package_overview` | The Certification Package Overview | `evidence.read` |
+| `/api/v1/authorization_boundaries/:id/fedramp/security_decision_record` | The Security Decision Record, from the boundary's FedRAMP statements and its SSP's controls, ports and protocols; `X-SPARC-SDR-Gaps` counts what FedRAMP still requires | `evidence.read` |
 
 - The body is the FedRAMP document itself, validated against FedRAMP's pinned
   schema and for completeness before it is returned.

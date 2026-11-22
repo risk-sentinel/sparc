@@ -403,6 +403,7 @@ class AuditEvent < ApplicationRecord
     fedramp_historical_ver_activity_exported
     fedramp_certification_package_overview_exported
     fedramp_statement_recorded
+    fedramp_security_decision_record_exported
 
     hdf_system_exported
 
@@ -635,7 +636,8 @@ class AuditEvent < ApplicationRecord
                             fedramp_accepted_vulnerability_info_exported
                             fedramp_historical_ver_activity_exported
                             fedramp_certification_package_overview_exported
-                            fedramp_statement_recorded],
+                            fedramp_statement_recorded
+                            fedramp_security_decision_record_exported],
     "KSI Validations" => %w[ksi_validation_created ksi_validation_updated
                             ksi_validation_deleted ksi_catalog_imported
                             ksi_catalog_import_refused],

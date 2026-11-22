@@ -6,8 +6,11 @@
 
 The boundary's answer to each FedRAMP rule that applies to its certification
 profile, and to each Key Security Indicator: what its Security Decision
-Record carries. Each test works on a throwaway phase2 boundary with FedRAMP
-on and a 20x Program Class B profile, removed afterwards.
+Record carries; the record itself
+(GET /api/v1/authorization_boundaries/:id/fedramp/security_decision_record) is
+fed back through POST /api/v1/document_validations, which must accept it.
+Each test works on a throwaway phase2 boundary with FedRAMP on, a 20x Program
+Class B profile and an overview address, removed afterwards.
 """
 
 from __future__ import annotations
@@ -37,6 +40,7 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
                 "description": "Created by the FedRAMP statement API contract tests (#1390)",
                 "fedramp_enabled": True,
                 "fedramp_package": PROFILE,
+                "fedramp_package_overview_uri": "https://provider.example/cpo.json",
             }
         },
     )
@@ -105,3 +109,30 @@ class TestFedrampStatements:
     @pytest.mark.auth
     def test_requires_a_token(self, anon_client: httpx.Client, boundary: dict[str, Any]) -> None:
         assert_error_envelope(anon_client.get(_path(boundary)), expected_status=401)
+
+    @pytest.mark.happy
+    def test_security_decision_record_carries_the_answer_and_ingests(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        saved = admin_client.put(
+            _path(boundary, "/frr/SDR-CSO-FRR"),
+            json={
+                "fedramp_statement": {"status": "Implemented", "implementation": "SPARC writes it."}
+            },
+        )
+        assert saved.status_code == 201, saved.text
+        response = admin_client.get(
+            f"{BOUNDARIES}/{boundary['id']}/fedramp/security_decision_record"
+        )
+        assert response.status_code == 200, response.text
+        record = response.json()
+        assert record["fedRampRequirements"][0]["frrID"] == "SDR-CSO-FRR"
+        assert int(response.headers["X-SPARC-SDR-Gaps"]) > 0
+        checked = admin_client.post(
+            "/api/v1/document_validations",
+            content=response.content,
+            headers={"Content-Type": "application/json"},
+        )
+        assert checked.status_code == 200, checked.text
+        assert checked.json()["valid"] is True, checked.json()["errors"]
+        assert checked.json()["document_type"] == "security-decision-record"
