@@ -5,7 +5,7 @@ require "rails_helper"
 # #1354 / #1384 — the provider's FedRAMP evaluation of each vulnerability
 # (VER-EVA-EIR, VER-EVA-ELX, VER-EVA-EPA, VER-RPT-VDT), keyed by control_id.
 RSpec.describe "Api::V1 FedRAMP evaluations", type: :request do
-  let(:boundary) { create(:authorization_boundary) }
+  let(:boundary) { create(:authorization_boundary, :fedramp) }
   let(:scan_run) { create(:scan_run, authorization_boundary: boundary) }
   let!(:finding) do
     create(:scanner_finding, :failed, scan_run: scan_run, authorization_boundary: boundary,

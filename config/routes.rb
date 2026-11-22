@@ -112,6 +112,11 @@ Rails.application.routes.draw do
       # #1390 — VER-TFR-MRH, the historical activity (12 months by default).
       get "triage/fedramp/historical_ver_activity", to: "fedramp_reports#historical_ver_activity",
                                                     as: :triage_fedramp_historical_ver_activity
+      # #1390 — the boundary's FedRAMP page: its answer to each FedRAMP rule
+      # and Key Security Indicator (the Security Decision Record's content).
+      get   "fedramp", to: "fedramp_statements#index", as: :fedramp
+      patch "fedramp/statements/:kind/:rule_id", to: "fedramp_statements#update", as: :fedramp_statement,
+                                                 constraints: { kind: /frr|ksi/, rule_id: /[A-Z]{3}(-[A-Z]{2,4}){1,2}/ }
       # #1390 — FRC-CSO-PKG, the Certification Package Overview.
       get "triage/fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview",
                                                            as: :triage_fedramp_certification_package_overview
@@ -1136,6 +1141,12 @@ Rails.application.routes.draw do
           get "fedramp/historical_ver_activity", to: "fedramp_reports#historical_ver_activity"
           # #1390 — FRC-CSO-PKG, the Certification Package Overview.
           get "fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview"
+          # #1390 — the boundary's answer to each FedRAMP rule and KSI.
+          get "fedramp_statements", to: "fedramp_statements#index"
+          # No route constraints: a caller is authenticated before the kind and
+          # rule are checked (an unknown one is 422), as the contract sweep requires.
+          get "fedramp_statements/:kind/:rule_id", to: "fedramp_statements#show"
+          put "fedramp_statements/:kind/:rule_id", to: "fedramp_statements#update"
         end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was

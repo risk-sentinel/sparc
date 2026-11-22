@@ -18,8 +18,11 @@
 # NIST SP 800-53: RA-5, CA-7, CA-5, SI-2, AC-3 / AC-6 (evidence.read on the
 # boundary), AU-12 (each download audited).
 class FedrampReportsController < ApplicationController
+  include RequiresFedramp
+
   before_action :set_boundary
   before_action :authorize_read!
+  before_action :require_fedramp!
 
   def vulnerability_detail_report
     deliver(:vulnerability_detail_report, "fedramp_vulnerability_detail_report_exported", "vulnerabilities", "vdr")

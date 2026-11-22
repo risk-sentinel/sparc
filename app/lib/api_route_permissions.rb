@@ -130,6 +130,9 @@ module ApiRoutePermissions
     # #1354 / #1384 — the FedRAMP evaluation of each vulnerability, checked
     # against the boundary in the path, as the dispositions beside it are.
     "fedramp_evaluations"    => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
+    # #1390 — the boundary's answer to each FedRAMP rule and KSI (the SDR),
+    # checked against the boundary in the path, as its FedRAMP evaluations are.
+    "fedramp_statements"     => { read: [ "evidence.read" ], write: [ "evidence.write" ] },
     "disposition_poams"      => { read: [ "evidence.read" ] }, # #1368
     "hdf_packages"           => { read: [ "evidence.read" ] },
     "ksi_validations"        => { read: [ "evidence.read" ], write: [ "evidence.write" ],

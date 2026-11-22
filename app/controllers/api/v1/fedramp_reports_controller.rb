@@ -29,8 +29,11 @@
 class Api::V1::FedrampReportsController < Api::V1::BaseController
   UUID_FORMAT = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
 
+  include RequiresFedramp
+
   before_action :set_boundary
   before_action :authorize_read!
+  before_action :require_fedramp!
 
   rescue_from FedrampVulnerabilityReportService::MissingPackageOverview,
               FedrampVulnerabilityReportService::InvalidPeriod,

@@ -168,7 +168,7 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
                     # FedRAMP's reports name (https:// only; the model refuses others).
                     :fedramp_package_overview_uri,
                     # #1390 — the Certification Package Overview's fields and contacts.
-                    :fedramp_overview_from_sparc, **AuthorizationBoundary::PERMITTED_PARAMS)
+                    :fedramp_enabled, :fedramp_overview_from_sparc, **AuthorizationBoundary::PERMITTED_PARAMS)
   end
 
   def serialize_boundary(ab, detailed: false)
@@ -196,6 +196,8 @@ class Api::V1::AuthorizationBoundariesController < Api::V1::BaseController
       fedramp_package_overview_uri: ab.fedramp_package_overview_uri,
       # #1390 — what the overview is written from, and the address the reports
       # name (the one above, or SPARC's own endpoint).
+      fedramp_enabled: ab.fedramp_enabled,
+      fedramp_sdr_version: ab.fedramp_sdr_version,
       fedramp_overview_from_sparc: ab.fedramp_overview_from_sparc,
       fedramp_overview_address: ab.fedramp_overview_address,
       fedramp_package: ab.fedramp_package,

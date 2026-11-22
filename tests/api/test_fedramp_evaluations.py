@@ -48,6 +48,8 @@ def scanned(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
             "authorization_boundary": {
                 "name": f"phase2-fedramp-evaluations-{uuid.uuid4().hex[:8]}",
                 "description": "FedRAMP evaluation API contract tests (#1354)",
+                # #1390 — FedRAMP features answer only once FedRAMP is on.
+                "fedramp_enabled": True,
             }
         },
     )

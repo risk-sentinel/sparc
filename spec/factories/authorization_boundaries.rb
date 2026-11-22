@@ -26,12 +26,22 @@ FactoryBot.define do
 
     # #1390 — every field the FedRAMP Certification Package Overview requires,
     # and its Security and Sales contacts.
+    # #1390 — FedRAMP turned on, with a complete certification profile.
+    trait :fedramp do
+      fedramp_enabled { true }
+      fedramp_package do
+        { "certification_type" => "20x", "certification_path" => "Program", "certification_class" => "B" }
+      end
+    end
+
     trait :fedramp_overview_ready do
+      fedramp_enabled { true }
       fedramp_package do
         { "package_id" => "FR2400000001", "provider_name" => "Example Provider", "service_name" => "Example Cloud",
           "service_acronym" => "EXC", "service_description" => "A cloud service.", "certification_type" => "20x",
           "website" => "https://provider.example", "logo" => "https://provider.example/logo.png",
-          "service_types" => [ "SaaS" ], "deployment_model" => "Public Cloud" }
+          "service_types" => [ "SaaS" ], "deployment_model" => "Public Cloud",
+          "certification_path" => "Program", "certification_class" => "B" }
       end
       fedramp_contacts do
         [ { "contact_type" => "Security", "name" => "Security Team", "email" => "security@provider.example" },

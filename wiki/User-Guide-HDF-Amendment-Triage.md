@@ -236,6 +236,10 @@ internet-reachable vulnerability and `LEV` a likely exploitable one.
 - Recording one needs `evidence.write` on the boundary, the same as a
   disposition. Each one is audited as `fedramp_evaluation_recorded`.
 
+The FedRAMP evaluation column and the **FedRAMP reports** card appear only on a
+boundary that has FedRAMP turned on (#1390; see
+[Authorization Boundaries](User-Guide-Authorization-Boundaries)).
+
 FedRAMP's reports also name the system's **FedRAMP package overview address**,
 which you set on the boundary's **Edit** page (see
 [Authorization Boundaries](User-Guide-Authorization-Boundaries)).

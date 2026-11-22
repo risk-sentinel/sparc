@@ -29,7 +29,11 @@
           class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
   </div>
 </div>
-<%= render "hdf_triage/fedramp_reports", boundary: @boundary %>
+<%# #1390 — FedRAMP features show only once the boundary turns FedRAMP on. %>
+<% fedramp = @boundary.fedramp_enabled? %>
+<% if fedramp %>
+  <%= render "hdf_triage/fedramp_reports", boundary: @boundary %>
+<% end %>
 
 <% if @re_failed_count.positive? %>
   <div class="alert alert-danger py-2" role="alert" id="re-failed-alert">
@@ -145,11 +149,11 @@
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0" id="hdf-findings-table">
       <thead>
-        <tr><th>Control</th><th>Component</th><th>Severity</th><th>Status</th><th>Lifecycle</th><th>Disposition</th><th>Triage</th><th>FedRAMP evaluation</th></tr>
+        <tr><th>Control</th><th>Component</th><th>Severity</th><th>Status</th><th>Lifecycle</th><th>Disposition</th><th>Triage</th><% if fedramp %><th>FedRAMP evaluation</th><% end %></tr>
       </thead>
       <tbody>
         <% if @findings.none? %>
-          <tr><td colspan="8" class="text-muted p-3">No findings match the current filter.</td></tr>
+          <tr><td colspan="<%= fedramp ? 8 : 7 %>" class="text-muted p-3">No findings match the current filter.</td></tr>
         <% end %>
         <% @findings.each do |finding| %>
           <% disp = @dispositions_by_control[finding.control_id] %>
@@ -287,14 +291,16 @@
             </td>
             <%# #1354 / #1384 — FedRAMP evaluates every detected vulnerability, so
                 the evaluation is offered on the current scan's failing findings. %>
-            <td>
-              <% if finding.current && finding.status == "failed" %>
-                <%= render "hdf_triage/fedramp_evaluation", boundary: @boundary, finding: finding,
-                           evaluation: @fedramp_evaluations_by_control[finding.control_id] %>
-              <% else %>
-                <span class="text-muted small">—</span>
-              <% end %>
-            </td>
+            <% if fedramp %>
+              <td>
+                <% if finding.current && finding.status == "failed" %>
+                  <%= render "hdf_triage/fedramp_evaluation", boundary: @boundary, finding: finding,
+                             evaluation: @fedramp_evaluations_by_control[finding.control_id] %>
+                <% else %>
+                  <span class="text-muted small">—</span>
+                <% end %>
+              </td>
+            <% end %>
           </tr>
         <% end %>
       </tbody>
