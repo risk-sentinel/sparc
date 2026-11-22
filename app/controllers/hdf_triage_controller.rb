@@ -129,6 +129,10 @@ class HdfTriageController < ApplicationController
   # service, refusals and audit as PUT /api/v1/.../fedramp_evaluations/:control_id.
   # The form sends every field; a blank clears it (evaluated_at excepted).
   def fedramp_evaluation
+    unless @boundary.fedramp_enabled?
+      return redirect_to(triage_path, error: "FedRAMP evaluation not saved: #{RequiresFedramp::NOT_ENABLED}")
+    end
+
     control_id = params[:control_id].to_s
     result = FedrampEvaluationService.new(@boundary).record(
       control_id: control_id, user: current_user,

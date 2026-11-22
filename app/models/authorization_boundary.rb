@@ -73,6 +73,8 @@ class AuthorizationBoundary < ApplicationRecord
   has_many :exchange_connections, dependent: :restrict_with_error
   # #1354 — the provider's FedRAMP evaluation of each vulnerability (VER-EVA).
   has_many :fedramp_vulnerability_evaluations, dependent: :destroy
+  # #1390 — its answer to each FedRAMP rule and KSI (the SDR).
+  has_many :fedramp_statements, dependent: :destroy
   has_many :scanner_findings, dependent: :destroy
   has_many :finding_dispositions, dependent: :destroy
   has_many :risk_assessments, dependent: :destroy

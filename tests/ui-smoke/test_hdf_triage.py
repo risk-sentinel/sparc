@@ -17,6 +17,7 @@ import uuid
 
 import pytest
 
+from _api_setup import create_boundary, delete_doc, patch_json
 from helpers import assert_no_csp_violations, first_show_href, record_csp
 
 # #1354 — ingest validates every upload with `hdf validate`, so this is a
@@ -315,27 +316,73 @@ def test_disposition_form_nist_poam_fields(authed_page, base_url):
 
 
 
-def test_fedramp_report_downloads(authed_page, base_url):
-    """#1354 / #1384 / #1390 — the FedRAMP report card: with a package overview
-    address, each control downloads its report as JSON with zero CSP violations
-    (the historical activity included); without one, the card says why and
-    offers none."""
+@pytest.fixture
+def fedramp_boundary():
+    """#1390 — FedRAMP features show only on a boundary that turns FedRAMP on,
+    so the FedRAMP checks bring their own: FedRAMP on, a 20x Program Class B
+    profile and a package overview address. Removed afterwards."""
+    b = create_boundary()
+    try:
+        r = patch_json(
+            f"/api/v1/authorization_boundaries/{b['slug']}",
+            {
+                "authorization_boundary": {
+                    "fedramp_enabled": True,
+                    "fedramp_package_overview_uri": "https://provider.example/cpo.json",
+                    "fedramp_package": {
+                        "certification_type": "20x",
+                        "certification_path": "Program",
+                        "certification_class": "B",
+                    },
+                }
+            },
+        )
+        assert r.status_code == 200, r.text
+        yield b
+    finally:
+        delete_doc("authorization_boundaries", b["slug"])
+
+
+def _open_boundary_triage(page, base_url, boundary) -> None:
+    page.goto(
+        f"{base_url}/authorization_boundaries/{boundary['slug']}/triage", wait_until="networkidle"
+    )
+    page.get_by_role("heading", name="HDF Amendment Triage").wait_for(timeout=10000)
+
+
+def test_fedramp_hidden_until_enabled(authed_page, base_url):
+    """#1390 — a boundary that has not turned FedRAMP on shows no FedRAMP card,
+    evaluation column or FedRAMP menu entry."""
     page = authed_page
     record_csp(page)
+    b = create_boundary()
+    try:
+        _open_boundary_triage(page, base_url, b)
+        assert page.locator("[data-testid='triage-fedramp-reports']").count() == 0
+        assert page.locator("th", has_text="FedRAMP evaluation").count() == 0
+        page.goto(f"{base_url}/authorization_boundaries/{b['slug']}", wait_until="networkidle")
+        page.locator("[data-boundary-action='more']").click()
+        assert page.locator("[data-boundary-action='fedramp']").count() == 0
+        assert_no_csp_violations(page, during="FedRAMP hidden until enabled")
+    finally:
+        delete_doc("authorization_boundaries", b["slug"])
 
-    if not _open_triage(page, base_url):
-        pytest.skip("no authorization boundary available to triage")
+
+def test_fedramp_report_downloads(authed_page, base_url, fedramp_boundary):
+    """#1354 / #1384 / #1390 — the FedRAMP report card on a FedRAMP boundary
+    with a package overview address: each control downloads its report as
+    JSON with zero CSP violations (the historical activity included). The
+    card's refusal without an address is covered by the request specs."""
+    page = authed_page
+    record_csp(page)
+    _open_boundary_triage(page, base_url, fedramp_boundary)
 
     card = page.locator("[data-testid='triage-fedramp-reports']")
     assert card.count() == 1, "the FedRAMP reports card is missing from the triage page"
 
-    if card.locator("[data-testid='triage-fedramp-reports-unavailable']").count() == 1:
-        assert card.locator("button").count() == 0, "report button offered, no package address"
-        assert card.locator("[data-testid='triage-download-fedramp-ver-history']").count() == 0, (
-            "historical activity offered, no package address"
-        )
-        assert_no_csp_violations(page, during="HDF triage FedRAMP reports (no package address)")
-        return
+    assert card.locator("[data-testid='triage-fedramp-reports-unavailable']").count() == 0, (
+        "the FedRAMP card says there is no package address on a boundary that has one"
+    )
 
     for testid, suffix in (
         ("triage-download-fedramp-vdr", "fedramp-vdr.json"),
@@ -352,15 +399,13 @@ def test_fedramp_report_downloads(authed_page, base_url):
         assert_no_csp_violations(page, during=f"HDF triage FedRAMP download {testid}")
 
 
-def test_fedramp_evaluation_recorded_and_shown(authed_page, base_url):
+def test_fedramp_evaluation_recorded_and_shown(authed_page, base_url, fedramp_boundary):
     """#1354 / #1384 — a failing finding's FedRAMP evaluation (internet-reachable,
     likely exploitable, N-rating, next reduction) is recorded from the triage
     page and shown in its row, with no CSP violation on the interaction."""
     page = authed_page
     record_csp(page)
-
-    if not _open_triage(page, base_url):
-        pytest.skip("no authorization boundary available to triage")
+    _open_boundary_triage(page, base_url, fedramp_boundary)
 
     # This test supplies its own failing finding, so a missing form after the
     # ingest is a broken screen, not thin data.

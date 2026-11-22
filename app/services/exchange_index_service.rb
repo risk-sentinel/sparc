@@ -80,6 +80,8 @@ class ExchangeIndexService
   FEDRAMP_OVERVIEW = [ "certification_package_overview", "Certification Package Overview" ].freeze
 
   def fedramp_reports
+    return [] unless @boundary.fedramp_enabled?
+
     reports = @boundary.fedramp_overview_address.blank? ? {} : FEDRAMP_REPORTS
     reports = { FedrampPackageOverview::DOCUMENT_TYPE => FEDRAMP_OVERVIEW }.merge(reports) if @boundary.fedramp_overview_ready?
     reports.map do |document_type, (path, title)|

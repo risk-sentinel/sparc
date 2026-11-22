@@ -27,9 +27,12 @@
 class Api::V1::FedrampEvaluationsController < Api::V1::BaseController
   NOT_FOUND_BODY = { error: "Not found" }.freeze
 
+  include RequiresFedramp
+
   before_action :set_boundary
   before_action :authorize_read!, only: %i[index show]
   before_action :authorize_write!, only: %i[update]
+  before_action :require_fedramp!
 
   rescue_from FedrampEvaluationService::Error do |e|
     render json: { error: e.message }, status: :unprocessable_content
