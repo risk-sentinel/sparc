@@ -92,6 +92,9 @@ GET /api/v1/authorization_boundaries/:id/fedramp/vulnerability_detail_report
 GET /api/v1/authorization_boundaries/:id/fedramp_incidents
 GET /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id
 GET /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/report
+GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports
+GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports/:report_id
+GET /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports/draft
 GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes
 GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id
 GET /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id/notification
@@ -258,6 +261,7 @@ POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_docume
 POST /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 POST /api/v1/authorization_boundaries/:id/fedramp_incidents
 POST /api/v1/authorization_boundaries/:id/fedramp_incidents/:incident_id/reports
+POST /api/v1/authorization_boundaries/:id/fedramp_ongoing_reports
 POST /api/v1/authorization_boundaries/:id/fedramp_significant_changes
 POST /api/v1/authorization_boundaries/:id/fedramp_significant_changes/:change_id/notices
 POST /api/v1/back_matter_resources

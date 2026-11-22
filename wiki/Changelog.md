@@ -33,11 +33,12 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - SPARC writes the boundary's **Security Decision Record** from those answers and its SSP's controls, parameters, ports and protocols, validated before it is returned, and lists what FedRAMP still requires of it.
   - The FedRAMP page's **Significant changes** tab records every change evaluated (Routine, Adaptive, Transformative), shows when each notice is due in federal business days (weekends and US federal holidays excluded), writes the **Significant Change Notification**, and keeps each notice as sent. The exchange index lists 12 months of them.
   - Its **Incidents** tab records each incident with its N-rating history, shows when each Initial, Ongoing and Final report is due by class and N-rating, and writes each **Incident Report**. New permissions: `incident.read` and `incident.write`.
+  - Its **Ongoing reports** tab writes the quarterly **Ongoing Certification Report** from the boundary's FedRAMP answers, significant changes, accepted vulnerabilities, incidents and its list of agencies using the service, with the recommendations you type, and keeps each report as issued.
   - SPARC writes the boundary's **Certification Package Overview** (FRC-CSO-PKG) from new FedRAMP fields and contacts on the boundary's Edit page, validated before it is returned, from the triage page, the API and the exchange index.
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
 
-**Upgrading:** an image swap from v1.17.10. Six migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+**Upgrading:** an image swap from v1.17.10. Seven migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
 

@@ -1,0 +1,103 @@
+<%# #1390 — the Ongoing reports tab of the boundary's FedRAMP page: the
+    report for a period, in human-readable form, its JSON, and (with
+    evidence.write) issuing it; and every report issued.
+    FedrampOngoingReportsController. %>
+<% content_for :title, "FedRAMP ongoing certification reports — #{@boundary.name}" %>
+<% params_for = { from: @input.from, to: @input.to, recommendations: @input.recommendations.join("\n"),
+                  other_changes: @input.other_changes.join("\n"), other_planned: @input.other_planned.join("\n") } %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "ongoing" %>
+
+<p class="small text-muted">
+  FedRAMP requires an Ongoing Certification Report every 3 months, covering the whole period since the previous one
+  (CCM-OCR-AVL). SPARC writes it from this boundary's FedRAMP answers, significant changes, accepted vulnerabilities
+  and incidents.
+  <% if @next_target %>
+    <strong data-testid="fedramp-ocr-next">Next report due by <%= @next_target %>.</strong>
+  <% end %>
+</p>
+
+<div class="card mb-3">
+  <div class="card-header">Report for a period</div>
+  <div class="card-body">
+    <%= form_with url: fedramp_ongoing_reports_authorization_boundary_path(@boundary), method: :get, local: true,
+          data: { testid: "fedramp-ocr-form", turbo: false } do %>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <%= label_tag :from, "From", class: "form-label small fw-semibold" %>
+          <%= date_field_tag :from, @input.from, class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-3">
+          <%= label_tag :to, "To", class: "form-label small fw-semibold" %>
+          <%= date_field_tag :to, @input.to, max: Date.current, class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-6 small text-muted d-flex align-items-end">
+          By default, from the day after the last report issued (or 3 months back) to today.
+        </div>
+        <div class="col-12">
+          <%= label_tag :recommendations, "Updated recommendations or best practices (one per line)", class: "form-label small fw-semibold" %>
+          <%= text_area_tag :recommendations, params_for[:recommendations], rows: 3, class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-6">
+          <%= label_tag :other_changes, "Other changes to certification data (one per line)", class: "form-label small fw-semibold" %>
+          <%= text_area_tag :other_changes, params_for[:other_changes], rows: 2, class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-6">
+          <%= label_tag :other_planned, "Other planned changes (one per line)", class: "form-label small fw-semibold" %>
+          <%= text_area_tag :other_planned, params_for[:other_planned], rows: 2, class: "form-control form-control-sm" %>
+        </div>
+      </div>
+      <div class="mt-3">
+        <%= submit_tag "Show report", name: nil, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm",
+              data: { testid: "fedramp-ocr-preview" } %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @error %>
+  <div class="alert alert-warning" data-testid="fedramp-ocr-error"><%= @error %></div>
+<% elsif @document.nil? %>
+  <p class="text-muted" data-testid="fedramp-ocr-no-overview">
+    The report names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
+  </p>
+<% else %>
+  <div class="card mb-3" data-testid="fedramp-ocr-draft">
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <span>Ongoing Certification Report, <%= @input.from %> to <%= @input.to %> (not issued)</span>
+      <span class="d-flex gap-2">
+        <%= link_to "Download JSON", draft_fedramp_ongoing_reports_authorization_boundary_path(@boundary, params_for),
+              class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+              data: { turbo: false, testid: "fedramp-ocr-download-draft" } %>
+        <% if @may_issue %>
+          <%= button_to "Issue report", fedramp_ongoing_reports_authorization_boundary_path(@boundary), params: params_for,
+                method: :post, form: { data: { testid: "fedramp-ocr-issue-form" } },
+                class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+                data: { testid: "fedramp-ocr-issue" } %>
+        <% end %>
+      </span>
+    </div>
+    <div class="card-body"><%= render "fedramp_ongoing_reports/document", doc: @document %></div>
+  </div>
+<% end %>
+
+<div class="card">
+  <div class="card-header">Reports issued</div>
+  <% if @reports.empty? %>
+    <p class="text-muted small m-3" data-testid="fedramp-ocr-none">None issued yet.</p>
+  <% else %>
+    <div class="table-responsive" role="region" aria-label="Reports issued" tabindex="0">
+      <table class="table table-sm mb-0 align-middle" data-testid="fedramp-ocr-issued">
+        <thead><tr><th scope="col">Period</th><th scope="col">Issued</th><th scope="col">SHA-256</th></tr></thead>
+        <tbody>
+          <% @reports.each do |r| %>
+            <tr data-testid="fedramp-ocr-issued-row">
+              <td><%= link_to "#{r.period_from} to #{r.period_to}", fedramp_ongoing_report_authorization_boundary_path(@boundary, r) %></td>
+              <td class="small"><%= r.created_at.utc.to_fs(:long) %> UTC<%= " by #{r.issued_by.display_label}" if r.issued_by %></td>
+              <td class="small text-muted"><code><%= r.sha256.first(16) %>…</code></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

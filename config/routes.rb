@@ -135,6 +135,13 @@ Rails.application.routes.draw do
       get   "fedramp/incidents/:incident_id/report", to: "fedramp_incidents#report", as: :fedramp_incident_report
       post  "fedramp/incidents/:incident_id/reports", to: "fedramp_incidents#record_report",
                                                       as: :fedramp_incident_reports
+      # #1390 — the Ongoing Certification Report (CCM-OCR-AVL).
+      get  "fedramp/ongoing_reports", to: "fedramp_ongoing_reports#index", as: :fedramp_ongoing_reports
+      get  "fedramp/ongoing_reports/draft", to: "fedramp_ongoing_reports#draft", as: :draft_fedramp_ongoing_reports
+      post "fedramp/ongoing_reports", to: "fedramp_ongoing_reports#create"
+      get  "fedramp/ongoing_reports/:report_id", to: "fedramp_ongoing_reports#show", as: :fedramp_ongoing_report
+      get  "fedramp/ongoing_reports/:report_id/document", to: "fedramp_ongoing_reports#document",
+                                                          as: :document_fedramp_ongoing_report
       # #1390 — FRC-CSO-PKG, the Certification Package Overview.
       get "triage/fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview",
                                                            as: :triage_fedramp_certification_package_overview
@@ -1170,6 +1177,10 @@ Rails.application.routes.draw do
           put  "fedramp_incidents/:incident_id", to: "fedramp_incidents#update"
           get  "fedramp_incidents/:incident_id/report", to: "fedramp_incidents#report"
           post "fedramp_incidents/:incident_id/reports", to: "fedramp_incidents#record_report"
+          get  "fedramp_ongoing_reports", to: "fedramp_ongoing_reports#index"
+          get  "fedramp_ongoing_reports/draft", to: "fedramp_ongoing_reports#draft"
+          post "fedramp_ongoing_reports", to: "fedramp_ongoing_reports#create"
+          get  "fedramp_ongoing_reports/:report_id", to: "fedramp_ongoing_reports#show"
         end
         # #1015 — a leveraged authorization records the ATO a system inherits
         # from, and OSCAL exports it on every SSP for the boundary. It was

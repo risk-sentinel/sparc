@@ -255,6 +255,7 @@ class AuthorizationBoundariesController < ApplicationController
       # The accessors merge one key at a time.
       *AuthorizationBoundary::BOUNDARY_DATE_KEYS,
       :fedramp_overview_from_sparc, :fedramp_enabled,             # #1390
+      :fedramp_active_agencies,                                   # #1390, one per line
       boundary_metadata: AuthorizationBoundary::BOUNDARY_METADATA_KEYS,  # #395 P3
       **AuthorizationBoundary::PERMITTED_PARAMS                          # #1390
     ).tap do |permitted|

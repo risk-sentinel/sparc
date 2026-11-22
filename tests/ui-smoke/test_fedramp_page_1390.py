@@ -5,6 +5,9 @@ FedRAMP rule and one KSI (adding a KSI evidence row with the Stimulus
 repeater), sees each answer's status after saving, and downloads the
 Security Decision Record carrying them. Every step checks for CSP violations.
 
+The other checks record a significant change, an incident and an Ongoing
+Certification Report on the tabs beside it.
+
 Works on a throwaway boundary made through the API, with FedRAMP on, a 20x
 Program Class B profile and an overview address, removed afterwards.
 """
@@ -168,3 +171,32 @@ def test_fedramp_incident_and_report(authed_page, base_url, boundary):
     assert doc["reportType"] == "Initial"
     assert doc["providerTrackingId"] == "INC-SMOKE-1"
     assert doc["potentialImpact"]["currentRating"] == 2
+
+
+def test_fedramp_ongoing_report_issue(authed_page, base_url, boundary):
+    """Shows the Ongoing Certification Report with a typed recommendation,
+    issues it from the button, and downloads it as issued."""
+    page = authed_page
+    record_csp(page)
+    fedramp = f"{base_url}/authorization_boundaries/{boundary['slug']}/fedramp"
+    page.goto(fedramp, wait_until="networkidle")
+    page.locator("[data-testid='fedramp-tab-ongoing']").click()
+    page.wait_for_url("**/fedramp/ongoing_reports**", timeout=10000)
+
+    page.locator("#recommendations").fill("Rotate API keys yearly")
+    page.locator("[data-testid='fedramp-ocr-preview']").click()
+    draft = page.locator("[data-testid='fedramp-ocr-draft']")
+    draft.wait_for(timeout=10000)
+    assert "Rotate API keys yearly" in draft.inner_text()
+    assert "None occurred in the period" in draft.inner_text()
+
+    page.locator("[data-testid='fedramp-ocr-issue']").click()
+    page.get_by_text("Issued the Ongoing Certification Report").wait_for(timeout=10000)
+    assert_no_csp_violations(page, during="FedRAMP ongoing report")
+
+    with page.expect_download() as download_info:
+        page.locator("[data-testid='fedramp-ocr-download']").click()
+    with open(download_info.value.path(), encoding="utf-8") as f:
+        doc = json.load(f)
+    assert doc["updatedRecommendations"] == ["Rotate API keys yearly"]
+    assert doc["reportableIncidents"] == {"incidents": []}

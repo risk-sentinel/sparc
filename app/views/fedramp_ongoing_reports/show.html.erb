@@ -1,0 +1,20 @@
+<%# #1390 — one Ongoing Certification Report as issued, in human-readable
+    form, with its JSON download. FedrampOngoingReportsController. %>
+<% content_for :title, "FedRAMP ongoing certification report — #{@boundary.name}" %>
+<%= render "fedramp_statements/header", boundary: @boundary, active: "ongoing" %>
+
+<p class="mb-2"><%= link_to "← All ongoing reports", fedramp_ongoing_reports_authorization_boundary_path(@boundary) %></p>
+
+<div class="card mb-3" data-testid="fedramp-ocr-report">
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <span>Ongoing Certification Report, <%= @report.period_from %> to <%= @report.period_to %>, issued
+      <%= @report.created_at.utc.to_fs(:long) %> UTC<%= " by #{@report.issued_by.display_label}" if @report.issued_by %></span>
+    <%= link_to "Download JSON", document_fedramp_ongoing_report_authorization_boundary_path(@boundary, @report),
+          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+          data: { turbo: false, testid: "fedramp-ocr-download" } %>
+  </div>
+  <div class="card-body">
+    <%= render "fedramp_ongoing_reports/document", doc: @report.document %>
+    <p class="small text-muted mt-3 mb-0">Kept exactly as issued. SHA-256 <code><%= @report.sha256 %></code></p>
+  </div>
+</div>

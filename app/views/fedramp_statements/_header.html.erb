@@ -1,6 +1,7 @@
 <%# #1390 — the heading and tabs every page of the boundary's FedRAMP area
-    shares. The Incidents tab shows only to holders of incident.read.
-    Locals: boundary, active ("frr", "ksi", "changes", "incidents"). %>
+    shares. The Incidents and Ongoing reports tabs show only to holders of
+    incident.read (the report summarizes incidents).
+    Locals: boundary, active ("frr", "ksi", "changes", "incidents", "ongoing"). %>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="h3 mb-0">FedRAMP</h1>
@@ -18,6 +19,7 @@
    ] %>
 <% if boundary_permission?("incident.read") %>
   <% tabs << [ "incidents", "Incidents", boundary.fedramp_incidents.count, fedramp_incidents_authorization_boundary_path(boundary) ] %>
+  <% tabs << [ "ongoing", "Ongoing reports", boundary.fedramp_ongoing_reports.count, fedramp_ongoing_reports_authorization_boundary_path(boundary) ] %>
 <% end %>
 <ul class="nav nav-tabs mb-3" role="tablist" data-testid="fedramp-tabs">
   <% tabs.each do |key, label, count, href| %>
