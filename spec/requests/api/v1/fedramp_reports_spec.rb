@@ -212,4 +212,36 @@ RSpec.describe "API v1 FedRAMP reports", type: :request do
       expect(response.parsed_body["error"]).to include("SPARC_APP_URL is not an https:// address")
     end
   end
+
+  # #1390 — SDR-CSO-FRR, written from the boundary's statements and SSP.
+  describe "security_decision_record" do
+    let(:path) { "#{base}/security_decision_record" }
+    let(:action) { "fedramp_security_decision_record_exported" }
+
+    before do
+      boundary.update!(fedramp_package: { certification_type: "20x", certification_path: "Program", certification_class: "B" })
+      boundary.fedramp_statements.create!(kind: "frr", rule_id: "SDR-CSO-FRR", status: "Implemented", implementation: "Yes.")
+    end
+
+    it "serves the record, counts what FedRAMP still requires, and audits it" do
+      expect { get path, headers: headers_for(reader) }.to change { AuditEvent.where(action: action).count }.by(1)
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body["$schema"]).to end_with("fedramp-security-decision-record-schema-2026-06-24.json")
+      expect(body["fedRampRequirements"].sole["frrID"]).to eq("SDR-CSO-FRR")
+      expect(response.headers["X-SPARC-SDR-Gaps"].to_i).to be_positive
+      expect(AuditEvent.where(action: action).last.metadata).to include("version" => "1", "requirements" => 1)
+    end
+
+    it "422s without the overview address it names" do
+      boundary.update!(fedramp_package_overview_uri: nil)
+      get path, headers: headers_for(reader)
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "403s without evidence.read on this boundary" do
+      get path, headers: headers_for(user_with({ "ssp.read" => true }))
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
 end

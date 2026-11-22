@@ -361,7 +361,9 @@ The API is in [API Reference](API-Reference). Permissions: `connections.manage`,
 
 SPARC writes a boundary's FedRAMP **Vulnerability Detail Report** (rule VER-RPT-VDT), **Accepted Vulnerability Info** (VER-RPT-AVI) and **Historical Vulnerability Activity** (VER-TFR-MRH), from its scanner findings, its finding dispositions and the provider's FedRAMP evaluation of each vulnerability. Download them from the boundary's triage page or over the API ([API Reference](API-Reference)). All three are listed in the boundary's exchange index.
 
-All of this, and the FedRAMP statements below, is available only on a boundary that has FedRAMP turned on (#1390).
+All of this is available only on a boundary that has FedRAMP turned on (#1390).
+
+SPARC also writes the boundary's **Security Decision Record** (SDR-CSO-FRR, #1390) from its answers on the FedRAMP page (each FedRAMP rule that applies to its certification profile, and each KSI) and from its SSP: controls with their status, prose and parameters, and the components' ports and protocols. It is written from whatever is recorded, validated before it is returned, and listed in the exchange index; what FedRAMP still requires of it is listed on the FedRAMP page.
 
 SPARC also writes the boundary's **Certification Package Overview** (FRC-CSO-PKG, #1390) from the FedRAMP fields and contacts on the boundary's **Edit** page: service identification, service properties, the trust center and the contacts. The assessor, advisors, certified services and third-party information resources are not included yet. It is listed in the exchange index once every required field and a Security and a Sales contact are recorded.
 

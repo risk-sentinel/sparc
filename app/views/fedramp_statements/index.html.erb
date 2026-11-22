@@ -29,6 +29,33 @@
   </div>
 </div>
 
+<%# #1390 — the Security Decision Record, written from what is recorded here
+    and on the SSP; what FedRAMP still requires of it is listed beside it. %>
+<div class="card mb-3" data-testid="fedramp-sdr">
+  <div class="card-header">Security Decision Record</div>
+  <div class="card-body">
+    <% if @boundary.fedramp_overview_address.blank? %>
+      <p class="text-muted small mb-2" data-testid="fedramp-sdr-unavailable">
+        The record names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
+        Set it in the boundary's FedRAMP section.
+      </p>
+    <% else %>
+      <%= link_to "Download Security Decision Record", fedramp_security_decision_record_authorization_boundary_path(@boundary),
+            class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+            data: { turbo: false, testid: "fedramp-download-sdr" } %>
+      <span class="text-muted small ms-2">Written from the answers below, the KSIs, and the SSP's controls, ports and protocols.</span>
+    <% end %>
+    <% if @sdr_gaps.any? %>
+      <p class="small fw-semibold mt-3 mb-1">FedRAMP still requires:</p>
+      <ul class="small mb-0" data-testid="fedramp-sdr-gaps">
+        <% @sdr_gaps.each do |gap| %><li><%= gap %></li><% end %>
+      </ul>
+    <% else %>
+      <p class="small text-muted mt-3 mb-0" data-testid="fedramp-sdr-complete">Nothing FedRAMP requires of the record is missing.</p>
+    <% end %>
+  </div>
+</div>
+
 <ul class="nav nav-tabs mb-3" role="tablist">
   <% { FedrampRules::FRR => "FedRAMP rules", FedrampRules::KSI => "Key Security Indicators" }.each do |kind, label| %>
     <li class="nav-item">

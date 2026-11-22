@@ -82,7 +82,9 @@ RSpec.describe "API v1 exchange index", type: :request do
       a_hash_including("origin" => "sparc", "document_type" => "accepted-vulnerability-info", "sha256" => nil,
                        "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/accepted_vulnerability_info"),
       a_hash_including("origin" => "sparc", "document_type" => "historical-ver-activity", "sha256" => nil,
-                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/historical_ver_activity")
+                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/historical_ver_activity"),
+      a_hash_including("origin" => "sparc", "document_type" => "security-decision-record", "sha256" => nil,
+                       "download_url" => "/api/v1/authorization_boundaries/#{boundary.id}/fedramp/security_decision_record")
     )
     fedramp.each do |entry|
       get entry["download_url"], headers: headers_for(admin)

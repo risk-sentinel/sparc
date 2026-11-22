@@ -28,6 +28,7 @@ class FedrampStatementsController < ApplicationController
     @entries = service.entries(@kind)
     @counts = FedrampRules::KINDS.index_with { |k| k == @kind ? @entries.size : service.entries(k).size }
     @summary = @entries.group_by(&:status).transform_values(&:size)
+    @sdr_gaps = FedrampSecurityDecisionRecordService.new(@boundary).gaps
     @may_edit = !SparcConfig.any_auth_enabled? ||
                 current_user&.has_permission?("evidence.write", authorization_boundary_id: @boundary.id)
   end

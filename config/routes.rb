@@ -115,6 +115,8 @@ Rails.application.routes.draw do
       # #1390 — the boundary's FedRAMP page: its answer to each FedRAMP rule
       # and Key Security Indicator (the Security Decision Record's content).
       get   "fedramp", to: "fedramp_statements#index", as: :fedramp
+      get   "fedramp/security_decision_record", to: "fedramp_reports#security_decision_record",
+                                                as: :fedramp_security_decision_record
       patch "fedramp/statements/:kind/:rule_id", to: "fedramp_statements#update", as: :fedramp_statement,
                                                  constraints: { kind: /frr|ksi/, rule_id: /[A-Z]{3}(-[A-Z]{2,4}){1,2}/ }
       # #1390 — FRC-CSO-PKG, the Certification Package Overview.
@@ -1131,6 +1133,8 @@ Rails.application.routes.draw do
           get "fedramp/historical_ver_activity", to: "fedramp_reports#historical_ver_activity"
           # #1390 — FRC-CSO-PKG, the Certification Package Overview.
           get "fedramp/certification_package_overview", to: "fedramp_reports#certification_package_overview"
+          # #1390 — SDR-CSO-FRR, the Security Decision Record.
+          get "fedramp/security_decision_record", to: "fedramp_reports#security_decision_record"
           # #1390 — the boundary's answer to each FedRAMP rule and KSI.
           get "fedramp_statements", to: "fedramp_statements#index"
           # No route constraints: a caller is authenticated before the kind and
