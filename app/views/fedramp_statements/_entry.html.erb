@@ -1,0 +1,76 @@
+<%# #1390 — one FedRAMP rule or KSI with the boundary's answer, and (with
+    evidence.write) the form that records it.
+    Locals: boundary, kind, entry, may_edit, status_badge. %>
+<% rule = entry.rule %>
+<% statement = entry.statement || FedrampStatement.new(kind: kind, rule_id: rule.id) %>
+<% ksi = kind == FedrampRules::KSI %>
+<details class="list-group-item" id="fedramp-<%= rule.id %>" data-testid="fedramp-entry" data-fedramp-rule="<%= rule.id %>">
+  <summary class="d-flex flex-wrap gap-2 align-items-center">
+    <code><%= rule.id %></code>
+    <span class="fw-semibold"><%= rule.name %></span>
+    <% if !ksi && rule.force.present? %><span class="badge bg-secondary"><%= rule.force %></span><% end %>
+    <% if statement.status %>
+      <span class="badge <%= status_badge[statement.status] %>" data-testid="fedramp-entry-status"><%= statement.status %></span>
+    <% else %>
+      <span class="text-muted small" data-testid="fedramp-entry-status">Not answered</span>
+    <% end %>
+  </summary>
+  <div class="mt-2">
+    <p class="mb-1"><%= rule.statement %></p>
+    <% if !ksi && rule.following_information.any? %>
+      <ul class="small text-muted mb-2">
+        <% rule.following_information.each do |item| %><li><%= item %></li><% end %>
+      </ul>
+    <% end %>
+    <% if ksi && rule.controls.any? %>
+      <p class="small text-muted mb-2">NIST SP 800-53: <%= rule.controls.join(", ") %></p>
+    <% end %>
+
+    <% if may_edit %>
+      <%= form_with url: fedramp_statement_authorization_boundary_path(boundary, kind: kind, rule_id: rule.id),
+            method: :patch, scope: :fedramp_statement, local: true, data: { testid: "fedramp-entry-form" } do |f| %>
+        <div class="mb-2">
+          <%= f.label :status, "Status", for: "fedramp_#{rule.id}_status", class: "form-label small fw-semibold" %>
+          <%= f.select :status, options_for_select(FedrampStatement.statuses, statement.status), { include_blank: "Not answered" },
+                id: "fedramp_#{rule.id}_status", class: "form-select form-select-sm" %>
+        </div>
+        <% { "implementation" => ksi ? "Measures that demonstrate it, or why there are none and the risk" : "How the rule is followed, or why not and the risk to customers",
+             "validation" => "Validation: in place and working as intended",
+             "assessment" => "Verification (assessment)" }.each do |field, label| %>
+          <div class="mb-2">
+            <%= f.label field, label, for: "fedramp_#{rule.id}_#{field}", class: "form-label small fw-semibold" %>
+            <%= f.text_area field, value: statement[field], rows: 2, id: "fedramp_#{rule.id}_#{field}", class: "form-control form-control-sm" %>
+          </div>
+        <% end %>
+        <% if ksi %>
+          <div class="mb-2">
+            <%= f.label :tests_text, "Tests (one per line)", for: "fedramp_#{rule.id}_tests", class: "form-label small fw-semibold" %>
+            <%= f.text_area :tests_text, value: Array(statement.tests).join("\n"), rows: 2, id: "fedramp_#{rule.id}_tests",
+                  class: "form-control form-control-sm" %>
+          </div>
+          <%= hidden_field_tag "fedramp_statement[evidence_listed]", "1", id: nil %>
+          <div data-controller="oscal-repeater" class="mb-2">
+            <span class="form-label small fw-semibold d-block">Evidence</span>
+            <template data-oscal-repeater-target="template"><%= render "fedramp_statements/evidence_row", item: {} %></template>
+            <div data-oscal-repeater-target="rows">
+              <% Array(statement.evidence).each do |item| %>
+                <%= render "fedramp_statements/evidence_row", item: item %>
+              <% end %>
+            </div>
+            <button type="button" data-action="click->oscal-repeater#add"
+                    class="sparc-action sparc-action--positive sparc-action--solid sparc-action--sm">+ Add evidence</button>
+          </div>
+        <% end %>
+        <%= f.submit "Save #{rule.id}", class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
+              data: { testid: "fedramp-entry-save" } %>
+      <% end %>
+    <% elsif entry.statement %>
+      <dl class="small mb-0">
+        <% FedrampStatement::TEXT_FIELDS.each do |field| %>
+          <% next if statement[field].blank? %>
+          <dt><%= field.humanize %></dt><dd><%= simple_format(statement[field]) %></dd>
+        <% end %>
+      </dl>
+    <% end %>
+  </div>
+</details>

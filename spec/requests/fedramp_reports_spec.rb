@@ -6,7 +6,9 @@ require "rails_helper"
 # (FedrampReportsController): the same service as the API, evidence.read on
 # the boundary, each download audited, never an invalid report.
 RSpec.describe "FedRAMP report downloads", type: :request do
-  let(:boundary) { create(:authorization_boundary, fedramp_package_overview_uri: "https://provider.example/cpo.json") }
+  let(:boundary) do
+    create(:authorization_boundary, fedramp_enabled: true, fedramp_package_overview_uri: "https://provider.example/cpo.json")
+  end
   let(:vdr_path) { triage_fedramp_vulnerability_detail_report_authorization_boundary_path(boundary) }
   let(:avi_path) { triage_fedramp_accepted_vulnerability_info_authorization_boundary_path(boundary) }
 

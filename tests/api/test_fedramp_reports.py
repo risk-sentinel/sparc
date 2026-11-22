@@ -44,6 +44,7 @@ def boundary(admin_client: httpx.Client) -> Iterator[dict[str, Any]]:
             "authorization_boundary": {
                 "name": f"phase2-boundary-fedramp-{uuid.uuid4().hex[:8]}",
                 "description": "Created by the FedRAMP report API contract tests (#1354)",
+                "fedramp_enabled": True,
             }
         },
     )
@@ -84,6 +85,20 @@ class TestFedrampReports:
         self, anon_client: httpx.Client, boundary: dict[str, Any], report: str
     ) -> None:
         assert_error_envelope(anon_client.get(_path(boundary, report)), expected_status=401)
+
+    @pytest.mark.validation
+    @pytest.mark.parametrize("report", REPORTS)
+    def test_boundary_without_fedramp_is_422(
+        self, admin_client: httpx.Client, boundary: dict[str, Any], report: str
+    ) -> None:
+        off = admin_client.patch(
+            f"{BOUNDARIES}/{boundary['id']}",
+            json={"authorization_boundary": {"fedramp_enabled": False}},
+        )
+        assert off.status_code == 200, off.text
+        response = admin_client.get(_path(boundary, report))
+        assert_error_envelope(response, expected_status=422)
+        assert "FedRAMP is not enabled" in response.json()["error"]
 
     @pytest.mark.happy
     def test_exchange_index_lists_no_report_it_cannot_build(

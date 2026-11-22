@@ -9,7 +9,9 @@ require "rails_helper"
 # boundary's package overview address; 502, never the document, when SPARC's
 # own report fails validation.
 RSpec.describe "API v1 FedRAMP reports", type: :request do
-  let(:boundary) { create(:authorization_boundary, fedramp_package_overview_uri: "https://provider.example/cpo.json") }
+  let(:boundary) do
+    create(:authorization_boundary, fedramp_enabled: true, fedramp_package_overview_uri: "https://provider.example/cpo.json")
+  end
   let(:base) { "/api/v1/authorization_boundaries/#{boundary.id}/fedramp" }
   let(:vdr_path) { "#{base}/vulnerability_detail_report" }
   let(:avi_path) { "#{base}/accepted_vulnerability_info" }

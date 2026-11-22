@@ -8,8 +8,33 @@
 <% id_for = ->(key) { "authorization_boundary_fedramp_package_#{key}" } %>
 <% sparc_base = AuthorizationBoundary.sparc_https_base_url %>
 <details class="mb-3 border rounded-3 p-3" data-testid="boundary-fedramp-package" <%= "open" if boundary.errors[:fedramp_package].any? || boundary.errors[:fedramp_contacts].any? || boundary.errors[:fedramp_overview_from_sparc].any? %>>
-  <summary class="fw-semibold">FedRAMP package overview</summary>
-  <p class="text-body-secondary small mt-2">
+  <summary class="fw-semibold">FedRAMP</summary>
+  <%# #1390 — FedRAMP is turned on per boundary; its features show only then. %>
+  <div class="form-check mt-2 mb-2">
+    <%= hidden_field_tag "authorization_boundary[fedramp_enabled]", "false", id: nil %>
+    <%= check_box_tag "authorization_boundary[fedramp_enabled]", "true", boundary.fedramp_enabled?,
+          id: "authorization_boundary_fedramp_enabled", class: "form-check-input" %>
+    <%= label_tag "authorization_boundary_fedramp_enabled", "FedRAMP applies to this system", class: "form-check-label fw-semibold" %>
+    <div class="form-text">Shows its FedRAMP page, reports and exchange documents. The fields below are kept either way.</div>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-3">Certification profile</h3>
+  <p class="text-body-secondary small">Decides which FedRAMP rules apply. Class A is a 20x Program certification; the Agency path is Rev5 only.</p>
+  <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+    <% choices = FedrampRules.profile_choices %>
+    <% [ [ "certification_type", "Certification type *", AuthorizationBoundary.fedramp_choices("certification_type") ],
+         [ "certification_path", "Path", choices[:paths] ],
+         [ "certification_class", "Class", choices[:classes] ] ].each do |key, label, options| %>
+      <div class="col">
+        <%= label_tag id_for.(key), label, class: "form-label fw-semibold" %>
+        <%= select_tag name_for.(key), options_for_select(options, pkg[key]), include_blank: true,
+              id: id_for.(key), class: "form-select" %>
+      </div>
+    <% end %>
+  </div>
+
+  <h3 class="fs-6 fw-semibold mt-4">Package overview</h3>
+  <p class="text-body-secondary small">
     What SPARC needs to write this system's FedRAMP Certification Package Overview, and the address
     FedRAMP's reports name for it. Required by FedRAMP: the fields marked *, and a Security and a Sales contact.
   </p>
@@ -53,12 +78,6 @@
         <%= text_field_tag name_for.(key), pkg[key], id: id_for.(key), class: "form-control" %>
       </div>
     <% end %>
-    <div class="col">
-      <%= label_tag id_for.("certification_type"), "Certification type *", class: "form-label fw-semibold" %>
-      <%= select_tag name_for.("certification_type"),
-            options_for_select(AuthorizationBoundary.fedramp_choices("certification_type"), pkg["certification_type"]),
-            include_blank: true, id: id_for.("certification_type"), class: "form-select" %>
-    </div>
   </div>
   <div class="mb-3">
     <%= label_tag id_for.("service_description"), "Service description *", class: "form-label fw-semibold" %>

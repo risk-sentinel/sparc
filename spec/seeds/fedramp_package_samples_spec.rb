@@ -33,6 +33,13 @@ RSpec.describe "db/seeds/fedramp_package_samples.rb" do
       expect(docs.pluck(:received_by_id).uniq).to eq([ nil ])
     end
 
+    it "turns FedRAMP on with the sample package's profile (#1390), keeping one already recorded" do
+      boundary.update!(fedramp_package: { certification_class: "C" })
+      run_seed
+      expect(boundary.reload).to be_fedramp_enabled
+      expect(boundary.fedramp_profile).to eq(%w[20x Program C])
+    end
+
     it "stores nothing on a second run: each stream already holds the bytes" do
       run_seed
 
@@ -46,7 +53,7 @@ RSpec.describe "db/seeds/fedramp_package_samples.rb" do
   end
 
   it "runs as its own demo section, so an existing demo install picks it up" do
-    expect(SeedRunner::CURRENT_VERSIONS).to include("demo_fedramp_package_samples" => "1.0.0")
+    expect(SeedRunner::CURRENT_VERSIONS).to include("demo_fedramp_package_samples" => "1.1.0")
     seeds = Rails.root.join("db/seeds.rb").read
     section = seeds[/^if SEED_DEMO\nSeedRunner\.run_section\("demo_fedramp_package_samples"\) do\n.*?\nend # if SEED_DEMO/m]
     expect(section).to include('load Rails.root.join("db/seeds/fedramp_package_samples.rb")')

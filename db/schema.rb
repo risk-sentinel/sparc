@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -134,6 +134,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_130000) do
     t.jsonb "fedramp_package", default: {}, null: false
     t.jsonb "fedramp_contacts", default: [], null: false
     t.boolean "fedramp_overview_from_sparc", default: false, null: false
+    t.boolean "fedramp_enabled", default: false, null: false
+    t.integer "fedramp_sdr_version", default: 0, null: false
     t.index ["organization_id"], name: "index_authorization_boundaries_on_organization_id"
     t.index ["profile_document_id"], name: "index_authorization_boundaries_on_profile_document_id"
     t.index ["slug"], name: "index_authorization_boundaries_on_slug", unique: true
@@ -790,6 +792,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_130000) do
     t.jsonb "public_metadata", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_federation_peers_on_name", unique: true
+  end
+
+  create_table "fedramp_statements", force: :cascade do |t|
+    t.bigint "authorization_boundary_id", null: false
+    t.string "kind", null: false
+    t.string "rule_id", null: false
+    t.string "status"
+    t.text "implementation"
+    t.text "validation"
+    t.text "assessment"
+    t.jsonb "tests", default: [], null: false
+    t.jsonb "evidence", default: [], null: false
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["authorization_boundary_id", "kind", "rule_id"], name: "idx_fedramp_statements_unique", unique: true
+    t.index ["authorization_boundary_id"], name: "index_fedramp_statements_on_authorization_boundary_id"
+    t.index ["updated_by_id"], name: "index_fedramp_statements_on_updated_by_id"
   end
 
   create_table "fedramp_vulnerability_evaluations", force: :cascade do |t|
@@ -2094,6 +2114,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_130000) do
   add_foreign_key "exchange_push_receipts", "exchange_connections"
   add_foreign_key "exchange_push_receipts", "exchange_document_sources", on_delete: :nullify
   add_foreign_key "exchange_push_receipts", "received_documents", on_delete: :nullify
+  add_foreign_key "fedramp_statements", "authorization_boundaries"
+  add_foreign_key "fedramp_statements", "users", column: "updated_by_id", on_delete: :nullify
   add_foreign_key "fedramp_vulnerability_evaluations", "authorization_boundaries"
   add_foreign_key "fedramp_vulnerability_evaluations", "users", column: "evaluated_by_id"
   add_foreign_key "finding_dispositions", "authorization_boundaries"

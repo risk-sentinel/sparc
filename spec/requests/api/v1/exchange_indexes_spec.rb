@@ -64,12 +64,16 @@ RSpec.describe "API v1 exchange index", type: :request do
   end
 
   # #1354 / #1384 — the FedRAMP reports, only once they can be built.
-  it "lists the FedRAMP VDR and AVI only when the boundary has a package overview address" do
+  it "lists the FedRAMP reports only once FedRAMP is on and the boundary has a package overview address" do
     admin = create(:user, :admin)
     get path, headers: headers_for(admin)
     expect(response.parsed_body.dig("data", "documents").map { |d| d["format"] }).not_to include("fedramp")
 
     boundary.update!(fedramp_package_overview_uri: "https://provider.example/package/cpo.json")
+    get path, headers: headers_for(admin)
+    expect(response.parsed_body.dig("data", "documents").map { |d| d["format"] }).not_to include("fedramp")
+
+    boundary.update!(fedramp_enabled: true)
     get path, headers: headers_for(admin)
     fedramp = response.parsed_body.dig("data", "documents").select { |d| d["format"] == "fedramp" }
     expect(fedramp).to contain_exactly(
@@ -89,7 +93,8 @@ RSpec.describe "API v1 exchange index", type: :request do
   # #1390 — the overview names no address; it is listed once it can be written.
   it "lists the Certification Package Overview once the boundary records what it requires" do
     admin = create(:user, :admin)
-    boundary.update!(attributes_for(:authorization_boundary, :fedramp_overview_ready).slice(:fedramp_package, :fedramp_contacts))
+    boundary.update!(attributes_for(:authorization_boundary, :fedramp_overview_ready)
+                       .slice(:fedramp_enabled, :fedramp_package, :fedramp_contacts))
     get path, headers: headers_for(admin)
     fedramp = response.parsed_body.dig("data", "documents").select { |d| d["format"] == "fedramp" }
     expect(fedramp).to contain_exactly(

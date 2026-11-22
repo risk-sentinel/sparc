@@ -100,7 +100,7 @@ Fields SPARC does not know are left out, never sent empty or null. `potentialAge
 | `401` | No token, or an invalid one |
 | `403` | No `evidence.read` on this boundary |
 | `404` | No such boundary |
-| `422` | The boundary has no FedRAMP Certification Package Overview address (or names SPARC's own endpoint while `SPARC_APP_URL` is not `https://`), or `from` / `to` is not an ISO 8601 date or date-time, or `from` is not before `to`. For the overview: the boundary does not yet record a field it requires, or a Security or Sales contact; the error lists what is missing |
+| `422` | FedRAMP is not enabled for the boundary (`fedramp_enabled`, #1390); the boundary has no FedRAMP Certification Package Overview address (or names SPARC's own endpoint while `SPARC_APP_URL` is not `https://`), or `from` / `to` is not an ISO 8601 date or date-time, or `from` is not before `to`. For the overview: the boundary does not yet record a field it requires, or a Security or Sales contact; the error lists what is missing |
 | `502` | SPARC built a report that fails FedRAMP's schema or its completeness check. It is not returned; the body is `{ "error": "SPARC produced an invalid report", "details": [...] }`. This is a defect in SPARC, not in the request |
 
 ## NIST SP 800-53
