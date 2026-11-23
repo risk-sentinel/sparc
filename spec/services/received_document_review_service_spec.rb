@@ -88,13 +88,13 @@ RSpec.describe ReceivedDocumentReviewService do
       expect(doc.reload).to have_attributes(state: "rejected", review_action: "reject", review_note: "Wrong system.")
     end
 
-    it "needs a note to respond or reject" do
+    it "needs a note or a question to respond or reject" do
       doc = stored
       [ nil, "", "   " ].each do |note|
         expect { described_class.respond(doc, user: reviewer, note: note) }
-          .to raise_error(described_class::Error, "Say why, so the provider and the record have it")
+          .to raise_error(described_class::Error, "Say why, or ask about at least one item, so the provider and the record have it")
         expect { described_class.reject(doc, user: reviewer, note: note) }
-          .to raise_error(described_class::Error, "Say why, so the provider and the record have it")
+          .to raise_error(described_class::Error, "Say why, or ask about at least one item, so the provider and the record have it")
       end
       expect(doc.reload.state).to eq("pending_review")
     end
@@ -247,6 +247,60 @@ RSpec.describe ReceivedDocumentReviewService do
       doc = stored
       expect { described_class.accept(doc, user: uploader) }.to raise_error(described_class::Error)
       expect(AuditEvent.where("action LIKE 'received_document_%'").pluck(:action)).to eq([ "received_document_stored" ])
+    end
+  end
+
+  # #1390 part G (owner, 2026-11-23): questions tied to places in the document
+  # go with a response or a rejection; a version that failed validation can be
+  # responded to or rejected so the provider is told, and never accepted.
+  describe "questions to the provider" do
+    let(:question) do
+      { "pointer" => "/vulnerabilities/VULN-1/currentRating", "label" => "Vulnerabilities › VULN-1 › Current rating (N)",
+        "detail" => "Current rating (N): N2 → N3", "before" => "2", "after" => "3", "question" => "Why did it go up?" }
+    end
+
+    it "stores the questions with a response, and a question alone is enough" do
+      doc = stored
+      described_class.respond(doc, user: reviewer, note: "", questions: [ question ])
+
+      expect(doc.reload).to have_attributes(state: "responded", review_action: "respond", review_note: nil)
+      expect(doc.questions).to eq([ question ])
+      expect(audits("received_document_responded").last.metadata["questions"])
+        .to eq([ question.slice("pointer", "label", "question") ])
+    end
+
+    it "keeps questions to plain bounded strings and drops empty ones" do
+      doc = stored
+      noisy = [ question.merge("question" => "x" * 5_000, "extra" => "ignored", "before" => { "a" => 1 }),
+                { "pointer" => "", "question" => "" }, question.merge("question" => "duplicate pointer") ]
+      described_class.respond(doc, user: reviewer, note: "See questions", questions: noisy)
+
+      kept = doc.reload.questions
+      expect(kept.size).to eq(1)
+      expect(kept.first.keys).to contain_exactly("pointer", "label", "detail", "after", "question")
+      expect(kept.first["question"].size).to eq(ReviewQuestions::LIMITS["question"])
+    end
+
+    it "lets a reviewer respond to or reject a version that failed validation, never accept it" do
+      bad = JSON.parse(vdr).merge("vulnerabilities" => [ { "providerTrackingId" => "VULN-1" } ]).to_json
+      doc = stored(bad)
+      expect(doc.state).to eq("invalid")
+
+      expect { described_class.accept(doc, user: reviewer) }.to raise_error(described_class::Error, /passed validation/)
+      described_class.respond(doc, user: reviewer, note: "Fill in the required fields.", questions: [ question ])
+      expect(doc.reload).to have_attributes(state: "invalid", review_action: "respond")
+      expect { described_class.accept(doc, user: reviewer) }.to raise_error(described_class::Error, /passed validation/)
+
+      described_class.reject(doc, user: reviewer, note: "Not resent.")
+      expect(doc.reload.state).to eq("rejected")
+      expect { described_class.respond(doc, user: reviewer, note: "again") }.to raise_error(described_class::Error, /has been decided/)
+    end
+
+    it "still refuses the uploader a response to their own invalid upload" do
+      bad = JSON.parse(vdr).merge("vulnerabilities" => [ { "providerTrackingId" => "VULN-1" } ]).to_json
+      doc = stored(bad)
+      expect { described_class.respond(doc, user: uploader, note: "Mine") }
+        .to raise_error(described_class::SeparationOfDutiesError)
     end
   end
 end

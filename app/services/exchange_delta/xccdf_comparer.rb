@@ -26,6 +26,27 @@ class ExchangeDelta
       end
     end
 
+    # The document as the received-document viewer shows it (#1390 part G):
+    # one entry per rule, keyed by `id` as the comparison keys its changes,
+    # read exactly as #compare reads it. A benchmark without TestResults
+    # lists its rules with no result.
+    def view(raw)
+      doc = parse(raw)
+      titles = doc.xpath("//*[local-name()='Rule']").to_h do |rule|
+        [ rule["id"].to_s, rule.at_xpath("*[local-name()='title']")&.text.to_s.squish ]
+      end
+      test_result = doc.xpath("//*[local-name()='TestResult']").last
+      rows = if test_results?(doc)
+        results(doc).map { |id, r| { "id" => id, "title" => titles[id].presence, "result" => r[:result], "severity" => r[:severity] }.compact }
+      else
+        rule_ids(doc).map { |id| { "id" => id, "title" => titles[id].presence }.compact }
+      end
+      { "benchmark" => doc.at_xpath("//*[local-name()='Benchmark']/*[local-name()='title']")&.text.to_s.squish.presence,
+        "target" => test_result&.at_xpath("*[local-name()='target']")&.text.to_s.strip.presence,
+        "startTime" => test_result&.[]("start-time"), "endTime" => test_result&.[]("end-time"),
+        "ruleResults" => rows }.compact
+    end
+
     private
 
     def parse(raw)

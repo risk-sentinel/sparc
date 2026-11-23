@@ -9,7 +9,15 @@
 #   POST /authorization_boundaries/:id/received_documents            — upload (ReceivedDocumentService)
 #   GET  /authorization_boundaries/:id/received_documents/:id        — one version, its errors and delta
 #   GET  /authorization_boundaries/:id/received_documents/:id/file   — the stored bytes
+#   GET  .../:id/review_export.md | .json                            — the review, to share out of band
 #   POST .../accept | respond | reject                               — ReceivedDocumentReviewService
+#
+# #1390 part G (owner, 2026-11-23): the version page is a document viewer
+# (ReceivedDocumentViewer): change list (default when there is a compared
+# version), side by side, this version, and the compared version, with
+# "Compare with" any other version of the same document in this boundary.
+# Questions asked about any place in the document go with Respond or Reject
+# and are exported (Markdown, JSON) to send to the provider out of band.
 #
 # Owner, 2026-11-20: received documents and their reviews live in the
 # boundary's evidence area; a document belongs to the boundary only once the
@@ -24,10 +32,12 @@
 # exchange), SI-10 (validation shown), AU-12 (every decision audited).
 class ReceivedDocumentsController < ApplicationController
   before_action :set_boundary
-  before_action :authorize_read!, only: %i[index show file]
+  before_action :authorize_read!, only: %i[index show file review_export]
   before_action :authorize_upload!, only: %i[create]
   before_action :authorize_review!, only: %i[accept respond reject]
-  before_action :set_document, only: %i[show file accept respond reject]
+  before_action :set_document, only: %i[show file accept respond reject review_export]
+
+  VIEWER_TABS = %w[changes side current compared].freeze
 
   def index
     documents = @boundary.received_documents.includes(:exchange_connection, :received_by).recent.to_a
@@ -44,8 +54,24 @@ class ReceivedDocumentsController < ApplicationController
     @history = AuditEvent.for_subject(@document).includes(:user).order(:created_at)
     @in_effect = @document.in_effect_version
     @can_review = permission?("exchange.review")
-    @may_decide = @can_review && @document.open? && may_decide?(@document)
-    @uploader_blocked = @can_review && @document.open? && !may_decide?(@document)
+    @may_decide = @can_review && @document.decidable? && may_decide?(@document)
+    @uploader_blocked = @can_review && @document.decidable? && !may_decide?(@document)
+    @viewer = ReceivedDocumentViewer.new(@document, compare_to: compare_version)
+    @guidance = ValidationGuidance.new(@document).items
+    @tab = viewer_tab
+    @changed_only = params[:changed] != "0"
+  end
+
+  # The review as Markdown (to read and send) or JSON (for a system), to share
+  # with the provider out of band until #1394 sends it.
+  def review_export
+    export = ReceivedDocumentReviewExport.new(@document)
+    AuditEvent.log(action: "received_document_review_exported", user: current_user, subject: @document,
+                   metadata: { authorization_boundary_id: @boundary.id, sha256: @document.sha256, format: request.format.symbol.to_s })
+    respond_to do |format|
+      format.md { send_data export.to_markdown, filename: export.filename("md"), type: "text/markdown; charset=utf-8", disposition: "attachment" }
+      format.json { send_data JSON.pretty_generate(export.as_json), filename: export.filename("json"), type: "application/json", disposition: "attachment" }
+    end
   end
 
   def create
@@ -93,12 +119,27 @@ class ReceivedDocumentsController < ApplicationController
 
   def decide(action, message)
     note = params[:note].to_s.strip
-    ReceivedDocumentReviewService.public_send(action, @document, user: current_user, note: note)
+    options = action == :accept ? {} : { questions: params[:questions] }
+    ReceivedDocumentReviewService.public_send(action, @document, user: current_user, note: note, **options)
     redirect_to document_path(@document), success: message
   rescue ReceivedDocumentReviewService::SeparationOfDutiesError => e
     redirect_to document_path(@document), error: e.message
   rescue ReceivedDocumentReviewService::Error => e
     redirect_to document_path(@document), error: "Not #{action == :accept ? 'accepted' : "#{action}ed"}: #{e.message}"
+  end
+
+  # Another version of the same document in this boundary, by id; nil for the
+  # recorded comparison. The viewer refuses anything outside the stream.
+  def compare_version
+    id = params[:compare].presence
+    id && @document.stream_versions.find_by(id: id)
+  end
+
+  def viewer_tab
+    tab = params[:tab].presence
+    return tab if VIEWER_TABS.include?(tab) && (tab == "current" || @viewer.compared?)
+
+    @viewer.compared? ? "changes" : "current"
   end
 
   def set_boundary

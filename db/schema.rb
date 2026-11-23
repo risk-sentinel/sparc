@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1410,7 +1410,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_160000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "push_confirmed"
+    t.jsonb "review_questions", default: [], null: false
+    t.bigint "compared_with_id"
     t.index ["authorization_boundary_id"], name: "index_received_documents_on_authorization_boundary_id"
+    t.index ["compared_with_id"], name: "index_received_documents_on_compared_with_id"
     t.index ["exchange_connection_id"], name: "index_received_documents_on_exchange_connection_id"
     t.index ["exchange_document_source_id"], name: "index_received_documents_on_exchange_document_source_id"
     t.index ["received_by_id"], name: "index_received_documents_on_received_by_id"
@@ -2257,6 +2260,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_160000) do
   add_foreign_key "received_documents", "authorization_boundaries"
   add_foreign_key "received_documents", "exchange_connections"
   add_foreign_key "received_documents", "exchange_document_sources"
+  add_foreign_key "received_documents", "received_documents", column: "compared_with_id", on_delete: :nullify
   add_foreign_key "received_documents", "scan_runs"
   add_foreign_key "received_documents", "users", column: "received_by_id"
   add_foreign_key "received_documents", "users", column: "reviewed_by_id"

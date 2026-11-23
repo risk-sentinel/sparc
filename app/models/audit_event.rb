@@ -311,6 +311,7 @@ class AuditEvent < ApplicationRecord
     exchange_document_source_updated
     exchange_document_source_deleted
     received_document_downloaded
+    received_document_review_exported
     exchange_push_received
     exchange_push_refused
     exchange_push_confirmed
@@ -607,7 +608,7 @@ class AuditEvent < ApplicationRecord
                      exchange_pull_completed exchange_pull_failed exchange_index_served
                      exchange_connection_discovered exchange_connection_tested
                      exchange_document_source_created exchange_document_source_updated
-                     exchange_document_source_deleted received_document_downloaded
+                     exchange_document_source_deleted received_document_downloaded received_document_review_exported
                      exchange_push_received exchange_push_refused exchange_push_confirmed
                      exchange_push_unconfirmed certification_material_stored],
     "Translations" => %w[translation_hdf_to_oscal_sar translation_hdf_to_oscal_poam
