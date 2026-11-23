@@ -358,7 +358,7 @@ jobs:
           echo "minted $(grep -c '^export' /tmp/smoke-env.sh) exports"
 
       - name: Set up Python tooling
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           enable-cache: true
 
@@ -600,7 +600,7 @@ jobs:
       - name: Login to Amazon ECR
         if: needs.prepare.outputs.dry_run != 'true'
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+        uses: aws-actions/amazon-ecr-login@7290e214a610b32bc0eef81748948b6d466a8783 # v2
 
       - name: Compute image tags
         id: tags
@@ -877,7 +877,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+        uses: aws-actions/amazon-ecr-login@7290e214a610b32bc0eef81748948b6d466a8783 # v2
 
       # ── Sign images (keyless OIDC) ──
 
@@ -1010,7 +1010,7 @@ jobs:
         id: grype
 
       - name: Set up Ruby (amendments + VEX enrichment)
-        uses: ruby/setup-ruby@f9c4492e86def3e644ab32a0ef185eda5b0c20d0 # v1.342.0
+        uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
         with:
           ruby-version: .ruby-version
 
@@ -1021,7 +1021,7 @@ jobs:
         run: script/ci/hdf_pins.sh --github-output
 
       - name: Set up Go (pinned to the hdf-cli fix line)
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ steps.hdf_pins.outputs.go_fix_line }}
 
