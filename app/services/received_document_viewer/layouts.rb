@@ -125,7 +125,7 @@ class ReceivedDocumentViewer
     # Numbers that are FedRAMP N-ratings, shown as N0–N5.
     RATING_FIELDS = %w[currentRating targetRating rating historicalRating].freeze
 
-    module_function
+    extend self
 
     # [[title, [top-level keys]], ...] for a document, with "Other fields"
     # last when the document has fields its layout does not name.

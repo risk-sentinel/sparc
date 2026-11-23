@@ -19,6 +19,9 @@
 class FedrampIncidentsController < ApplicationController
   include FedrampPage
 
+  READ_PERMISSION = "incident.read"
+  WRITE_PERMISSION = "incident.write"
+
   before_action :set_boundary
   before_action :authorize_read!, only: %i[index show report]
   before_action :authorize_write!, only: %i[create update record_report]
@@ -28,13 +31,13 @@ class FedrampIncidentsController < ApplicationController
   def index
     @incidents = service.incidents.to_a
     @incident = @boundary.fedramp_incidents.new
-    @may_edit = boundary_permission?("incident.write")
+    @may_edit = boundary_permission?(WRITE_PERMISSION)
   end
 
   def show
     @deadlines = service.deadlines(@incident)
     @no_deadlines = service.no_deadlines_reason(@incident)
-    @may_edit = boundary_permission?("incident.write")
+    @may_edit = boundary_permission?(WRITE_PERMISSION)
   end
 
   def create
@@ -97,10 +100,10 @@ class FedrampIncidentsController < ApplicationController
   end
 
   def authorize_read!
-    authorize_permission!("incident.read", authorization_boundary_id: @boundary.id)
+    authorize_permission!(READ_PERMISSION, authorization_boundary_id: @boundary.id)
   end
 
   def authorize_write!
-    authorize_permission!("incident.write", authorization_boundary_id: @boundary.id)
+    authorize_permission!(WRITE_PERMISSION, authorization_boundary_id: @boundary.id)
   end
 end

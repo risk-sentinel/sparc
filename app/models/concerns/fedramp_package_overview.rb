@@ -267,6 +267,7 @@ module FedrampPackageOverview
       end
     when :date
       "must be a date in the form YYYY-MM-DD" unless SparcNamespaceProps.iso_date(value)
+    else nil # free text: any value is accepted
     end
   end
 

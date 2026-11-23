@@ -118,6 +118,7 @@ class FedrampIncidentService
     when "Initial" then incident.evaluation_completed_at
     when "Ongoing" then ongoing_basis(incident)
     when "Final" then incident.resolved_at
+    else nil # not a report type: no deadline basis
     end
   end
 

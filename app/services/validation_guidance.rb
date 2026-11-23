@@ -156,7 +156,7 @@ class ValidationGuidance
   # The title, description, allowed values and format FedRAMP's schemas give
   # each field name, read from the vendored schemas once.
   module FieldGuide
-    module_function
+    extend self
 
     def lookup(field) = index[field.to_s]
 
@@ -182,6 +182,7 @@ class ValidationGuidance
         node["properties"].each { |name, sub| record(out, name, deref(sub, doc)) } if node["properties"].is_a?(Hash)
         node.each_value { |v| walk(v, doc, out, depth + 1) }
       when Array then node.each { |v| walk(v, doc, out, depth + 1) }
+      else nil # a scalar holds no field definitions
       end
     end
 

@@ -21,6 +21,9 @@
 class FedrampSignificantChangesController < ApplicationController
   include FedrampPage
 
+  READ_PERMISSION = "evidence.read"
+  WRITE_PERMISSION = "evidence.write"
+
   before_action :set_boundary
   before_action :authorize_read!, only: %i[index show notification]
   before_action :authorize_write!, only: %i[create update record_notice]
@@ -30,12 +33,12 @@ class FedrampSignificantChangesController < ApplicationController
   def index
     @changes = service.changes.to_a
     @change = @boundary.fedramp_significant_changes.new(change_type: FedrampSignificantChange::ADAPTIVE)
-    @may_edit = boundary_permission?("evidence.write")
+    @may_edit = boundary_permission?(WRITE_PERMISSION)
   end
 
   def show
     @deadlines = service.deadlines(@change)
-    @may_edit = boundary_permission?("evidence.write")
+    @may_edit = boundary_permission?(WRITE_PERMISSION)
   end
 
   def create
@@ -100,10 +103,10 @@ class FedrampSignificantChangesController < ApplicationController
   end
 
   def authorize_read!
-    authorize_permission!("evidence.read", authorization_boundary_id: @boundary.id)
+    authorize_permission!(READ_PERMISSION, authorization_boundary_id: @boundary.id)
   end
 
   def authorize_write!
-    authorize_permission!("evidence.write", authorization_boundary_id: @boundary.id)
+    authorize_permission!(WRITE_PERMISSION, authorization_boundary_id: @boundary.id)
   end
 end

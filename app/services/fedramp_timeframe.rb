@@ -10,7 +10,7 @@
 #
 # A business-day shift of a time keeps its time of day.
 module FedrampTimeframe
-  module_function
+  extend self
 
   def shift(from, type, num, before: false)
     sign = before ? -1 : 1
