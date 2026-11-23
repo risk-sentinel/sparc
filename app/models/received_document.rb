@@ -43,6 +43,9 @@ class ReceivedDocument < ApplicationRecord
   belongs_to :received_by, class_name: "User", optional: true
   belongs_to :reviewed_by, class_name: "User", optional: true
   belongs_to :scan_run, optional: true
+  # #1390 part G: the version this one's recorded comparison was made against
+  # (the version in effect when it arrived).
+  belongs_to :compared_with, class_name: "ReceivedDocument", optional: true
   has_one_attached :file
 
   attr_readonly :authorization_boundary_id, :source, :stream_key, :format, :document_type,
@@ -62,6 +65,10 @@ class ReceivedDocument < ApplicationRecord
   scope :documents, -> { where.not(format: MATERIAL_FORMAT) }
 
   def open? = OPEN_STATES.include?(state)
+  # #1390 part G (owner, 2026-11-23): a reviewer may also respond to or reject
+  # a version that failed validation, so the provider can be told what is
+  # wrong. It still can never be accepted (ReceivedDocumentReviewService).
+  def decidable? = open? || state == "invalid"
   def in_effect? = state == "accepted"
   def certification_material? = format == MATERIAL_FORMAT
   # Pushed bytes the fresh pull from the registered address did not confirm.
@@ -75,6 +82,25 @@ class ReceivedDocument < ApplicationRecord
   def validation_errors = Array(validation["errors"])
   def validation_warnings = Array(validation["warnings"])
   def delta_changes = Array(delta["changes"])
+  def questions = Array(review_questions).select { |q| q.is_a?(Hash) }
 
   def bytes = file.attached? ? file.download : nil
+
+  # Every other version of this document in the same boundary, newest first:
+  # what a reviewer may compare this one with (#1390 part G).
+  def stream_versions
+    self.class.where(authorization_boundary_id: authorization_boundary_id, stream_key: stream_key)
+        .where.not(id: id).recent
+  end
+
+  # The version the recorded comparison was made against. Stored since #1390
+  # part G; for a version stored earlier, the stream's version that had been
+  # accepted most recently when this one arrived.
+  def recorded_baseline
+    return compared_with if compared_with
+    return nil if delta.blank? || delta["first_version"]
+
+    stream_versions.where(state: %w[accepted superseded]).where(reviewed_at: ..received_at)
+                   .reorder(reviewed_at: :desc, id: :desc).first
+  end
 end

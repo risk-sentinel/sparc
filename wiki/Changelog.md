@@ -42,6 +42,9 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - Each version is validated and kept by SHA-256; one that fails is kept with its errors shown.
   - A document takes effect only when a reviewer of the receiving boundary accepts it, seeing what changed since the version in effect. Only a byte-identical re-delivery skips review. The uploader cannot decide their own upload.
   - An accepted HDF document goes into the boundary's findings.
+  - **A document viewer** shows what the provider sent, laid out for each FedRAMP document type, HDF results by control, XCCDF results by rule and anything else in a general view. It opens on the **change list**, with **side by side**, this version and the compared version as the other tabs. **Compare with** any other version of the same document; that comparison is calculated on request and not stored.
+  - **Ask about this** on any place in the document adds it, with its location and values, to the reviewer's questions for the provider, which go with Respond or Reject. **Download review** writes the review as Markdown or JSON to send to the provider out of band ([#1394](https://github.com/risk-sentinel/sparc/issues/1394) will send it automatically).
+  - A version that failed validation says what is wrong and what is needed, from FedRAMP's schema, and can be responded to or rejected so the provider is told. It still can never be accepted.
   - New permissions: `exchange.upload`, `exchange.review`, `connections.manage`.
 - **Push:** a provider can push a changed document, signed with an Ed25519 key pinned on the connection (two allowed, for rotation). SPARC accepts it only within 5 minutes of its timestamp, once per signature, from the connection's IP ranges, and rate-limited. It then pulls the document fresh from its registered address: the same bytes confirm the push; anything else is received as an **unconfirmed push**, flagged and never accepted without a person.
 - **Class A:** a Class A connection records the framework its certification rests on (FedRAMP Rev5 or Ready, SOC 2 Type II, GovRAMP) and its date, and is flagged expired 12 months later. Its assessment materials, such as a SOC 2 report or a Readiness Assessment Report, are added on the connection and reviewed on the boundary, kept by SHA-256 and not schema-checked.
@@ -62,7 +65,7 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
 
-**Upgrading:** an image swap from v1.17.10. Seven migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
+**Upgrading:** an image swap from v1.17.10. Eight migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
 [Full release notes](https://github.com/risk-sentinel/sparc/releases/tag/v1.17.11).
 

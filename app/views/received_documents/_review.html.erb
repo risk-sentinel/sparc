@@ -1,0 +1,110 @@
+<%# #1354 / #1390 part G — the review. Questions a reviewer adds with "Ask
+    about this" collect here (review_questions_controller.js) and go with
+    Respond or Reject as questions[]. A version that failed validation can be
+    responded to or rejected, never accepted. The export is the review as a
+    file to send to the provider out of band (#1394 will send it). %>
+<div class="card sparc-viewer-review" data-testid="received-review">
+  <div class="card-header d-flex justify-content-between align-items-center gap-2">
+    <h5 class="mb-0">Review</h5>
+    <%= received_state_badge(doc.state) %>
+  </div>
+  <div class="card-body">
+    <% if doc.review_action.present? %>
+      <p class="mb-2">
+        <strong><%= doc.review_action == "auto_accept" ? "Accepted without review" : doc.review_action.humanize %></strong>
+        <%= exchange_time(doc.reviewed_at) %>
+        <% if doc.reviewed_by %>by <%= doc.reviewed_by.display_label %><% end %>
+      </p>
+      <% if doc.review_note.present? %>
+        <p class="small mb-2" data-testid="review-note"><%= doc.review_note %></p>
+      <% end %>
+      <% if doc.questions.any? %>
+        <ol class="small ps-3 mb-3" data-testid="review-questions-recorded">
+          <% doc.questions.each do |q| %>
+            <li>
+              <strong><%= q["label"].presence || q["pointer"] %></strong>
+              <% if q["detail"].present? %><br><span class="text-body-secondary"><%= q["detail"] %></span><% end %>
+              <% if q["question"].present? %><br><%= q["question"] %><% end %>
+            </li>
+          <% end %>
+        </ol>
+      <% end %>
+    <% end %>
+
+    <% if doc.state == "invalid" %>
+      <p class="text-danger small" data-testid="review-invalid">
+        This version failed validation and cannot be accepted. A valid version has to replace it.
+        <% if @may_decide %>You can still ask the provider to fix it, or reject it.<% end %>
+      </p>
+    <% end %>
+
+    <% if !doc.decidable? %>
+      <p class="text-body-secondary mb-3">This version has been decided.</p>
+    <% elsif @uploader_blocked %>
+      <p class="text-body-secondary mb-3" data-testid="review-sod">
+        You uploaded this version, so someone else has to review it (separation of duties).
+      </p>
+    <% elsif @may_decide %>
+      <p class="small text-body-secondary">
+        <% unless doc.state == "invalid" %>Accept puts this version in effect and supersedes the one before it.<% end %>
+        Respond asks the provider and leaves the version where it is. Reject keeps it on record and it never takes effect.
+        <% if doc.format == "hdf" && doc.state != "invalid" %>Accepting an HDF document also adds its results to the boundary's findings.<% end %>
+      </p>
+
+      <div class="mb-3" data-testid="review-questions">
+        <div class="d-flex justify-content-between align-items-center">
+          <label class="form-label small fw-semibold mb-1" for="review-questions-list">
+            Questions for the provider (<span data-review-questions-target="count">0</span>)
+          </label>
+          <button type="button" class="sparc-viewer-ask" data-action="review-questions#clear" data-review-questions-target="clear" hidden>Clear</button>
+        </div>
+        <ol id="review-questions-list" class="sparc-viewer-tray" data-review-questions-target="tray" aria-live="polite"></ol>
+        <p class="small text-body-secondary mb-0" data-review-questions-target="empty">
+          Use “Ask about this” on any section, entry, field or change to add it here with its location and values.
+        </p>
+      </div>
+
+      <% if doc.state != "invalid" %>
+        <%= form_with url: accept_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+              local: true, class: "mb-3", data: { testid: "accept-form" } do |f| %>
+          <%= f.label :note, "Note (optional)", class: "form-label small fw-semibold", for: "accept-note" %>
+          <%= f.text_area :note, rows: 2, class: "form-control form-control-sm mb-2", id: "accept-note" %>
+          <%= f.submit "Accept", class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
+                data: { testid: "review-accept", turbo_confirm: "Accept this version? It takes effect for the boundary." } %>
+        <% end %>
+      <% end %>
+      <%= form_with url: respond_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+            local: true, class: "mb-3", data: { testid: "respond-form", action: "submit->review-questions#submitted" } do |f| %>
+        <%= f.label :note, "What you need from the provider", class: "form-label small fw-semibold", for: "respond-note" %>
+        <%= f.text_area :note, rows: 3, class: "form-control form-control-sm mb-2", id: "respond-note", required: true,
+              data: { review_questions_target: "note" } %>
+        <div data-review-questions-target="fields"></div>
+        <%= f.submit "Respond", class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+              data: { testid: "review-respond" } %>
+      <% end %>
+      <%= form_with url: reject_authorization_boundary_received_document_path(@boundary, doc), method: :post,
+            local: true, data: { testid: "reject-form", action: "submit->review-questions#submitted" } do |f| %>
+        <%= f.label :note, "Why it is rejected", class: "form-label small fw-semibold", for: "reject-note" %>
+        <%= f.text_area :note, rows: 2, class: "form-control form-control-sm mb-2", id: "reject-note", required: true,
+              data: { review_questions_target: "note" } %>
+        <div data-review-questions-target="fields"></div>
+        <%= f.submit "Reject", class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
+              data: { testid: "review-reject" } %>
+      <% end %>
+    <% else %>
+      <p class="text-body-secondary mb-3">Waiting for a reviewer of this boundary.</p>
+    <% end %>
+
+    <hr>
+    <p class="small fw-semibold mb-1">Share the review</p>
+    <p class="small text-body-secondary mb-2">
+      The review as a file, with each question’s location and values<%= " and what the provider needs to fix" if doc.state == "invalid" %>, to send to the provider.
+    </p>
+    <div class="d-flex gap-2 flex-wrap">
+      <%= link_to "Download review (Markdown)", review_export_authorization_boundary_received_document_path(@boundary, doc, format: :md),
+            class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm", data: { turbo: false, testid: "review-export-md" } %>
+      <%= link_to "JSON", review_export_authorization_boundary_received_document_path(@boundary, doc, format: :json),
+            class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm", data: { turbo: false, testid: "review-export-json" } %>
+    </div>
+  </div>
+</div>

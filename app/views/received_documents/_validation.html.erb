@@ -1,0 +1,86 @@
+<%# #1354 validation, with #1390 part G guidance: each error says where it is,
+    what is wrong and what the provider needs to send (ValidationGuidance),
+    above the validator's own message. A reviewer may ask about one error or
+    all of them at once. %>
+<% ctx = viewer_context(@viewer, mode: :current, ask: @may_decide, open_all: true) %>
+<div class="card h-100" data-testid="received-validation">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Validation</h5>
+    <% if doc.certification_material? %>
+      <span class="sparc-status sparc-status--neutral">Not checked</span>
+    <% elsif doc.valid_document? %>
+      <span class="sparc-status sparc-status--success">Valid</span>
+    <% else %>
+      <span class="sparc-status sparc-status--danger">Invalid</span>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% schema = doc.validation["schema"] %>
+    <% if schema.is_a?(Hash) && schema["name"].present? %>
+      <p class="small text-body-secondary">
+        Checked against <code><%= schema["name"] %></code><% if schema["version"].present? %> (<%= schema["version"] %>)<% end %>,
+        and for every required field being filled in.
+      </p>
+    <% end %>
+    <% warnings = doc.validation_warnings.select { |w| w.is_a?(Hash) } %>
+    <% if doc.certification_material? %>
+      <p class="mb-0 small text-body-secondary">A Class A material is not schema-checked.</p>
+    <% elsif @guidance.any? %>
+      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+        <h6 class="fw-semibold text-danger mb-0"><%= pluralize(@guidance.size, "error") %></h6>
+        <% if @may_decide %>
+          <button type="button" class="sparc-action sparc-action--danger sparc-action--outline sparc-action--sm"
+                  data-action="review-questions#addGroup" data-group="validation-errors" data-testid="ask-fix-errors">
+            Ask the provider to fix these
+          </button>
+        <% end %>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sparc-viewer-errors" data-testid="validation-errors">
+          <colgroup><col class="sparc-viewer-errors__where"><col><col><col class="sparc-viewer-changes__ask"></colgroup>
+          <thead><tr><th>Where</th><th>What is wrong</th><th>What is needed</th><th><span class="visually-hidden">Ask</span></th></tr></thead>
+          <tbody data-ask-group="validation-errors">
+            <% @guidance.each do |item| %>
+              <tr data-check="<%= item.check %>">
+                <td class="text-break">
+                  <strong><%= item.label %></strong><br>
+                  <span class="small text-body-secondary"><%= item.check.humanize %> check · <code><%= item.pointer.presence || "/" %></code></span>
+                </td>
+                <td><%= item.wrong %></td>
+                <td><%= item.needed.presence || tag.span("See the validator’s message.", class: "text-body-secondary") %>
+                  <div class="small text-body-secondary mt-1">Validator: <%= item.message %></div></td>
+                <td><%= viewer_ask(ctx, item.location, item.label, [ item.wrong, ("Needed: #{item.needed}" if item.needed.present?) ].compact.join(" ")) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="mb-2">No errors.</p>
+    <% end %>
+    <% if warnings.any? %>
+      <% total = doc.validation["warnings_total"].to_i %>
+      <h6 class="fw-semibold mt-3">
+        <%= pluralize([ total, warnings.size ].max, "warning") %>
+        <small class="text-body-secondary fw-normal">— optional fields left empty; they never block acceptance</small>
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0" data-testid="validation-warnings">
+          <thead><tr><th>Check</th><th>Where</th><th>Message</th></tr></thead>
+          <tbody>
+            <% warnings.each do |warning| %>
+              <tr>
+                <td><%= warning["check"].to_s.humanize %></td>
+                <td class="text-break"><code><%= warning["pointer"].presence || "/" %></code></td>
+                <td><%= warning["message"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if total > warnings.size %>
+        <p class="small text-body-secondary mt-2 mb-0">Showing the first <%= warnings.size %>.</p>
+      <% end %>
+    <% end %>
+  </div>
+</div>

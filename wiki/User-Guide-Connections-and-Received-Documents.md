@@ -226,18 +226,88 @@ version in effect stays in effect.
 
 ## 7. Review a version
 
-Open the version from the Received documents page. Someone holding
-`exchange.review` on the boundary sees the **Review** card:
+Open the version from the Received documents page. The page shows the document
+itself, laid out for its type, next to the **Review** card.
+
+### Read what was sent
+
+The document viewer has four tabs:
+
+| Tab | What it shows |
+|---|---|
+| **Change list** | Every change since the version it is compared with, regressions first, each with what was there before and after. It opens here whenever there is something to compare. **Show in document** jumps to the place. |
+| **Side by side** | The compared version on the left and this one on the right, section by section. Lists (vulnerabilities, controls, KSIs, ports, results) are lined up entry by entry, so an added or removed entry shows as absent on the other side. |
+| **This version** | The whole document, with each change marked where it occurs and what it was before. |
+| **Version *n*** | The version it is compared with. |
+
+**Changed only** (on by default) closes every section and entry that did not
+change; **Show everything** opens them all.
+
+Each FedRAMP document type has its own layout: vulnerabilities with their
+N-rating and status, controls and KSIs with their implementation status,
+incidents with their timeline. HDF results are listed by control and XCCDF
+results by rule. Any other document (OSCAL, for example) is shown in a general
+view, one section per top-level field. A field a layout does not name is shown
+under **Other fields**, so nothing a provider sent is hidden.
+
+Everything a provider sent is shown as text. Addresses (including logo
+addresses) are shown, never opened or fetched by SPARC.
+
+### Compare with another version
+
+By default a version is compared with the version that was in effect when it
+arrived. That **recorded comparison** is the one the review is decided on.
+
+**Compare with** lists every other version of the same document in this
+boundary, with its state and date. Pick one to compare with it instead: for
+example the last version before a significant change, or a version you
+rejected, to see what the provider fixed. A banner says the comparison is
+calculated now and not stored, gives the recorded comparison's counts, and
+links back. A version that failed validation is listed but cannot be compared.
+
+### Ask the provider about something
+
+**Ask about this** is on every section, entry, field, change and validation
+error, for anyone who may decide the version. Each one you pick is added to
+**Questions for the provider** on the Review card with its location and the
+values compared; type your question under it. The questions go with
+**Respond** (or **Reject**), and a note is then optional.
+
+### Decide
 
 - **Accept** (optional note): the version takes effect for its stream, and the
   version it replaces becomes **Superseded**.
-- **Respond** (note required: what you need from the provider): the version
-  stays pending as **Responded**, and the version in effect stays in effect.
-- **Reject** (note required: why): the version stays on record and never takes
-  effect.
+- **Respond** (a note or at least one question: what you need from the
+  provider): the version stays pending as **Responded**, and the version in
+  effect stays in effect.
+- **Reject** (a note or at least one question: why): the version stays on
+  record and never takes effect.
 
-Every decision is recorded with who made it, when, and the note, and shows in
-the version's **History** and the audit log.
+Every decision is recorded with who made it, when, the note and the questions,
+and shows in the version's **History** and the audit log.
+
+### A version that failed validation
+
+Each error is listed under **Validation** with where it is, **what is wrong**,
+and **what is needed**, taken from FedRAMP's schema for a FedRAMP document (the
+allowed values, the format with an example, or what the field is), followed by
+the validator's own message. The error is also marked where it occurs in the
+document. **Ask the provider to fix these** adds every error to your questions
+at once.
+
+A version that failed validation can never be accepted, but you can **Respond**
+(it stays **Invalid**) or **Reject** it, so the provider is told what to fix.
+
+### Share the review with the provider
+
+**Download review (Markdown)** (or **JSON**) on the Review card writes the
+review as a file: the document's identity and SHA-256, the version it was
+reviewed against, the decision and note, every question with its location and
+values, and for an invalid version what needs fixing. Send it to the provider by
+whatever channel your agency uses. Anyone who can read the boundary's received
+documents can download it, and each download is audited. Sending it to the
+provider automatically is planned
+([#1394](https://github.com/risk-sentinel/sparc/issues/1394)).
 
 ### Separation of duties
 

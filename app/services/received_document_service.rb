@@ -65,7 +65,8 @@ class ReceivedDocumentService
     in_effect = ReceivedDocument.in_effect.find_by(stream_key: stream_key)
     delta = validation[:valid] ? compare(format, document_type, in_effect) : nil
     document = store(format: format, document_type: document_type, stream_key: stream_key,
-                     sha256: sha256, validation: validation, delta: delta)
+                     sha256: sha256, validation: validation, delta: delta,
+                     compared_with: delta && !delta.first_version? ? in_effect : nil)
 
     audit("received_document_stored", document)
     ReceivedDocumentReviewService.auto_accept(document) if delta&.auto_acceptable? && @push_confirmed != false
@@ -84,7 +85,9 @@ class ReceivedDocumentService
     raise Error, "Document exceeds the #{max}-byte upload limit" if @bytes.bytesize > max
   end
 
-  def store(format:, document_type:, stream_key:, sha256:, validation:, delta:)
+  # compared_with (#1390 part G): the version the recorded comparison was made
+  # against, so the viewer can show both side by side.
+  def store(format:, document_type:, stream_key:, sha256:, validation:, delta:, compared_with: nil)
     ReceivedDocument.transaction do
       doc = ReceivedDocument.create!(
         authorization_boundary: @boundary, exchange_connection: @connection,
@@ -93,7 +96,7 @@ class ReceivedDocumentService
         sha256: sha256, byte_size: @bytes.bytesize, filename: @filename, content_type: @content_type,
         state: validation[:valid] ? "pending_review" : "invalid", valid_document: validation[:valid],
         validation: validation[:json], received_at: Time.current, received_by: @received_by,
-        push_confirmed: @push_confirmed, **delta_attributes(delta)
+        push_confirmed: @push_confirmed, compared_with: compared_with, **delta_attributes(delta)
       )
       doc.file.attach(io: StringIO.new(@bytes), filename: @filename.presence || "#{format}-document",
                       content_type: @content_type.presence || "application/octet-stream")

@@ -33,6 +33,7 @@ A **stream** is one pulled document address, or a boundary's uploads of one form
 | POST | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents` | Upload a document |
 | GET | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id` | One version, with its validation, delta and review |
 | GET | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/file` | The exact bytes received |
+| GET | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/review_export` | The review, as JSON or Markdown, to share with the provider |
 | POST | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/accept` | Accept: the version takes effect |
 | POST | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/respond` | Ask the provider for information |
 | POST | `/api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/reject` | Reject: on record, never in effect |
@@ -43,7 +44,7 @@ A valid Bearer token. Permissions are checked against the boundary in the path (
 
 | Action | Permission |
 |---|---|
-| list, show, download | `evidence.read` |
+| list, show, download, review export | `evidence.read` |
 | upload | `exchange.upload` |
 | accept, respond, reject | `exchange.review` |
 
@@ -91,8 +92,45 @@ The list row plus:
 - `validation`: `valid`, `schema`, `errors`, `warnings`, `warnings_total`;
 - `delta`: `first_version`, `identical`, `truncated`, `counts` and `changes` (each `{kind, key, summary, before, after}`, regressions first);
 - `in_effect_version_id`: the version now in effect for its stream (this one when accepted);
-- `may_decide`: whether the caller may decide this version now (it is open and they did not upload it);
-- `links.accept`, `links.respond`, `links.reject`.
+- `validation.guidance`: each error with `location` (a pointer naming list entries by identifier), `label` (the location as a reader says it), `wrong` (what is wrong), `needed` (what the provider needs to send, from FedRAMP's schema; `null` for other formats) and the validator's `message`;
+- `compared_with_id`: the version the recorded comparison was made against (the version in effect when this one arrived; `null` for a first version, an invalid one, and versions stored before v1.17.11);
+- `review.questions`: the questions sent with a response or rejection (see [Review](#review));
+- `may_decide`: whether the caller may decide this version now (it is open, or invalid, and they did not upload it);
+- `links.accept`, `links.respond`, `links.reject`, `links.review_export`.
+
+### Compare with another version: `?compare=:other_id`
+
+Compares this version with any other version of the **same document in the same boundary**, calculated on request with the same rules as the recorded comparison and **never stored**. The response gains a `comparison` block in the shape of `delta`:
+
+```json
+"comparison": {
+  "compared_with_id": 38, "recorded": false, "truncated": false,
+  "counts": { "regression": 2, "improvement": 1, "neutral": 4 },
+  "changes": [ { "kind": "regression", "key": "/vulnerabilities/VULN-12/currentRating",
+                 "pointer": "/vulnerabilities/VULN-12/currentRating",
+                 "summary": "VULN-12: rating N2 → N3", "before": 2, "after": 3 } ]
+}
+```
+
+`pointer` places each change in the document (`null` when it cannot be placed). `404` when the id is not another version of this document in this boundary; `422` when that version failed validation. The review is still decided on the recorded comparison (`delta`).
+
+## `GET .../received_documents/:id/review_export`
+
+The review written out to send to the provider out of band: `review_export.json` (or no extension) answers `{"data": {…}}`; `review_export.md` answers a Markdown attachment. Both carry the document's identity (type, FedRAMP ID, version number, SHA-256), the version it was reviewed against with the recorded counts, the decision and note, every question with its location and values, and, for a version that failed validation, each error with what is wrong and what is needed. Provider-supplied text is escaped in the Markdown. Audited as `received_document_review_exported`.
+
+```json
+{
+  "data": {
+    "sparc_review_export": "1",
+    "document": { "id": 41, "format": "fedramp", "document_type": "vulnerability-detail-report", "version": 4, "sha256": "…" },
+    "compared_with": { "id": 38, "version": 3, "sha256": "…", "state": "accepted", "counts": { "regression": 2, "improvement": 1, "neutral": 4 } },
+    "review": { "action": "respond", "note": "Two questions.", "reviewed_at": "2026-11-23T15:00:00Z", "reviewed_by": "Riley Reviewer" },
+    "questions": [ { "pointer": "/vulnerabilities/VULN-12/currentRating", "label": "Vulnerabilities › VULN-12 › Current rating (N)",
+                     "detail": "VULN-12: rating N2 → N3", "before": "2", "after": "3", "question": "Why did the rating rise?" } ],
+    "validation_errors": []
+  }
+}
+```
 
 ## `GET .../received_documents/:id/file`
 
@@ -123,7 +161,15 @@ Audited as `received_document_stored`.
 
 ## Review
 
-Each takes an optional JSON body `{"note": "…"}`; `respond` and `reject` require one. Each answers `200` with the version (detailed) and is audited (`received_document_accepted`, `received_document_responded`, `received_document_rejected`) with who decided and the note.
+Each takes an optional JSON body `{"note": "…"}`. `respond` and `reject` also take `questions`, and need a note or at least one question:
+
+```json
+{ "note": "Please explain.",
+  "questions": [ { "pointer": "/vulnerabilities/VULN-12/currentRating", "label": "Vulnerabilities › VULN-12 › Current rating (N)",
+                   "detail": "VULN-12: rating N2 → N3", "before": "2", "after": "3", "question": "Why did the rating rise?" } ] }
+```
+
+Each question is tied to a place in the document by its JSON `pointer`; `question` is the reviewer's own words. At most 100, each field bounded, kept as plain text; the first question for a pointer wins. Each decision answers `200` with the version (detailed) and is audited (`received_document_accepted`, `received_document_responded`, `received_document_rejected`) with who decided, the note and the questions. Sending the questions to the provider automatically is tracked in #1394; until then, use the review export.
 
 ### `POST .../received_documents/:id/accept`
 
@@ -132,6 +178,8 @@ The version takes effect for its stream; the one it replaces becomes `superseded
 ### `POST .../received_documents/:id/respond`
 
 Ask the provider for information. The version moves to `responded` and stays out of effect; the version in effect stays in effect. A responded version can still be accepted or rejected.
+
+A version that **failed validation** can also be responded to (it stays `invalid`) or rejected, so the provider can be told what to fix. It can never be accepted.
 
 ### `POST .../received_documents/:id/reject`
 
@@ -143,7 +191,7 @@ The version stays on record and never takes effect.
 |---|---|
 | `403` | No `exchange.review` on the boundary, or the caller uploaded this version (`{"error": "A received document cannot be decided by the person who uploaded it"}`) |
 | `404` | No such version on this boundary |
-| `422` | The version already decided, accepting one that failed validation, `respond` / `reject` without a note, or a failed HDF ingest |
+| `422` | The version already decided, accepting one that failed validation, `respond` / `reject` with neither a note nor a question, or a failed HDF ingest |
 
 ## Errors (all endpoints)
 
@@ -155,4 +203,4 @@ The version stays on record and never takes effect.
 
 ## NIST SP 800-53
 
-AC-3 / AC-6 (boundary-scoped permissions), AC-5 (separation of duties), CA-3 (information exchange), CA-7 (each delivery compared with the last accepted), SI-10 (validated on receipt), SI-7 and AU-10 (bytes and SHA-256 fixed at receipt; downloads carry the SHA-256), AU-12 (uploads, decisions and downloads audited).
+AC-3 / AC-6 (boundary-scoped permissions), AC-5 (separation of duties), CA-3 (information exchange), CA-7 (each delivery compared with the last accepted), SI-10 (validated on receipt), SI-7 and AU-10 (bytes and SHA-256 fixed at receipt; downloads carry the SHA-256), AU-12 (uploads, decisions, downloads and review exports audited).

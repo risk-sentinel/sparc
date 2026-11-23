@@ -1,0 +1,110 @@
+<%# #1390 part G — the document viewer, in a Turbo Frame so its tabs, the
+    "Changed only" switch and "Compare with" reload only this card. Every
+    control is a plain link or GET form (no inline script; CSP unchanged). %>
+<% tab = @tab %>
+<% base_params = { tab: tab, compare: (viewer.recorded? || !viewer.compared? ? nil : viewer.compared.id), changed: (@changed_only ? nil : "0") }.compact %>
+<% path_for = ->(**over) { authorization_boundary_received_document_path(@boundary, doc, **base_params.merge(over).compact) } %>
+<% ask = @may_decide %>
+<% compared_label = viewer.compared ? "Version #{viewer.version_number(viewer.compared)}" : nil %>
+<%= turbo_frame_tag "document-viewer", data: { action: "turbo:frame-load->review-questions#sync" } do %>
+  <div class="card sparc-viewer" data-testid="document-viewer" data-viewer-tab="<%= tab %>">
+    <div class="sparc-viewer__bar">
+      <nav class="sparc-viewer__tabs" aria-label="Document views">
+        <% tabs = viewer.compared? ? [ [ "changes", "Change list (#{viewer.changes.size})" ], [ "side", "Side by side" ], [ "current", "This version" ], [ "compared", "#{compared_label}#{viewer.compared == viewer.baseline ? ' (compared)' : ''}" ] ] : [ [ "current", "This version" ] ] %>
+        <% tabs.each do |key, label| %>
+          <%= link_to label, path_for.call(tab: key), class: "sparc-viewer__tab", aria: { current: (key == tab ? "page" : nil) },
+                data: { turbo_frame: "document-viewer", turbo_action: "advance", testid: "viewer-tab-#{key}" } %>
+        <% end %>
+      </nav>
+      <div class="sparc-viewer__tools">
+        <% comparable = viewer.versions.reject(&:certification_material?) %>
+        <% if comparable.any? && tab != "current" %>
+          <%= form_with url: authorization_boundary_received_document_path(@boundary, doc), method: :get, local: true,
+                class: "sparc-viewer__compare", data: { turbo_frame: "document-viewer", turbo_action: "advance", testid: "viewer-compare-form" } do %>
+            <%= hidden_field_tag :tab, tab, id: "viewer-compare-tab" %>
+            <% unless @changed_only %><%= hidden_field_tag :changed, "0", id: "viewer-compare-changed" %><% end %>
+            <label for="viewer-compare" class="small text-body-secondary">Compare with</label>
+            <select id="viewer-compare" name="compare" class="form-select form-select-sm" data-testid="viewer-compare">
+              <% comparable.each do |v| %>
+                <% n = viewer.version_number(v) %>
+                <% text = if v == viewer.baseline then "Version #{n} · #{ExchangeHelper::RECEIVED_STATE_LABELS.fetch(v.state, v.state).downcase} · recorded comparison"
+                          elsif !viewer.comparable?(v) then "Version #{n} · failed validation, cannot compare"
+                          else "Version #{n} · #{ExchangeHelper::RECEIVED_STATE_LABELS.fetch(v.state, v.state).downcase} #{v.received_at.utc.strftime('%-d %b %Y')}"
+                          end %>
+                <option value="<%= v.id %>" <%= "selected" if v == viewer.compared %> <%= "disabled" unless viewer.comparable?(v) %>><%= text %></option>
+              <% end %>
+            </select>
+            <%= submit_tag "Compare", name: nil, class: "sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm", data: { testid: "viewer-compare-submit" } %>
+          <% end %>
+        <% end %>
+        <% if viewer.compared? && tab != "changes" %>
+          <%= link_to(@changed_only ? "Show everything" : "Changed only", path_for.call(changed: (@changed_only ? "0" : nil)),
+                class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm",
+                data: { turbo_frame: "document-viewer", turbo_action: "advance", testid: "viewer-changed-only" }) %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if viewer.compared? && !viewer.recorded? %>
+      <div class="sparc-viewer__banner sparc-viewer__banner--warning" data-testid="viewer-compare-banner">
+        <% rc = viewer.recorded_counts %>
+        Comparing with <strong><%= compared_label %></strong> (<%= ExchangeHelper::RECEIVED_STATE_LABELS.fetch(viewer.compared.state, viewer.compared.state).downcase %>, received <%= exchange_time(viewer.compared.received_at) %>).
+        <% if viewer.baseline %>
+          This comparison is calculated now and is not stored. The review is decided on the recorded comparison with
+          version <%= viewer.version_number(viewer.baseline) %>: <%= rc["regression"] %> regressions, <%= rc["improvement"] %> improvements, <%= rc["neutral"] %> neutral.
+          <%= link_to "Compare with version #{viewer.version_number(viewer.baseline)}", authorization_boundary_received_document_path(@boundary, doc, tab: tab),
+                data: { turbo_frame: "document-viewer", turbo_action: "advance", testid: "viewer-compare-reset" } %>
+        <% else %>
+          No comparison is recorded for this version, so this one is calculated now and is not stored.
+        <% end %>
+      </div>
+    <% elsif !viewer.compared? && !doc.certification_material? %>
+      <div class="sparc-viewer__banner" data-testid="viewer-first-version">
+        <% if doc.state == "invalid" %>
+          No version of this document is in effect to compare with. The whole document is the review.
+        <% else %>
+          The first version of this document in this boundary: there is nothing to compare it with, so the whole document is the review.
+        <% end %>
+      </div>
+    <% end %>
+    <% if doc.state == "invalid" %>
+      <div class="sparc-viewer__banner sparc-viewer__banner--danger" data-testid="viewer-invalid-banner">
+        <strong>This version failed validation (<%= pluralize(@guidance.size, "error") %>), so it cannot be accepted.</strong>
+        Each error is listed under Validation with what is wrong and what the provider needs to send, and is marked where it occurs in the document.
+        <% if @in_effect %>Version <%= viewer.version_number(@in_effect) %> stays in effect.<% end %>
+      </div>
+    <% end %>
+    <% if viewer.truncated? %>
+      <div class="sparc-viewer__banner" data-testid="viewer-truncated">The change list is shortened; the counts cover every change, regressions first.</div>
+    <% end %>
+
+    <div class="sparc-viewer__body">
+      <% case tab %>
+      <% when "changes" %>
+        <%= render "received_documents/viewer_changes", doc: doc, viewer: viewer, ask: ask, path_for: path_for %>
+      <% when "side" %>
+        <%= render "received_documents/viewer_side", viewer: viewer, ask: ask %>
+      <% else %>
+        <% data = tab == "compared" ? viewer.compared_data : viewer.current_data %>
+        <% if tab == "current" && viewer.xml_text %>
+          <p class="small text-body-secondary px-3 pt-3 mb-2"><%= viewer.unviewable_reason %></p>
+          <pre class="sparc-viewer-xml" data-testid="viewer-xml"><%= viewer.xml_text.truncate(ReceivedDocumentViewer::MAX_VIEW_BYTES) %></pre>
+        <% elsif data.nil? %>
+          <p class="text-body-secondary p-3 mb-0" data-testid="viewer-unviewable"><%= (tab == "current" && viewer.unviewable_reason) || "This version cannot be shown here. Use the download." %></p>
+        <% else %>
+          <% ctx = viewer_context(viewer, mode: (tab == "compared" ? :compared : :current), ask: ask && tab == "current",
+                                          open_all: !@changed_only, guidance: (tab == "current" ? @guidance : [])) %>
+          <div data-testid="viewer-document"><%= viewer_document(ctx, data) %></div>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="sparc-viewer__foot small text-body-secondary">
+      Everything the provider sent is shown as text. Addresses are shown, never opened or fetched.
+      <% if (doc.format == "fedramp" && ReceivedDocumentViewer::Layouts::FEDRAMP.key?(doc.document_type.to_s)) || ReceivedDocumentViewer::Layouts::BY_FORMAT.key?(doc.format) %>
+        Fields this layout does not name are under “Other fields”, so nothing sent is hidden.
+      <% else %>
+        This document type is shown in the general view: one section per top-level field.
+      <% end %>
+    </div>
+  </div>
+<% end %>
