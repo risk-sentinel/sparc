@@ -1,0 +1,36 @@
+<%# #1390 part G — the change list (the default tab when there is a compared
+    version): every change, regressions first, each linked to where it is in
+    the document and open to a question. %>
+<% ctx = viewer_context(viewer, mode: :current, ask: ask, open_all: true) %>
+<div data-testid="received-delta">
+  <% if viewer.changes.empty? %>
+    <p class="p-3 mb-0">No changes from <%= viewer.compared ? "version #{viewer.version_number(viewer.compared)}" : "the compared version" %>.</p>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0 sparc-viewer-changes" data-testid="delta-changes">
+        <colgroup><col class="sparc-viewer-changes__kind"><col class="sparc-viewer-changes__where"><col><col class="sparc-viewer-changes__value"><col class="sparc-viewer-changes__value"><col class="sparc-viewer-changes__ask"></colgroup>
+        <thead><tr><th>Kind</th><th>Where</th><th>What changed</th><th>Before</th><th>After</th><th><span class="visually-hidden">Ask</span></th></tr></thead>
+        <tbody>
+          <% viewer.changes.each do |change| %>
+            <tr data-change-kind="<%= change.kind %>">
+              <td><%= change_kind_badge(change.kind) %></td>
+              <td class="text-break">
+                <% if change.pointer %>
+                  <%= ReceivedDocumentViewer.pointer_label(change.pointer) %><br>
+                  <%= link_to "Show in document", "#{path_for.call(tab: 'current', changed: '0')}##{viewer_anchor(change.pointer)}",
+                        class: "small", data: { turbo_frame: "_top", testid: "viewer-show-in-document" } %>
+                <% else %>
+                  <code><%= change.key %></code>
+                <% end %>
+              </td>
+              <td><%= change.summary %></td>
+              <td class="small"><%= viewer_change_value(change.pointer, change.before) %></td>
+              <td class="small"><%= viewer_change_value(change.pointer, change.after) %></td>
+              <td><%= viewer_ask(ctx, change.pointer || change.key, change.pointer ? ReceivedDocumentViewer.pointer_label(change.pointer) : change.key, change.summary) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

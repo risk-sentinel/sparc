@@ -165,6 +165,8 @@ Rails.application.routes.draw do
     resources :received_documents, only: [ :index, :show, :create ] do
       member do
         get  :file,    to: "received_documents#file"
+        # #1390 part G — the review, to share with the provider out of band.
+        get  :review_export, to: "received_documents#review_export"
         post :accept,  to: "received_documents#accept"
         post :respond, to: "received_documents#respond"
         post :reject,  to: "received_documents#reject"
@@ -1141,6 +1143,7 @@ Rails.application.routes.draw do
         resources :received_documents, only: [ :index, :show, :create ] do
           member do
             get  :file,    to: "received_documents#file"
+            get  :review_export, to: "received_documents#review_export"
             post :accept,  to: "received_documents#accept"
             post :respond, to: "received_documents#respond"
             post :reject,  to: "received_documents#reject"

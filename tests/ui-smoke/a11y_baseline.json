@@ -1551,6 +1551,7 @@
   ],
   "profile_show": [],
   "promotion_queue": [],
+  "received_document_viewer": [],
   "review_queue": [],
   "sap_index": [
     "color-contrast::tr:nth-child(1) > td:nth-child(2) > .rounded.fw-semibold",

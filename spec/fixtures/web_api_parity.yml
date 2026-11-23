@@ -682,6 +682,8 @@ controllers:
       show: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id"]
       create: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents"]
       file: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/file"]
+      # #1390 part G — the review, to share with the provider out of band.
+      review_export: ["GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/review_export"]
       accept: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/accept"]
       respond: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/respond"]
       reject: ["POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/reject"]

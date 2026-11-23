@@ -1,6 +1,6 @@
 """Tests for a boundary's received documents and its exchange index (#1354).
 
-    /api/v1/authorization_boundaries/:id/received_documents[/:id[/file|accept|respond|reject]]
+    /api/v1/authorization_boundaries/:id/received_documents[/:id[/file|review_export|accept|respond|reject]]
     /api/v1/authorization_boundaries/:id/exchange_index
 
 Every version received is kept and never overwritten. A version that fails
@@ -213,3 +213,165 @@ class TestExchangeIndex:
     def test_requires_a_token(self, anon_client: httpx.Client, boundary: dict[str, Any]) -> None:
         response = anon_client.get(f"{BOUNDARIES}/{boundary['id']}/exchange_index")
         assert_error_envelope(response, expected_status=401)
+
+
+# #1390 part G — the received-document viewer's API side: compare with any
+# other version of the same document (calculated on request, never stored),
+# questions with a response, the review export (review_export.json / .md), and
+# a version that failed validation answered but never accepted.
+
+
+def _rated_vdr(rating: int, period_end: str = "2026-10-31T23:59:59Z") -> bytes:
+    return json.dumps(
+        {
+            "certificationPackageOverviewUri": "https://provider.example/package/cpo.json",
+            "reportPeriod": {"from": "2026-10-01T00:00:00Z", "to": period_end},
+            "vulnerabilities": [
+                {
+                    "providerTrackingId": "VULN-1",
+                    "detection": {
+                        "detectedAt": "2026-10-02T10:00:00Z",
+                        "detectionSource": "scanner",
+                    },
+                    "vulnerabilityDescription": "Outdated library",
+                    "potentialAgencyImpact": "Low",
+                    "evaluationCompletedAt": "2026-10-03T10:00:00Z",
+                    "isInternetReachable": False,
+                    "isLikelyExploitable": False,
+                    "currentRating": rating,
+                    "overdueStatus": {"isOverdue": False, "explanation": "Within the timeframe."},
+                    "painReductionEvents": [
+                        {"reducedAt": "2026-10-04T10:00:00Z", "rating": rating}
+                    ],
+                }
+            ],
+        }
+    ).encode()
+
+
+def _stored(client: httpx.Client, boundary: dict[str, Any], body: bytes) -> dict[str, Any]:
+    response = client.post(_path(boundary), files={"file": ("vdr.json", body, "application/json")})
+    assert response.status_code == 201, response.text
+    return response.json()["data"]
+
+
+def _accepted(client: httpx.Client, boundary: dict[str, Any], doc: dict[str, Any]) -> None:
+    response = client.post(f"{_path(boundary)}/{doc['id']}/accept", json={})
+    assert response.status_code == 200, response.text
+
+
+VIEWER_QUESTION = {
+    "pointer": "/vulnerabilities/VULN-1/currentRating",
+    "label": "Vulnerabilities › VULN-1 › Current rating (N)",
+    "detail": "Current rating raised",
+    "before": "2",
+    "after": "3",
+    "question": "Why did the rating rise?",
+}
+
+
+class TestCompareWith:
+    @pytest.mark.happy
+    def test_recorded_by_default_and_calculated_on_request(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        v1 = _stored(admin_client, boundary, _rated_vdr(1))
+        _accepted(admin_client, boundary, v1)
+        v2 = _stored(admin_client, boundary, _rated_vdr(2))
+        _accepted(admin_client, boundary, v2)
+        v3 = _stored(admin_client, boundary, _rated_vdr(3))
+        assert v3["compared_with_id"] == v2["id"]
+
+        response = admin_client.get(f"{_path(boundary)}/{v3['id']}", params={"compare": v1["id"]})
+        assert response.status_code == 200, response.text
+        comparison = response.json()["data"]["comparison"]
+        assert comparison["compared_with_id"] == v1["id"]
+        assert comparison["recorded"] is False
+        pointers = [c["pointer"] for c in comparison["changes"]]
+        assert "/vulnerabilities/VULN-1/currentRating" in pointers
+
+        unchanged = admin_client.get(f"{_path(boundary)}/{v3['id']}").json()["data"]
+        assert unchanged["delta"] == v3["delta"], "a requested comparison must not be stored"
+
+    @pytest.mark.validation
+    def test_unknown_version_is_404(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        doc = _stored(admin_client, boundary, _rated_vdr(1))
+        response = admin_client.get(f"{_path(boundary)}/{doc['id']}", params={"compare": 999999999})
+        assert response.status_code == 404
+
+
+class TestQuestionsAndExport:
+    @pytest.mark.happy
+    def test_questions_go_with_a_response_and_into_the_export(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        v1 = _stored(admin_client, boundary, _rated_vdr(2))
+        _accepted(admin_client, boundary, v1)
+        v2 = _stored(admin_client, boundary, _rated_vdr(3))
+
+        response = admin_client.post(
+            f"{_path(boundary)}/{v2['id']}/respond",
+            json={"note": "", "questions": [VIEWER_QUESTION]},
+        )
+        assert response.status_code == 200, response.text
+        review = response.json()["data"]["review"]
+        assert review["action"] == "respond"
+        assert review["questions"] == [VIEWER_QUESTION]
+
+        export = admin_client.get(f"{_path(boundary)}/{v2['id']}/review_export.json")
+        assert export.status_code == 200, export.text
+        data = export.json()["data"]
+        assert data["sparc_review_export"] == "1"
+        assert data["compared_with"]["id"] == v1["id"]
+        assert data["questions"][0]["question"] == "Why did the rating rise?"
+
+        markdown = admin_client.get(f"{_path(boundary)}/{v2['id']}/review_export.md")
+        assert markdown.status_code == 200, markdown.text
+        assert markdown.headers["content-type"].startswith("text/markdown")
+        assert "## Questions for the provider" in markdown.text
+
+    @pytest.mark.validation
+    def test_respond_needs_a_note_or_a_question(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        doc = _stored(admin_client, boundary, _rated_vdr(1))
+        response = admin_client.post(f"{_path(boundary)}/{doc['id']}/respond", json={"note": ""})
+        assert response.status_code == 422, response.text
+
+    @pytest.mark.auth
+    def test_export_requires_a_token(
+        self, anon_client: httpx.Client, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        doc = _stored(admin_client, boundary, _rated_vdr(1))
+        assert (
+            anon_client.get(f"{_path(boundary)}/{doc['id']}/review_export.json").status_code == 401
+        )
+
+
+class TestInvalidVersion:
+    @pytest.mark.validation
+    def test_says_what_is_needed_answered_never_accepted(
+        self, admin_client: httpx.Client, boundary: dict[str, Any]
+    ) -> None:
+        broken = json.loads(_rated_vdr(1))
+        broken["vulnerabilities"][0]["vulnerabilityDescription"] = "   "
+        doc = _stored(admin_client, boundary, json.dumps(broken).encode())
+        assert doc["state"] == "invalid"
+
+        shown = admin_client.get(f"{_path(boundary)}/{doc['id']}").json()["data"]
+        guidance = shown["validation"]["guidance"]
+        assert guidance, shown["validation"]
+        assert guidance[0]["wrong"] == "Vulnerability description is blank."
+        assert guidance[0]["needed"].endswith("FedRAMP's schema requires it.")
+
+        assert (
+            admin_client.post(f"{_path(boundary)}/{doc['id']}/accept", json={}).status_code == 422
+        )
+        response = admin_client.post(
+            f"{_path(boundary)}/{doc['id']}/respond",
+            json={"note": "Please describe the vulnerability."},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["state"] == "invalid"

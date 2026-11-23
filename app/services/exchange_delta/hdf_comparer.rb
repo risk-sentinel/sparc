@@ -143,5 +143,18 @@ class ExchangeDelta
     def runner
       @runner ||= HdfRunner.new(timeout: HdfIngestService::HDF_TIMEOUT_SECONDS)
     end
+
+    public
+
+    # The document as the received-document viewer shows it (#1390 part G):
+    # one entry per requirement, keyed by `id` as the comparison keys its
+    # changes, read exactly as #compare reads it (a v2 document is converted
+    # to v3 first).
+    def view(raw)
+      { "controls" => requirements(raw).map do |id, req|
+        { "id" => id, "title" => req[:title].presence, "status" => req[:status], "impact" => req[:impact],
+          "severity" => req[:severity], "description" => req[:description].presence }.compact
+      end }
+    end
   end
 end
