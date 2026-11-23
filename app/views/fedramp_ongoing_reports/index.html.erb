@@ -85,7 +85,7 @@
   <% if @reports.empty? %>
     <p class="text-muted small m-3" data-testid="fedramp-ocr-none">None issued yet.</p>
   <% else %>
-    <div class="table-responsive" role="region" aria-label="Reports issued" tabindex="0">
+    <section class="table-responsive" aria-label="Reports issued" tabindex="0"><%# tabindex: a keyboard user can scroll the table (WCAG 2.1 A/AA) %>
       <table class="table table-sm mb-0 align-middle" data-testid="fedramp-ocr-issued">
         <thead><tr><th scope="col">Period</th><th scope="col">Issued</th><th scope="col">SHA-256</th></tr></thead>
         <tbody>
@@ -98,6 +98,6 @@
           <% end %>
         </tbody>
       </table>
-    </div>
+    </section>
   <% end %>
 </div>

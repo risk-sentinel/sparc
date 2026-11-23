@@ -8,7 +8,7 @@
 #   FormRows.normalize({ "0" => { "description" => " Go live ", "x" => "1" } }, %w[description])
 #   # => [{ "description" => "Go live" }]
 module FormRows
-  module_function
+  extend self
 
   def normalize(rows, keys)
     rows = rows.to_unsafe_h if rows.respond_to?(:to_unsafe_h)

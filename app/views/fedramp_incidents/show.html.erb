@@ -59,7 +59,7 @@
         A report names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
       </p>
     <% end %>
-    <div class="table-responsive" role="region" aria-label="Incident reports" tabindex="0">
+    <section class="table-responsive" aria-label="Incident reports" tabindex="0"><%# tabindex: a keyboard user can scroll the table (WCAG 2.1 A/AA) %>
       <table class="table table-sm mb-0 align-middle">
         <thead><tr><th scope="col">Report</th><th scope="col">Rule</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Sent</th></tr></thead>
         <tbody>
@@ -96,7 +96,7 @@
           <% end %>
         </tbody>
       </table>
-    </div>
+    </section>
     <p class="small text-muted mx-3 my-2">
       Business days exclude weekends and US federal holidays. Recording a report keeps the report exactly as it was sent.
     </p>

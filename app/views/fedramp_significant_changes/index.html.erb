@@ -24,7 +24,7 @@
   <p class="text-muted" data-testid="fedramp-changes-empty">No changes recorded yet.</p>
 <% else %>
   <div class="card">
-    <div class="table-responsive" role="region" aria-label="Significant changes" tabindex="0">
+    <section class="table-responsive" aria-label="Significant changes" tabindex="0"><%# tabindex: a keyboard user can scroll the table (WCAG 2.1 A/AA) %>
       <table class="table table-sm mb-0 align-middle" data-testid="fedramp-changes">
         <thead>
           <tr><th scope="col">Type</th><th scope="col">Change</th><th scope="col">Planned start</th>
@@ -43,6 +43,6 @@
           <% end %>
         </tbody>
       </table>
-    </div>
+    </section>
   </div>
 <% end %>
