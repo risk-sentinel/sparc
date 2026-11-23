@@ -243,6 +243,10 @@ The document viewer has four tabs:
 **Changed only** (on by default) closes every section and entry that did not
 change; **Show everything** opens them all.
 
+![The change list for a second version of a Vulnerability Detail Report, with one question added for the provider](images/received-document-change-list.png)
+
+![Side by side: the compared version on the left and this version on the right, lined up by vulnerability](images/received-document-side-by-side.png)
+
 Each FedRAMP document type has its own layout: vulnerabilities with their
 N-rating and status, controls and KSIs with their implementation status,
 incidents with their timeline. HDF results are listed by control and XCCDF
@@ -297,6 +301,10 @@ at once.
 
 A version that failed validation can never be accepted, but you can **Respond**
 (it stays **Invalid**) or **Reject** it, so the provider is told what to fix.
+
+![A version that failed validation: the banner, its change list, and the error added to the questions for the provider](images/received-document-invalid.png)
+
+![Validation: where the error is, what is wrong and what is needed, with the validator's own message](images/received-document-validation-guidance.png)
 
 ### Share the review with the provider
 
