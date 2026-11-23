@@ -63,7 +63,7 @@
         A notification names the boundary's FedRAMP Certification Package Overview address, and this boundary has none yet.
       </p>
     <% end %>
-    <div class="table-responsive" role="region" aria-label="Notices" tabindex="0">
+    <section class="table-responsive" aria-label="Notices" tabindex="0"><%# tabindex: a keyboard user can scroll the table (WCAG 2.1 A/AA) %>
       <table class="table table-sm mb-0 align-middle">
         <thead><tr><th scope="col">Notice</th><th scope="col">Rule</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Sent</th></tr></thead>
         <tbody>
@@ -94,7 +94,7 @@
           <% end %>
         </tbody>
       </table>
-    </div>
+    </section>
     <p class="small text-muted mx-3 my-2">
       Due dates count federal business days (weekends and US federal holidays excluded). Recording a notice keeps the
       notification exactly as it was sent.

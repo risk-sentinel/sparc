@@ -13,7 +13,7 @@
 # counted. Holidays a President declares by executive order are not known in
 # advance and are not counted either.
 module FederalBusinessDays
-  module_function
+  extend self
 
   def business_day?(date)
     !date.saturday? && !date.sunday? && !holiday?(date)

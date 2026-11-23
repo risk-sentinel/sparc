@@ -156,6 +156,7 @@ class FedrampSignificantChangeService
     when :start then change.started_on || change.planned_start
     when :finish then change.finished_on
     when :verification then change.verified_on
+    else nil # a stage with no basis has no deadline
     end
   end
 

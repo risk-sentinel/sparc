@@ -17,6 +17,9 @@
 # NIST SP 800-53: AU-10 (what was asked, by whom, of which exact bytes),
 # CA-2, SI-10.
 class ReceivedDocumentReviewExport
+  # A question's fields in the order the export lists them, with their labels.
+  QUESTION_FIELDS = { "pointer" => "Location", "detail" => nil, "before" => "Before", "after" => "After", "question" => "Question" }.freeze
+
   FORMAT_VERSION = "1"
 
   def initialize(document, viewer: nil)
@@ -58,57 +61,66 @@ class ReceivedDocumentReviewExport
 
   def to_markdown
     data = as_json
-    doc = data[:document]
-    lines = []
-    lines << "# Review of #{md(title)} version #{doc[:version]}"
-    lines << ""
-    lines << "- Boundary: #{md(data[:boundary][:name])}"
-    lines << "- Document: #{md(title)}#{doc[:fedramp_id] ? " (FedRAMP ID #{md(doc[:fedramp_id])})" : ''}, version #{doc[:version]}"
-    lines << "- File: #{md(doc[:filename] || '—')}, SHA-256 `#{doc[:sha256]}`"
-    lines << "- Received: #{doc[:received_at]} (#{doc[:source]})"
-    lines << "- State: #{doc[:state].to_s.humanize}#{doc[:valid] ? '' : ' (failed validation)'}"
-    if (cw = data[:compared_with])
-      c = cw[:counts]
-      lines << "- Reviewed against: version #{cw[:version]} (#{cw[:state].to_s.humanize.downcase}), SHA-256 `#{cw[:sha256]}`: " \
-               "#{c['regression']} regressions, #{c['improvement']} improvements, #{c['neutral']} neutral changes"
-    end
-    review = data[:review]
-    lines << ""
-    lines << "## Decision"
-    lines << ""
-    if review[:action]
-      lines << "#{review[:action] == 'auto_accept' ? 'Accepted without review' : review[:action].humanize} on #{review[:reviewed_at]}#{review[:reviewed_by] ? " by #{md(review[:reviewed_by])}" : ''}."
-      lines << "" << quote(review[:note]) if review[:note].present?
-    else
-      lines << "Not decided yet."
-    end
-
-    if data[:questions].any?
-      lines << "" << "## Questions for the provider" << ""
-      data[:questions].each_with_index do |q, i|
-        lines << "#{i + 1}. **#{md(q['label'] || q['pointer'] || 'General')}**"
-        lines << "   - Location: #{md(q['pointer'])}" if q["pointer"].present?
-        lines << "   - #{md(q['detail'])}" if q["detail"].present?
-        lines << "   - Before: #{md(q['before'])}" if q["before"].present?
-        lines << "   - After: #{md(q['after'])}" if q["after"].present?
-        lines << "   - Question: #{md(q['question'])}" if q["question"].present?
-      end
-    end
-
-    if data[:validation_errors].any?
-      lines << "" << "## Why this version failed validation" << ""
-      data[:validation_errors].each_with_index do |e, i|
-        lines << "#{i + 1}. **#{md(e[:location])}** (#{e[:check]} check)"
-        lines << "   - What is wrong: #{md(e[:wrong])}"
-        lines << "   - What is needed: #{md(e[:needed])}" if e[:needed].present?
-        lines << "   - Validator: #{md(e[:pointer].presence || '/')} #{md(e[:message])}"
-      end
-    end
+    lines = md_summary(data)
+    lines.concat(md_decision(data[:review]))
+    lines.concat(md_questions(data[:questions]))
+    lines.concat(md_validation(data[:validation_errors]))
     lines << "" << "_Exported from SPARC on #{data[:exported_at]}._" << ""
     lines.join("\n")
   end
 
   private
+
+  def md_summary(data)
+    doc = data[:document]
+    lines = [ "# Review of #{md(title)} version #{doc[:version]}", "",
+              "- Boundary: #{md(data[:boundary][:name])}",
+              "- Document: #{md(title)}#{doc[:fedramp_id] ? " (FedRAMP ID #{md(doc[:fedramp_id])})" : ''}, version #{doc[:version]}",
+              "- File: #{md(doc[:filename] || '—')}, SHA-256 `#{doc[:sha256]}`",
+              "- Received: #{doc[:received_at]} (#{doc[:source]})",
+              "- State: #{doc[:state].to_s.humanize}#{doc[:valid] ? '' : ' (failed validation)'}" ]
+    if (cw = data[:compared_with])
+      c = cw[:counts]
+      lines << "- Reviewed against: version #{cw[:version]} (#{cw[:state].to_s.humanize.downcase}), SHA-256 `#{cw[:sha256]}`: " \
+               "#{c['regression']} regressions, #{c['improvement']} improvements, #{c['neutral']} neutral changes"
+    end
+    lines
+  end
+
+  def md_decision(review)
+    lines = [ "", "## Decision", "" ]
+    return lines << "Not decided yet." unless review[:action]
+
+    lines << "#{review[:action] == 'auto_accept' ? 'Accepted without review' : review[:action].humanize} on #{review[:reviewed_at]}#{review[:reviewed_by] ? " by #{md(review[:reviewed_by])}" : ''}."
+    lines << "" << quote(review[:note]) if review[:note].present?
+    lines
+  end
+
+  def md_questions(questions)
+    return [] if questions.empty?
+
+    lines = [ "", "## Questions for the provider", "" ]
+    questions.each_with_index do |q, i|
+      lines << "#{i + 1}. **#{md(q['label'] || q['pointer'] || 'General')}**"
+      QUESTION_FIELDS.each do |field, label|
+        lines << "   - #{"#{label}: " if label}#{md(q[field])}" if q[field].present?
+      end
+    end
+    lines
+  end
+
+  def md_validation(errors)
+    return [] if errors.empty?
+
+    lines = [ "", "## Why this version failed validation", "" ]
+    errors.each_with_index do |e, i|
+      lines << "#{i + 1}. **#{md(e[:location])}** (#{e[:check]} check)"
+      lines << "   - What is wrong: #{md(e[:wrong])}"
+      lines << "   - What is needed: #{md(e[:needed])}" if e[:needed].present?
+      lines << "   - Validator: #{md(e[:pointer].presence || '/')} #{md(e[:message])}"
+    end
+    lines
+  end
 
   def guidance = @guidance ||= ValidationGuidance.new(@document).items
 

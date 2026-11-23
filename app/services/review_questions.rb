@@ -13,7 +13,7 @@ module ReviewQuestions
   MAX = 100
   LIMITS = { "pointer" => 1_000, "label" => 300, "detail" => 1_000, "before" => 500, "after" => 500, "question" => 2_000 }.freeze
 
-  module_function
+  extend self
 
   # [{ "pointer", "label", "detail", "before", "after", "question" }, ...]
   # from a list of hashes or ActionController::Parameters. Entries with no
@@ -32,9 +32,7 @@ module ReviewQuestions
     entry = entry.to_unsafe_h if entry.respond_to?(:to_unsafe_h)
     return nil unless entry.is_a?(Hash)
 
-    out = LIMITS.to_h do |field, limit|
-      [ field, entry[field] || entry[field.to_sym] ]
-    end
+    out = LIMITS.keys.to_h { |field| [ field, entry[field] || entry[field.to_sym] ] }
     out = out.transform_values { |v| v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false ? v.to_s.strip : nil }
     out = out.to_h { |field, v| [ field, v&.truncate(LIMITS.fetch(field)).presence ] }.compact
     out["pointer"].present? || out["question"].present? ? out : nil
