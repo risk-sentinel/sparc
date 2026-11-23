@@ -1,0 +1,61 @@
+<%# #1390 part G — the compared version and this one side by side, section by
+    section. A section holding one list is lined up entry by entry, by the
+    identifier the comparison keys it with; an entry only one side has shows
+    as absent on the other. %>
+<% left = viewer_context(viewer, mode: :compared, ask: false, open_all: true) %>
+<% right = viewer_context(viewer, mode: :current, ask: ask, open_all: true, guidance: @guidance) %>
+<% cur = viewer.current_data %>
+<% old = viewer.compared_data %>
+<% if cur.nil? || old.nil? %>
+  <p class="text-body-secondary p-3 mb-0" data-testid="viewer-unviewable"><%= viewer.unviewable_reason || "These versions cannot be shown side by side here. Use the change list." %></p>
+<% else %>
+  <div class="sparc-viewer-side" data-testid="viewer-side">
+    <div class="sparc-viewer-side__head" aria-hidden="true">
+      <div>Version <%= viewer.version_number(viewer.compared) %> (compared)</div>
+      <div>Version <%= viewer.version_number(@document) %> (this version)</div>
+    </div>
+    <% viewer.sections(cur).each do |title, keys, base| %>
+      <% pointers = keys.map { |k| viewer.child_pointer(base, k) } %>
+      <% changed = pointers.flat_map { |p| viewer.changes_under(p) } %>
+      <% next if @changed_only && changed.empty? %>
+      <details class="sparc-viewer-section" open>
+        <summary class="sparc-viewer-section__summary">
+          <h3 class="h6 mb-0"><%= title %></h3>
+          <%= changed.any? ? viewer_kind_counts(changed) : tag.span("No changes", class: "small text-body-secondary") %>
+        </summary>
+        <div class="sparc-viewer-section__body">
+          <% list_key = keys.size == 1 ? keys.first : nil %>
+          <% new_root = base.present? ? ExchangeDelta::JsonDiff.resolve(cur, base) : cur %>
+          <% old_root = base.present? ? ExchangeDelta::JsonDiff.resolve(old, base) : old %>
+          <% new_list = list_key && new_root.is_a?(Hash) ? new_root[list_key] : nil %>
+          <% old_list = list_key && old_root.is_a?(Hash) ? old_root[list_key] : nil %>
+          <% if list_key && (viewer_list_of_records?(new_list) || viewer_list_of_records?(old_list)) %>
+            <% new_entries = viewer.entries(Array(new_list)).to_h %>
+            <% old_entries = viewer.entries(Array(old_list)).to_h %>
+            <% segs = (new_entries.keys + old_entries.keys).uniq %>
+            <% segs = segs.select { |s| viewer.changes_under(viewer.child_pointer(pointers.first, s)).any? } if @changed_only %>
+            <% if segs.empty? %>
+              <p class="small text-body-secondary mb-0">No changed entries. Choose “Show everything” to see every entry.</p>
+            <% end %>
+            <% segs.each do |seg| %>
+              <% ptr = viewer.child_pointer(pointers.first, seg) %>
+              <div class="sparc-viewer-side__row">
+                <div class="sparc-viewer-side__col" data-side="Compared version">
+                  <%= old_entries[seg] ? viewer_entry(left, old_entries[seg], ptr, list_key, removed: !new_entries.key?(seg)) : tag.div("Not in version #{viewer.version_number(viewer.compared)}", class: "sparc-viewer-absent") %>
+                </div>
+                <div class="sparc-viewer-side__col" data-side="This version">
+                  <%= new_entries[seg] ? viewer_entry(right, new_entries[seg], ptr, list_key) : tag.div("Removed in this version", class: "sparc-viewer-absent") %>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="sparc-viewer-side__row">
+              <div class="sparc-viewer-side__col" data-side="Compared version"><%= old_root.is_a?(Hash) ? viewer_fields(left, old_root, base, keys) : "" %></div>
+              <div class="sparc-viewer-side__col" data-side="This version"><%= new_root.is_a?(Hash) ? viewer_fields(right, new_root, base, keys) : "" %></div>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+  </div>
+<% end %>

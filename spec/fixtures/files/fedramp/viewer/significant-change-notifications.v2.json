@@ -1,0 +1,38 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-significant-change-notifications-schema-2026-06-24.json",
+  "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json",
+  "assessorName": "Example Assessment Services, LLC",
+  "relatedVulnerability": "None",
+  "changeType": "Transformative",
+  "changeTypeExplanation": "A database major-version migration changes the storage layer every tenant's data lives in (SCN-CSO-EVA).",
+  "changeDescription": "SCN-2026-004: migrate the managed PostgreSQL database tier to the next major version.",
+  "reason": "The current major version reaches the cloud provider's end of support in March 2027.",
+  "customerImpact": "A 45-minute read-only window per region; no agency configuration changes are needed.",
+  "planAndTimeline": {
+    "summary": "Rehearse in staging, migrate the secondary region, verify, then the primary. The assessor re-validates SC-28 and CP-9 after cut-over.",
+    "plannedStart": "2026-12-01",
+    "plannedCompletion": "2027-02-28",
+    "milestones": [
+      {
+        "milestoneDescription": "Staging rehearsal complete",
+        "targetDate": "2026-12-05"
+      },
+      {
+        "milestoneDescription": "Secondary region migrated",
+        "targetDate": "2026-12-12"
+      },
+      {
+        "milestoneDescription": "Primary region migrated and assessor validation complete",
+        "targetDate": "2027-02-28"
+      }
+    ]
+  },
+  "impactedControls": [
+    "SC-28",
+    "CP-9",
+    "CM-3",
+    "KSI-CMT-VTD",
+    "SC-8"
+  ],
+  "impactAnalysis": "https://trust.example.com/fedramp/changes/SCN-2026-004-impact-analysis.pdf"
+}

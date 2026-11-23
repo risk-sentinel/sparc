@@ -79,6 +79,7 @@ GET /api/v1/authorization_boundaries/:authorization_boundary_id/readiness
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/file
+GET /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents/:id/review_export
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scan_runs/:id
 GET /api/v1/authorization_boundaries/:authorization_boundary_id/scanner_findings

@@ -6,13 +6,22 @@
 #   GET  /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents
 #   POST /api/v1/authorization_boundaries/:authorization_boundary_id/received_documents        upload
 #   GET  .../received_documents/:id
+#   GET  .../received_documents/:id?compare=:other_id   with a comparison to any other version
 #   GET  .../received_documents/:id/file      the exact bytes received
+#   GET  .../received_documents/:id/review_export.json | .md   the review, to share out of band
 #   POST .../received_documents/:id/accept
 #   POST .../received_documents/:id/respond   ask the provider for information
 #   POST .../received_documents/:id/reject
 #
+# #1390 part G (owner, 2026-11-23): respond and reject take `questions`, each
+# tied to a place in the document ({ pointer, label, detail, before, after,
+# question }); a version that failed validation may be responded to or
+# rejected (never accepted); `compare` compares with any other version of the
+# same document in the boundary, calculated on request and never stored; the
+# review export is the record a reviewer sends to the provider until #1394.
+#
 # Permissions, on the boundary (or across the instance):
-#   read (index, show, file)        evidence.read
+#   read (index, show, file, review_export)  evidence.read
 #   upload (create)                 exchange.upload
 #   accept / respond / reject       exchange.review
 #
@@ -37,10 +46,10 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
   UUID_FORMAT = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
 
   before_action :set_boundary
-  before_action :authorize_read!, only: %i[index show file]
+  before_action :authorize_read!, only: %i[index show file review_export]
   before_action :authorize_upload!, only: %i[create]
   before_action :authorize_review!, only: %i[accept respond reject]
-  before_action :set_document, only: %i[show file accept respond reject]
+  before_action :set_document, only: %i[show file accept respond reject review_export]
 
   # Rails tries handlers last-declared first, so the subclass comes second.
   rescue_from ReceivedDocumentReviewService::Error do |e|
@@ -65,7 +74,27 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
 
   # GET .../received_documents/:id
   def show
-    render json: { data: serialize(@document, detailed: true) }
+    data = serialize(@document, detailed: true)
+    if params[:compare].present?
+      other = @document.stream_versions.find_by(id: params[:compare])
+      return render(json: { error: "No other version of this document with id #{params[:compare]} in this boundary" }, status: :not_found) unless other
+      return render(json: { error: "Version #{other.id} failed validation and cannot be compared" }, status: :unprocessable_content) unless other.valid_document?
+
+      data[:comparison] = comparison(ReceivedDocumentViewer.new(@document, compare_to: other))
+    end
+    render json: { data: data }
+  end
+
+  # GET .../received_documents/:id/review_export(.json|.md)
+  def review_export
+    export = ReceivedDocumentReviewExport.new(@document)
+    audit_log("received_document_review_exported", subject: @document,
+              metadata: { authorization_boundary_id: @boundary.id, sha256: @document.sha256, format: params[:format].presence || "json" })
+    if params[:format] == "md"
+      send_data export.to_markdown, filename: export.filename("md"), type: "text/markdown; charset=utf-8", disposition: "attachment"
+    else
+      render json: { data: export.as_json }
+    end
   end
 
   # GET .../received_documents/:id/file
@@ -121,15 +150,15 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
     render json: { data: serialize(@document.reload, detailed: true) }
   end
 
-  # POST .../received_documents/:id/respond  { note } (required)
+  # POST .../received_documents/:id/respond  { note, questions[] } (a note or at least one question)
   def respond
-    ReceivedDocumentReviewService.respond(@document, user: current_user, note: params[:note])
+    ReceivedDocumentReviewService.respond(@document, user: current_user, note: params[:note], questions: params[:questions])
     render json: { data: serialize(@document.reload, detailed: true) }
   end
 
-  # POST .../received_documents/:id/reject   { note } (required)
+  # POST .../received_documents/:id/reject   { note, questions[] } (a note or at least one question)
   def reject
-    ReceivedDocumentReviewService.reject(@document, user: current_user, note: params[:note])
+    ReceivedDocumentReviewService.reject(@document, user: current_user, note: params[:note], questions: params[:questions])
     render json: { data: serialize(@document.reload, detailed: true) }
   end
 
@@ -196,8 +225,10 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
         action: doc.review_action,
         note: doc.review_note,
         reviewed_at: doc.reviewed_at&.utc&.iso8601,
-        reviewed_by: person(doc.reviewed_by)
+        reviewed_by: person(doc.reviewed_by),
+        questions: doc.questions
       },
+      compared_with_id: doc.compared_with_id,
       scan_run_id: doc.scan_run_id,
       links: { self: path, file: "#{path}/file" }
     }
@@ -209,7 +240,10 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
         schema: doc.validation["schema"],
         errors: doc.validation_errors,
         warnings: doc.validation_warnings,
-        warnings_total: doc.validation["warnings_total"]
+        warnings_total: doc.validation["warnings_total"],
+        # #1390 part G: each error with where it is, what is wrong and what
+        # the provider needs to send.
+        guidance: ValidationGuidance.new(doc).items.map(&:to_h)
       },
       delta: {
         first_version: doc.delta["first_version"],
@@ -221,9 +255,18 @@ class Api::V1::ReceivedDocumentsController < Api::V1::BaseController
       in_effect_version_id: doc.in_effect? ? doc.id : doc.in_effect_version&.id,
       # Whether THIS caller may decide it: open, valid where accepting, and
       # not their own upload (AC-5).
-      may_decide: doc.open? && ReceivedDocumentReviewService.may_decide?(doc, current_user),
-      links: data[:links].merge(accept: "#{path}/accept", respond: "#{path}/respond", reject: "#{path}/reject")
+      may_decide: doc.decidable? && ReceivedDocumentReviewService.may_decide?(doc, current_user),
+      links: data[:links].merge(accept: "#{path}/accept", respond: "#{path}/respond", reject: "#{path}/reject",
+                                review_export: "#{path}/review_export")
     )
+  end
+
+  # A comparison calculated on request (never stored), in the shape of the
+  # stored delta.
+  def comparison(viewer)
+    { compared_with_id: viewer.compared.id, recorded: viewer.recorded?, truncated: viewer.truncated?,
+      counts: viewer.counts,
+      changes: viewer.changes.map { |c| { kind: c.kind, key: c.key, pointer: c.pointer, summary: c.summary, before: c.before, after: c.after } } }
   end
 
   def authorize_read!

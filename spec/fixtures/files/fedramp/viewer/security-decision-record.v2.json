@@ -1,0 +1,173 @@
+{
+  "$schema": "https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json",
+  "certificationPackageOverviewUri": "https://trust.example.com/fedramp/certification-package-overview.json",
+  "metadata": {
+    "version": "1.3.0",
+    "lastUpdated": "2026-11-20T15:00:00Z",
+    "updateSource": "Example Cloud Works compliance pipeline (automated nightly build)"
+  },
+  "portsAndProtocols": [
+    {
+      "serviceName": "Case Manager web and API",
+      "portNumber": "443",
+      "transportProtocol": "TCP",
+      "encryption": "TLS 1.3 (TLS 1.2 FIPS cipher suites accepted)",
+      "purpose": "Agency users and API clients reach the service over HTTPS."
+    },
+    {
+      "serviceName": "Database (internal only)",
+      "portNumber": "5432",
+      "transportProtocol": "TCP",
+      "encryption": "TLS 1.2",
+      "purpose": "Application tier to the managed PostgreSQL database inside the private network."
+    },
+    {
+      "serviceName": "Bastion SSH (break-glass)",
+      "portNumber": "22",
+      "transportProtocol": "TCP",
+      "encryption": "SSH, FIPS ciphers",
+      "purpose": "Emergency administrative access from the provider VPN only."
+    }
+  ],
+  "securityControls": [
+    {
+      "controlId": "AC-2",
+      "parameterValues": [
+        {
+          "parameterId": "ac-02_odp.10",
+          "parameterValue": "every 120 days"
+        }
+      ],
+      "controlImplementationStatus": "Implemented",
+      "controlImplementationDescription": "Accounts are provisioned only through the agency's SSO; inactive accounts are disabled after 90 days by an automated job."
+    },
+    {
+      "controlId": "IA-2",
+      "parameterValues": [
+        {
+          "parameterId": "ia-02.08_odp",
+          "parameterValue": "privileged accounts, non-privileged accounts"
+        }
+      ],
+      "controlImplementationStatus": "Implemented",
+      "controlImplementationDescription": "Every user authenticates with phishing-resistant MFA (FIDO2 or PIV) through the agency identity provider."
+    },
+    {
+      "controlId": "RA-5",
+      "parameterValues": [
+        {
+          "parameterId": "ra-05_odp.01",
+          "parameterValue": "continuously, and within 24 hours of a new critical advisory"
+        }
+      ],
+      "controlImplementationStatus": "Implemented",
+      "controlImplementationDescription": "Container images, hosts and the managed database tier are scanned continuously; authenticated database scanning went live 15 Nov 2026."
+    }
+  ],
+  "fedRampRequirements": [
+    {
+      "frrID": "VDR-CSO-DET",
+      "frrImplementationStatus": "Implemented",
+      "frrImplementation": [
+        "Container, host and dependency scanners run on every build and every six hours in production."
+      ],
+      "frrValidation": [
+        "The compliance pipeline fails the build when a scanner did not report in the last six hours."
+      ],
+      "frrAssessment": [
+        "The assessor re-ran the scanners against production and compared results with the provider's records."
+      ]
+    },
+    {
+      "frrID": "SCN-CSO-INF",
+      "frrImplementationStatus": "Implemented",
+      "frrImplementation": [
+        "Significant changes are recorded in the change system and published as machine-readable notifications in the trust center."
+      ],
+      "frrValidation": [
+        "Each notification is checked against FedRAMP's schema before it is published."
+      ],
+      "frrAssessment": [
+        "The assessor sampled the last two notifications and matched them to change records."
+      ]
+    }
+  ],
+  "keySecurityIndicators": [
+    {
+      "ksiId": "KSI-IAM-APM",
+      "ksiImplementationStatus": "Partially Implemented",
+      "ksiImplementation": [
+        "Passwordless FIDO2 or PIV through agency SSO for all users; no local passwords exist."
+      ],
+      "ksiValidation": [
+        "A daily job lists any account without a phishing-resistant authenticator; on 18 Nov 2026 it listed 3 service accounts."
+      ],
+      "ksiAssessment": [
+        "The assessor attempted password and SMS sign-in and confirmed both are refused."
+      ],
+      "ksiTests": [
+        "iam-phishing-resistant-mfa-daily",
+        "iam-no-local-passwords"
+      ],
+      "ksiEvidence": [
+        {
+          "evidenceType": "Report",
+          "evidenceDescription": "Daily authenticator inventory for all tenants.",
+          "evidenceLocation": "https://trust.example.com/fedramp/evidence/iam-apm-2026-11-01.json",
+          "evidenceText": "accounts_without_phishing_resistant_mfa: 0",
+          "lastUpdated": "2026-11-01"
+        }
+      ]
+    },
+    {
+      "ksiId": "KSI-MLA-LET",
+      "ksiImplementationStatus": "Implemented",
+      "ksiImplementation": [
+        "Application, database and cloud-control-plane logs stream to a central log store with 12 months of retention."
+      ],
+      "ksiValidation": [
+        "Alerting fires when a log source stops reporting for 15 minutes."
+      ],
+      "ksiAssessment": [
+        "The assessor confirmed every in-scope source appears in the log store."
+      ],
+      "ksiTests": [
+        "mla-log-source-heartbeat"
+      ],
+      "ksiEvidence": [
+        {
+          "evidenceType": "Configuration",
+          "evidenceDescription": "Log pipeline configuration export.",
+          "evidenceLocation": "https://trust.example.com/fedramp/evidence/mla-let-config.json",
+          "evidenceText": "sources: 14; retention_days: 365",
+          "lastUpdated": "2026-10-28"
+        }
+      ]
+    },
+    {
+      "ksiId": "KSI-SVC-VRI",
+      "ksiImplementationStatus": "Partially Implemented",
+      "ksiImplementation": [
+        "Release images are signed and verified before deployment; configuration files are not yet signed."
+      ],
+      "ksiValidation": [
+        "The deployer refuses an unsigned image."
+      ],
+      "ksiAssessment": [
+        "The assessor attempted to deploy an unsigned image and confirmed the refusal."
+      ],
+      "ksiTests": [
+        "svc-image-signature-verify"
+      ],
+      "ksiEvidence": [
+        {
+          "evidenceType": "Log",
+          "evidenceDescription": "Deployer log showing an unsigned image rejected.",
+          "evidenceLocation": "https://trust.example.com/fedramp/evidence/svc-vri-deployer.log",
+          "evidenceText": "2026-10-20T14:02:11Z deploy refused: image signature missing",
+          "lastUpdated": "2026-10-20"
+        }
+      ]
+    }
+  ]
+}
