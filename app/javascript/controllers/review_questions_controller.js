@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // DOM text nodes, never innerHTML: provider text stays inert (SI-10).
 const FIELDS = ["pointer", "label", "detail", "before", "after", "question"]
 
-export default class extends Controller {
+export default class ReviewQuestionsController extends Controller {
   static targets = ["ask", "tray", "count", "empty", "fields", "note", "clear"]
   static values = { key: String }
 
@@ -154,6 +154,8 @@ export default class extends Controller {
       const list = raw ? JSON.parse(raw) : []
       return Array.isArray(list) ? list.filter(q => q && typeof q.pointer === "string") : []
     } catch (_e) {
+      // Storage blocked or holding something unreadable: start with no
+      // questions; the list still works on this page.
       return []
     }
   }

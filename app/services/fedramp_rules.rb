@@ -112,13 +112,12 @@ class FedrampRules
 
     # A rule as the rules file records it, whatever it applies to.
     def raw_rule(id)
-      each_rule.each { |*, rule_id, rule| return rule if rule_id == id }
-      nil
+      each_rule.find { |*, rule_id, _rule| rule_id == id }&.last
     end
 
     # A rule's deadline: [timeframe_type, timeframe_num], e.g. ["bizdays", 10].
     def timeframe(id)
-      rule = raw_rule(id) or raise KeyError, "FedRAMP rule #{id} is not in the rules file"
+      rule = raw_rule(id) || raise(KeyError, "FedRAMP rule #{id} is not in the rules file")
       [ rule.fetch("timeframe_type"), rule.fetch("timeframe_num") ]
     end
 

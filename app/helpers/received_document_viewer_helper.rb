@@ -15,6 +15,10 @@
 module ReceivedDocumentViewerHelper
   MAX_NODES = 4_000
   MAX_DEPTH = 12
+  # Classes used in several places, named once.
+  NEUTRAL_STATUS = "sparc-status sparc-status--neutral"
+  MUTED = "text-body-secondary"
+  WAS = "sparc-viewer-was"
   DATE = /\A(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?\z/
   STATUS_VARIANTS = {
     /\A(implemented|passed|pass|final|remediated|fully mitigated|fixed)\z/i => "success",
@@ -71,7 +75,7 @@ module ReceivedDocumentViewerHelper
   def viewer_section_badges(ctx, changed, errors)
     parts = []
     if changed.any?
-      parts << (ctx.current? ? viewer_kind_counts(changed) : tag.span("#{changed.size} changed in the newer version", class: "sparc-status sparc-status--neutral"))
+      parts << (ctx.current? ? viewer_kind_counts(changed) : tag.span("#{changed.size} changed in the newer version", class: NEUTRAL_STATUS))
     elsif ctx.viewer.compared?
       parts << tag.span("No changes", class: "small text-body-secondary")
     end
@@ -102,7 +106,7 @@ module ReceivedDocumentViewerHelper
 
     label = ReceivedDocumentViewer::Layouts.label(key)
     if value.is_a?(Hash) || viewer_list_of_records?(value)
-      body = if depth >= MAX_DEPTH then tag.span("(nested too deeply to show; see the download)", class: "text-body-secondary")
+      body = if depth >= MAX_DEPTH then tag.span("(nested too deeply to show; see the download)", class: MUTED)
       elsif value.is_a?(Hash) then viewer_fields(ctx, value, pointer, nil, depth + 1)
       else viewer_list(ctx, value, pointer, key, depth + 1)
       end
@@ -139,9 +143,9 @@ module ReceivedDocumentViewerHelper
     badge = tag.span(ctx.current? ? change.kind.humanize : "Changed in the newer version",
                      class: "sparc-status sparc-status--#{ExchangeHelper::CHANGE_KIND_VARIANTS.fetch(change.kind, 'neutral')}")
     was = if ctx.current? && !change.before.nil? && !change.before.is_a?(Hash) && !change.before.is_a?(Array)
-      tag.span(safe_join([ "Was ", tag.del(viewer_value(change.pointer.to_s.split("/").last, change.before)) ]), class: "sparc-viewer-was")
+      tag.span(safe_join([ "Was ", tag.del(viewer_value(change.pointer.to_s.split("/").last, change.before)) ]), class: WAS)
     elsif ctx.current? && change.before.nil?
-      tag.span("New in this version", class: "sparc-viewer-was")
+      tag.span("New in this version", class: WAS)
     end
     tag.div(safe_join([ badge, was ].compact, " "), class: "sparc-viewer-note")
   end
@@ -151,7 +155,7 @@ module ReceivedDocumentViewerHelper
 
     tag.div(class: "sparc-viewer-note") do
       safe_join([ tag.span("Error", class: "sparc-status sparc-status--danger"), " ", tag.strong(error.wrong),
-                  (tag.span(safe_join([ "Needed: ", error.needed ]), class: "sparc-viewer-was") if error.needed.present?) ].compact)
+                  (tag.span(safe_join([ "Needed: ", error.needed ]), class: WAS) if error.needed.present?) ].compact)
     end
   end
 
@@ -174,13 +178,13 @@ module ReceivedDocumentViewerHelper
       tag.div(class: viewer_row_class(change, nil), id: viewer_anchor(pointer)) do
         safe_join([ tag.dt(ReceivedDocumentViewer::Layouts.label(k)),
                     tag.dd(tag.div(safe_join([ tag.del(viewer_value(k, before[k])), " ",
-                                               tag.span("Removed in this version", class: "sparc-status sparc-status--neutral") ]), class: "sparc-viewer-value")) ])
+                                               tag.span("Removed in this version", class: NEUTRAL_STATUS) ]), class: "sparc-viewer-value")) ])
       end
     end
   end
 
   def viewer_scalar_list(ctx, list, pointer)
-    return tag.span("None", class: "text-body-secondary") if list.empty?
+    return tag.span("None", class: MUTED) if list.empty?
 
     tag.ul(class: "sparc-viewer-values") do
       safe_join(list.each_with_index.map do |item, i|
@@ -194,7 +198,7 @@ module ReceivedDocumentViewerHelper
 
   # A list of records: flat records as a table, others as entries.
   def viewer_list(ctx, list, pointer, name, depth = 0)
-    return tag.span("None", class: "text-body-secondary") if list.blank?
+    return tag.span("None", class: MUTED) if list.blank?
 
     layout = ReceivedDocumentViewer::Layouts::ENTRIES[name.to_s]
     flat = !layout && list.all? { |r| r.is_a?(Hash) && r.values.none? { |v| v.is_a?(Hash) || v.is_a?(Array) } }
@@ -210,34 +214,56 @@ module ReceivedDocumentViewerHelper
 
     layout = ReceivedDocumentViewer::Layouts::ENTRIES[name.to_s] || {}
     change = ctx.viewer.change_at(pointer)
-    under = ctx.viewer.changes_under(pointer)
     kind = change&.kind || ctx.viewer.kind_under(pointer)
+    tag.details(class: viewer_entry_classes(kind, removed), open: !removed && (ctx.open_all || kind.present?),
+                id: viewer_anchor(pointer), data: { pointer: pointer }) do
+      safe_join([ viewer_entry_summary(ctx, entry, pointer, layout, change, removed),
+                  tag.div(viewer_entry_body(ctx, entry, pointer, depth, removed), class: "sparc-viewer-entry__body") ])
+    end
+  end
+
+  def viewer_entry_classes(kind, removed)
+    [ "sparc-viewer-entry", ("sparc-viewer-entry--#{kind}" if kind), ("sparc-viewer-entry--removed" if removed) ].compact.join(" ")
+  end
+
+  # The entry's one line: title, rating and status, what changed, its summary
+  # and "Ask about this".
+  def viewer_entry_summary(ctx, entry, pointer, layout, change, removed)
     title = viewer_dig(entry, layout[:title]).presence || pointer.split("/").last
     summary = viewer_dig(entry, layout[:summary])
-    badges = [ (viewer_rating(viewer_dig(entry, layout[:rating])) if layout[:rating]),
-               (viewer_status(viewer_dig(entry, layout[:status])) if layout[:status]) ].compact
-    state = if removed then tag.span(ctx.current? ? "Removed in this version" : "Removed in the newer version", class: "sparc-status sparc-status--neutral")
-    elsif change && change.before.nil? then tag.span(ctx.current? ? "New" : "Added in the newer version", class: "sparc-status sparc-status--#{ExchangeHelper::CHANGE_KIND_VARIANTS.fetch(change.kind, 'neutral')}")
-    elsif under.any? then ctx.current? ? viewer_kind_counts(under) : tag.span("Changed in the newer version", class: "sparc-status sparc-status--neutral")
+    text = summary.to_s.squish.truncate(160)
+    tag.summary(class: "sparc-viewer-entry__summary") do
+      safe_join([ tag.span(title.to_s.truncate(120), class: "fw-semibold"), *viewer_entry_badges(entry, layout),
+                  viewer_entry_state(ctx, pointer, change, removed),
+                  (tag.span(text, class: "sparc-viewer-entry__text") if summary.present?),
+                  viewer_ask(ctx, pointer, ReceivedDocumentViewer.pointer_label(pointer), change&.summary || "#{title}: #{text}") ].compact, " ")
     end
-    open = !removed && (ctx.open_all || kind.present?)
-    tag.details(class: [ "sparc-viewer-entry", ("sparc-viewer-entry--#{kind}" if kind), ("sparc-viewer-entry--removed" if removed) ].compact.join(" "),
-                open: open, id: viewer_anchor(pointer), data: { pointer: pointer }) do
-      safe_join([
-        tag.summary(class: "sparc-viewer-entry__summary") do
-          safe_join([ tag.span(title.to_s.truncate(120), class: "fw-semibold"), *badges, state,
-                      (tag.span(summary.to_s.squish.truncate(160), class: "sparc-viewer-entry__text") if summary.present?),
-                      viewer_ask(ctx, pointer, ReceivedDocumentViewer.pointer_label(pointer), change&.summary || "#{title}: #{summary.to_s.squish.truncate(160)}") ].compact, " ")
-        end,
-        tag.div(class: "sparc-viewer-entry__body") do
-          if removed && ctx.current?
-            tag.p("Only in the compared version. Open its tab to read it.", class: "small text-body-secondary mb-0")
-          else
-            viewer_fields(ctx, entry, pointer, nil, depth + 1)
-          end
-        end
-      ])
+  end
+
+  def viewer_entry_badges(entry, layout)
+    [ (viewer_rating(viewer_dig(entry, layout[:rating])) if layout[:rating]),
+      (viewer_status(viewer_dig(entry, layout[:status])) if layout[:status]) ].compact
+  end
+
+  # Removed, new, or changed underneath; nothing when the entry is unchanged.
+  def viewer_entry_state(ctx, pointer, change, removed)
+    if removed
+      tag.span(ctx.current? ? "Removed in this version" : "Removed in the newer version", class: NEUTRAL_STATUS)
+    elsif change && change.before.nil?
+      tag.span(ctx.current? ? "New" : "Added in the newer version",
+               class: "sparc-status sparc-status--#{ExchangeHelper::CHANGE_KIND_VARIANTS.fetch(change.kind, 'neutral')}")
+    else
+      under = ctx.viewer.changes_under(pointer)
+      return nil if under.empty?
+
+      ctx.current? ? viewer_kind_counts(under) : tag.span("Changed in the newer version", class: NEUTRAL_STATUS)
     end
+  end
+
+  def viewer_entry_body(ctx, entry, pointer, depth, removed)
+    return tag.p("Only in the compared version. Open its tab to read it.", class: "small #{MUTED} mb-0") if removed && ctx.current?
+
+    viewer_fields(ctx, entry, pointer, nil, depth + 1)
   end
 
   # Entries the compared version had and this one does not.
@@ -354,6 +380,7 @@ module ReceivedDocumentViewerHelper
       case node
       when Hash then node[seg]
       when Array then seg.match?(/\A\d+\z/) ? node[seg.to_i] : nil
+      else nil # a scalar has nothing under it
       end
     end
   end
