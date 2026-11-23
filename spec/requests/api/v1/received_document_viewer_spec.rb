@@ -9,6 +9,11 @@ require "rails_helper"
 #
 # NIST SP 800-53: AC-3, AC-5, AU-10, AU-12, SI-10.
 RSpec.describe "API v1 received document viewer", type: :request do
+  # API authentication is on, as it is in every deployment. Without this the
+  # suite would depend on a developer's .env: with no login method enabled the
+  # API serves User.first, and a refusal can never be tested.
+  before { allow(SparcConfig).to receive(:any_auth_enabled?).and_return(true) }
+
   let(:boundary) { create(:authorization_boundary) }
   let(:base) { "/api/v1/authorization_boundaries/#{boundary.id}/received_documents" }
 
