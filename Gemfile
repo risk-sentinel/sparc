@@ -39,8 +39,8 @@ gem "pagy", "~> 43.8"              # Pagination
 gem "sidekiq"                       # Background jobs
 gem "redis", "~> 6.0"              # For Sidekiq
 gem "aws-sdk-s3"                    # File storage
-gem "aws-sdk-secretsmanager", "~> 1.139"  # Secrets Manager (ECS deployments)
-gem "aws-sdk-rds", "~> 1.327"           # IAM DB auth token generation
+gem "aws-sdk-secretsmanager", "~> 1.149"  # Secrets Manager (ECS deployments)
+gem "aws-sdk-rds", "~> 1.337"           # IAM DB auth token generation
 gem "json_schemer", "~> 2.3"         # JSON Schema validation (OSCAL)
 # #620 / #1065 — pin patched versions of Ruby DEFAULT gems so Bundler loads them
 # instead of the copy Ruby ships. Two independent layers, and both are wanted:
@@ -85,7 +85,7 @@ gem "bcrypt", "~> 3.1.22"
 gem "rack-attack", "~> 6.7"                    # Rate limiting + throttling (#513)
 
 # ── Authentication ──────────────────────────────────────────────────────────
-gem "omniauth", "~> 2.3"                       # OAuth/OIDC foundation
+gem "omniauth", "~> 2.4"                       # OAuth/OIDC foundation
 gem "omniauth-rails_csrf_protection", "~> 2.0" # CSRF protection for OmniAuth POST
 gem "omniauth-github", "~> 2.0"                # GitHub OAuth
 gem "omniauth-gitlab", "~> 4.0"                # GitLab OAuth
@@ -165,7 +165,7 @@ gem "kamal", require: false
 # extension), so they add zero build risk to the UBI9 image, unlike C/Rust
 # markdown gems. Nokogiri (already present transitively via Rails) does the
 # post-render pass (image/link rewrite, Mermaid fences, Bootstrap tables).
-gem "kramdown", "~> 2.5"
+gem "kramdown", "~> 2.6"
 gem "kramdown-parser-gfm", "~> 1.1"
 
 group :development, :test do
@@ -185,7 +185,7 @@ group :development do
 end
 
 group :development, :test do
-  gem "rspec-rails", "~> 8.0.4"
+  gem "rspec-rails", "~> 8.1.0"
   gem "factory_bot_rails"
   gem "faker"
   gem "bundler-audit", require: false
