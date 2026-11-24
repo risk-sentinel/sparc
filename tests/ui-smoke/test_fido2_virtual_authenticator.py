@@ -15,6 +15,8 @@ import os
 
 import pytest
 
+from helpers import accept_consent_banner
+
 # #885 — named so a skip is reported as UNPROVEN rather than passing quietly.
 pytestmark = [
     pytest.mark.posture("fido2"),
@@ -44,14 +46,6 @@ def _add_virtual_authenticator(cdp):
     return result["authenticatorId"]
 
 
-def _dismiss_consent_if_present(page):
-    """The login form is gated behind a consent banner (#190) — click Proceed to
-    reveal it, when configured."""
-    proceed = page.locator("button[data-action='consent-banner#proceed']")
-    if proceed.count() and proceed.is_visible():
-        proceed.click()
-
-
 def test_enroll_then_passwordless_login(context, authed_page, base_url):
     cdp = context.new_cdp_session(authed_page)
     authenticator_id = _add_virtual_authenticator(cdp)
@@ -76,7 +70,7 @@ def test_enroll_then_passwordless_login(context, authed_page, base_url):
     # 2) Sign out (drop the session cookie), then sign in with the key alone.
     context.clear_cookies()
     authed_page.goto(f"{base_url}/login", wait_until="networkidle")
-    _dismiss_consent_if_present(authed_page)
+    accept_consent_banner(authed_page)
     authed_page.click("button[data-action='webauthn#login']")
 
     # A successful passwordless assertion redirects away from /login.

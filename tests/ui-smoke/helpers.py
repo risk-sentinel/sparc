@@ -259,3 +259,27 @@ def help_focus_return_selector(page) -> str:
     """Where focus lands when the help drawer closes: the Help menu's button
     (the item itself is hidden by then)."""
     return SHELL_HELP_TOGGLE
+
+
+# #190 / #1396 — the login consent banner. With a banner configured, the login
+# card stays hidden (d-none) until the user clicks Proceed; a real user does,
+# so a test that signs in through /login must too. The Proceed button only
+# renders when a banner is configured, so its absence means there is nothing to
+# accept. Waits for the button (the modal fades in) and then for the login card
+# to be revealed, so the next click is never racing the fade.
+CONSENT_PROCEED = "button[data-action='consent-banner#proceed']"
+CONSENT_LOGIN_CARD = "[data-consent-banner-target='loginCard']"
+
+
+def accept_consent_banner(page, timeout: int = 15_000) -> bool:
+    """Click Proceed when a consent banner gates the login card.
+
+    Returns True when a banner was accepted, False when none is configured.
+    """
+    proceed = page.locator(CONSENT_PROCEED)
+    if proceed.count() == 0:
+        return False
+    proceed.wait_for(state="visible", timeout=timeout)
+    proceed.click()
+    page.locator(f"{CONSENT_LOGIN_CARD}:not(.d-none)").wait_for(state="visible", timeout=timeout)
+    return True
