@@ -22,15 +22,18 @@ the dashboard; what you can create or edit depends on your assigned roles — se
 
 ## Signing in
 
-![The SPARC Login page showing the welcome panel and the authentication method tabs](images/login.png)
+![The SPARC Login page: the welcome panel and OSCAL overview on the left, and a sign-in card with the email and password form, Create Account, and a button for each single sign-on method](images/login.png)
 
-*The Login page — the authentication tabs shown depend on what the instance has enabled.*
+*The Login page. The sign-in options shown depend on what the instance has enabled.*
 
 1. Open your SPARC instance. If you are not signed in you land on the **Login**
    page (`/login`).
-2. Pick the tab for your authentication method — **Local Login**, **OIDC/SSO**,
-   or **LDAP** — or use a **GitHub**/**GitLab** button if shown. The tabs that
-   appear depend on what the instance has enabled.
+2. Sign in with the form, or with one of the buttons under *or sign in with*.
+   The form is for a local account, or for **LDAP**; when both are enabled, a
+   **Local Login** / **LDAP** tab above the form switches between them. Single
+   sign-on methods (your organization's OIDC provider, **GitHub**, **GitLab**,
+   a security key or a PIV/CAC card) are each one button. What appears depends
+   on what the instance has enabled.
 3. Enter your credentials and sign in. First-time local accounts created by an
    admin may be prompted to change the password on first login.
 
@@ -113,7 +116,7 @@ Every list screen in SPARC — SSPs, assessments, POA&Ms, component definitions,
 catalogs, evidence, converters, boundaries, the queues — works the same way. Learn
 it once and it applies everywhere.
 
-![A collection screen in card view, showing the search box, active-filter chips and the card/list toggle](images/cdef_index.png)
+![A collection screen in card view, showing the search box, the card/list toggle and a card with its actions](images/cdef_index.png)
 
 *A collection screen in card view. Search sits at the top, any active filters
 appear as removable chips beneath it, and the view toggle is on the right.*
@@ -242,7 +245,7 @@ See [RBAC](RBAC) for the full role and permission matrix.
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| No login tabs / "no auth configured" message | Instance has no auth method enabled | An admin must enable one (see `ENVIRONMENT_VARIABLES.md` / [Configuration](Configuration)) |
+| No sign-in form or buttons / "no auth configured" message | Instance has no auth method enabled | An admin must enable one (see `ENVIRONMENT_VARIABLES.md` / [Configuration](Configuration)) |
 | Implementation/Assessment menus missing | Not signed in | Sign in; those layers require authentication |
 | A boundary or document isn't visible | Not a member of that boundary, or lacking the role | Ask an admin to add you / grant the role ([RBAC](RBAC)) |
 | Admin menu absent | You are not an Instance Admin | Expected — only Instance Admins see it |

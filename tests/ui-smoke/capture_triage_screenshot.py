@@ -28,10 +28,13 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from conftest import _bridge_token_to_cookie, _cookie_spec  # noqa: E402
-from helpers import first_show_href  # noqa: E402
+from helpers import first_show_href, smoke_flag  # noqa: E402
 
 BASE_URL = os.environ.get("SPARC_SMOKE_BASE_URL", "http://localhost:3000").rstrip("/")
 SA_TOKEN = os.environ.get("SPARC_SMOKE_SA_TOKEN")
+# The local UBI9 stack serves a self-signed certificate on :3443, as
+# capture_screenshots.py allows for.
+INSECURE_TLS = smoke_flag("SPARC_SMOKE_INSECURE_TLS")
 IMAGES = Path(__file__).resolve().parents[2] / "wiki" / "images"
 OUT = IMAGES / "hdf-triage.png"
 # #809 — the admin SLA grid the guide points at for amendment validity.
@@ -39,16 +42,34 @@ OUT_TIMELINES = IMAGES / "remediation-timelines.png"
 VIEWPORT = {"width": 1440, "height": 1000}
 
 # A small, realistic set of failed findings so the screenshot shows the worklist.
+# It must be a COMPLETE HDF v2 (InSpec exec-json) document: SPARC validates
+# every upload, and a partial one is refused ("statistics is required", ...).
+def _finding(cid, title, impact, severity, nist):
+    return {
+        "id": cid, "title": title, "desc": title, "impact": impact, "refs": [],
+        "tags": {"nist": nist, "severity": severity}, "code": "",
+        "source_location": {"ref": "example-scan", "line": 1},
+        "results": [{"status": "failed", "code_desc": title, "message": "found by the scanner",
+                     "run_time": 0.01, "start_time": "2026-06-01T00:00:00Z"}],
+    }
+
+
 SAMPLE = {
-    "platform": {"name": "smoke"},
-    "profiles": [{"name": "trivy", "controls": [
-        {"id": "CVE-2026-1000", "title": "Outdated TLS library (openssl)", "desc": "x",
-         "impact": 0.8, "results": [{"status": "failed"}]},
-        {"id": "CVE-2026-1001", "title": "Hardcoded credential pattern", "desc": "x",
-         "impact": 0.95, "results": [{"status": "failed"}]},
-        {"id": "CVE-2026-1002", "title": "Verbose error disclosure", "desc": "x",
-         "impact": 0.4, "results": [{"status": "failed"}]},
-    ]}],
+    "platform": {"name": "example-host", "release": "1.0.0", "target_id": ""},
+    "version": "5.22.3",
+    "statistics": {"duration": 0.5},
+    "profiles": [{
+        "name": "example-scan", "version": "1.0.0", "sha256": "0" * 64,
+        "title": "Example container scan", "maintainer": "Example",
+        "summary": "Example scanner output",
+        "license": "Apache-2.0", "copyright": "Example", "copyright_email": "",
+        "supports": [], "attributes": [], "depends": [], "groups": [],
+        "controls": [
+            _finding("CVE-2026-1000", "Outdated TLS library (openssl)", 0.8, "high", ["SI-2"]),
+            _finding("CVE-2026-1001", "Hardcoded credential pattern", 0.95, "critical", ["IA-5"]),
+            _finding("CVE-2026-1002", "Verbose error disclosure", 0.4, "medium", ["SI-11"]),
+        ],
+    }],
 }
 
 
@@ -62,7 +83,8 @@ def main() -> int:
 
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chrome", headless=True)
-        ctx = browser.new_context(base_url=BASE_URL, viewport=VIEWPORT, device_scale_factor=2)
+        ctx = browser.new_context(base_url=BASE_URL, viewport=VIEWPORT, device_scale_factor=2,
+                                  ignore_https_errors=INSECURE_TLS)
         ctx.add_cookies([_cookie_spec(cookie, BASE_URL)])
         page = ctx.new_page()
 
@@ -82,7 +104,15 @@ def main() -> int:
             page.locator("input[type='file']").first.set_input_files(sample_path)
             page.get_by_role("button", name="Upload & Ingest").click()
             page.wait_for_load_state("networkidle")
+            refused = page.locator(".alert-danger, .alert").filter(has_text="Ingest failed")
+            if refused.count():
+                # Never publish an empty worklist as if it were the screen.
+                print(f"sample upload refused: {refused.first.inner_text()[:300]}")
+                return 1
             page.goto(triage, wait_until="networkidle")
+            if "No findings match" in page.content():
+                print("sample upload left the worklist empty; not capturing")
+                return 1
 
         # Expand the sidebar boundary tree so the new "Amendments" nav entry
         # (between SSP and SAP) is visible in the shot.
