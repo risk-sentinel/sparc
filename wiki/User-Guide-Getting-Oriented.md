@@ -22,15 +22,18 @@ the Overview; what you can create or edit depends on your assigned roles — see
 
 ## Signing in
 
-![The SPARC Login page showing the welcome panel and the authentication method tabs](images/login.png)
+![The SPARC Login page: the welcome panel and OSCAL overview on the left, and a sign-in card with the email and password form, Create Account, and a button for each single sign-on method](images/login.png)
 
-*The Login page — the authentication tabs shown depend on what the instance has enabled.*
+*The Login page. The sign-in options shown depend on what the instance has enabled.*
 
 1. Open your SPARC instance. If you are not signed in you land on the **Login**
    page (`/login`).
-2. Pick the tab for your authentication method — **Local Login**, **OIDC/SSO**,
-   or **LDAP** — or use a **GitHub**/**GitLab** button if shown. The tabs that
-   appear depend on what the instance has enabled.
+2. Sign in with the form, or with one of the buttons under *or sign in with*.
+   The form is for a local account, or for **LDAP**; when both are enabled, a
+   **Local Login** / **LDAP** tab above the form switches between them. Single
+   sign-on methods (your organization's OIDC provider, **GitHub**, **GitLab**,
+   a security key or a PIV/CAC card) are each one button. What appears depends
+   on what the instance has enabled.
 3. Enter your credentials and sign in. First-time local accounts created by an
    admin may be prompted to change the password on first login.
 
@@ -378,7 +381,7 @@ See [RBAC](RBAC) for the full role and permission matrix.
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| No login tabs / "no auth configured" message | Instance has no auth method enabled | An admin must enable one (see `ENVIRONMENT_VARIABLES.md` / [Configuration](Configuration)) |
+| No sign-in form or buttons / "no auth configured" message | Instance has no auth method enabled | An admin must enable one (see `ENVIRONMENT_VARIABLES.md` / [Configuration](Configuration)) |
 | No tabs, no **Create** menu, no boundary switcher | Not signed in | Sign in; these require authentication |
 | A **Create** item is missing | You lack the role to create that record | Ask an admin to grant the role ([RBAC](RBAC)) |
 | A boundary or document isn't visible | Not a member of that boundary, or lacking the role | Ask an admin to add you / grant the role ([RBAC](RBAC)) |

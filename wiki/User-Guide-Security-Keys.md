@@ -24,9 +24,9 @@ also see [Administration](User-Guide-Administration).
 
 ---
 
-![The Security Keys screen showing registered FIDO2 and PIV credentials with options to add or remove keys](images/security_keys.png)
+![The Security Keys screen: a Your keys list, empty until a key is enrolled, and an Add a security key form with an optional name](images/security_keys.png)
 
-*The Security Keys screen — register and manage FIDO2 security keys and PIV / CAC smart cards.*
+*The Security Keys screen. Each key you enroll is listed under Your keys, with a Remove button.*
 
 ## At a glance
 
