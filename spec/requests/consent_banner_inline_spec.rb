@@ -22,6 +22,14 @@ RSpec.describe "Inline consent banner (#867)", type: :request do
     original.each { |k, v| v.nil? ? ENV.delete(k.to_s) : ENV[k.to_s] = v }
   end
 
+  # Every example starts with no banner configured, so a developer's .env
+  # cannot decide the outcome: a SPARC_BANNER there takes precedence over the
+  # deprecated pair by design (#909) and failed seven of these locally while CI,
+  # which has no .env, passed. Each example then sets only what it tests.
+  around do |example|
+    with_env(SPARC_BANNER: nil, SPARC_BANNER_HTML: nil, SPARC_BANNER_MESSAGE: nil) { example.run }
+  end
+
   describe "inline content" do
     it "renders the banner from SPARC_BANNER_HTML with no file involved" do
       with_env(SPARC_BANNER_HTML: "<p>Inline rules of behavior.</p>") do

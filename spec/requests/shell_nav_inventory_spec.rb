@@ -84,8 +84,12 @@ RSpec.describe "Shell navigation inventory (1.18.0-rf #1296)", type: :request do
   end
 
   def shell_for(posture)
+    # contact_email: the recorded inventory has no Support mail link, as CI has
+    # no SPARC_CONTACT_EMAIL; a developer's .env that sets one must not decide
+    # the outcome.
     allow(SparcConfig).to receive_messages(any_auth_enabled?: posture[:auth], enable_local_login?: posture[:auth],
-                                           public_catalogs?: posture[:public], fido2_enabled?: true)
+                                           public_catalogs?: posture[:public], fido2_enabled?: true,
+                                           contact_email: nil)
     sign_in_as(public_send(posture[:user])) if posture[:user]
 
     shell_pages(posture).each_with_object({ reach: Set.new, nav: Set.new }) do |path, acc|
