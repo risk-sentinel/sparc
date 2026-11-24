@@ -31,7 +31,7 @@
   <% end %>
 </div>
 <details class="mt-1" data-testid="fedramp-evaluation" data-fedramp-control="<%= finding.control_id %>">
-  <summary class="btn btn-outline-secondary btn-sm">FedRAMP</summary>
+  <summary class="sparc-action sparc-action--neutral sparc-action--outline sparc-action--sm">FedRAMP</summary>
   <%= form_with url: triage_fedramp_evaluation_authorization_boundary_path(boundary), method: :post,
         data: { turbo: false }, class: "mt-2" do |f| %>
     <%= hidden_field_tag :control_id, finding.control_id, id: "#{key}_control_id" %>

@@ -1,19 +1,9 @@
-<%# #1354 — Settings → Connections. Same frame as Admin → Roles. %>
-<div class="d-flex justify-content-between align-items-center my-4">
-  <div>
-    <h1 class="h3 fw-bold mb-0">Connections</h1>
-    <p class="text-body-secondary mb-0 small">
-      Other systems SPARC pulls FedRAMP, OSCAL, HDF and XCCDF documents from, or that push them to SPARC. Each
-      document lands in its boundary's Received documents, where it waits for review.
-    </p>
-  </div>
-  <div class="d-flex gap-2">
-    <span class="badge text-bg-secondary align-self-center"><%= pluralize(@connections.size, "connection") %></span>
-    <%= link_to "New Connection", new_admin_exchange_connection_path,
-          class: "sparc-action sparc-action--positive sparc-action--solid sparc-action--sm",
-          data: { testid: "new-connection" } %>
-  </div>
-</div>
+<%# #1354 — Settings → Connections. Since 1.18.0-rf, the shared page header (#1346). %>
+<%= render "shared/page_header", title: "Connections",
+      subtitle: "Other systems SPARC pulls FedRAMP, OSCAL, HDF and XCCDF documents from, or that push them to SPARC. " \
+                "Each document lands in its boundary's Received documents, where it waits for review.",
+      meta: [ pluralize(@connections.size, "connection") ],
+      primary: { label: "New Connection", path: new_admin_exchange_connection_path, data: { testid: "new-connection" } } %>
 
 <div class="card">
   <div class="table-responsive">

@@ -21,7 +21,8 @@ RSpec.describe "Admin settings (#1303)", type: :request do
     "idp_grants" => "/admin/idp_grants", "organizations" => "/admin/organizations",
     "authorization_boundaries" => "/admin/authorization_boundaries",
     "remediation_timelines" => "/admin/remediation_timelines", "audit_logs" => "/admin/audit_logs",
-    "reconciliation" => "/admin/reconciliation", "data_migrations" => "/admin/data_migrations"
+    "reconciliation" => "/admin/reconciliation", "data_migrations" => "/admin/data_migrations",
+    "exchange_connections" => "/admin/exchange_connections"
   }
 
   context "in the 1.18.0-rf navigation" do

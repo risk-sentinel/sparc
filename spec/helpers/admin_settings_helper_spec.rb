@@ -26,6 +26,6 @@ RSpec.describe AdminSettingsHelper, type: :helper do
   it "lists each admin screen once" do
     paths = helper.admin_settings_sections.flat_map(&:items).map(&:path)
     expect(paths).to eq(paths.uniq)
-    expect(paths.size).to eq(10)
+    expect(paths.size).to eq(11)
   end
 end
