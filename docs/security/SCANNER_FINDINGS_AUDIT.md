@@ -1,8 +1,34 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-21 (v1.17.11 — connections for FedRAMP, OSCAL, HDF and XCCDF)
+**Last reviewed:** 2026-11-23 (v1.17.11 as tagged — connections for FedRAMP, OSCAL, HDF and XCCDF)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v1.17.11 release rescan (2026-11-23).** Real rescan of the image built from
+> the tagged code (arm64, `sparc:v1.17.11` `1e66b856e942`, the tree of
+> `ec8ea958` apart from docs), not an SBOM, with grype 0.114.0 (DB built
+> 2026-11-23 06:28 UTC) and Trivy 0.74.0. It adds the dependency updates that
+> landed after the 11-21 rescan: `rack-protection` 4.2.2, `puma` 8.1.2,
+> `net-ssh` 7.3.10, `rack` 3.2.9, `omniauth` 2.4.2 and the AWS SDK gems.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype, v1.17.11 release image | **0** | **8** | 50 | 37 |
+> | Trivy 0.74.0, v1.17.11 release image | 0 | 0 | 0 | 1 |
+>
+> - **The same 8 Highs as 11-21**, all OS packages Red Hat has not fixed:
+>   `libpq` CVE-2026-116328, four `sqlite-libs`, two `openssl-libs` (QUIC) and
+>   `cyrus-sasl-lib`. All 8 are now **approved** deviations; the three requested
+>   on 11-21 were approved.
+> - **Medium 44 → 50**, on a database two days newer. The 11-21 image was not
+>   rescanned on this database, so the change is not attributed here.
+> - **Trivy's one Low** is the on-disk `json` 2.9.1 (CVE-2026-54696), the residual
+>   already recorded in `docs/compliance/sparc-findings.yml`; the loaded copy is
+>   patched.
+> - **bundle-audit** (ruby-advisory-db as of 2026-11-23): no vulnerabilities.
+>   Against v1.17.10's lockfile it reports 7, all fixed here (`rack-protection`
+>   3, `puma` 2, `net-ssh` 2).
+> - **Register:** 13 active entries, none awaiting approval.
 
 > **v1.17.11 rescan (2026-11-21).** Real rescan of the v1.17.11 release code's
 > image (arm64, `a4aa8a47fb2e`, built from `854e2aad`), not an SBOM, with grype
