@@ -86,7 +86,7 @@ new page added there is captured automatically.
    ./wiki/PUSH_TO_WIKI.sh
    ```
 
-   Guides reference images by relative path: `![alt](images/ssp_index.png)`.
+   Guides reference images by relative path: `![alt](images/ssp_show.png)`.
 
 ## Refreshing after a UI change
 
