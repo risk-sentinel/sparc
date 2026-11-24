@@ -3,34 +3,28 @@
     connection. Discover and Test render their answer on this page and store
     nothing, so their forms opt out of Turbo (a 200 render, not a redirect). %>
 <% connection = @connection %>
-<div class="d-flex justify-content-between align-items-start my-4 gap-3 flex-wrap">
-  <div>
-    <h1 class="h3 fw-bold mb-1"><%= connection.name %></h1>
-    <p class="text-body-secondary mb-0 small">
-      Documents land in
-      <%= link_to connection.authorization_boundary.name, authorization_boundary_path(connection.authorization_boundary) %>
-      ·
-      <%= link_to "Received documents", authorization_boundary_received_documents_path(connection.authorization_boundary) %>
-    </p>
-  </div>
-  <div class="d-flex gap-2 flex-wrap">
-    <%= button_to "Pull now", pull_admin_exchange_connection_path(connection), method: :post,
-          class: "sparc-action sparc-action--primary sparc-action--solid sparc-action--sm",
-          data: { testid: "pull-now", turbo_confirm: "Pull every enabled document of this connection now?" } %>
-    <%= button_to "Discover", discover_admin_exchange_connection_path(connection), method: :post,
-          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-          form: { data: { turbo: false } }, data: { testid: "discover" } %>
-    <%= button_to "Test connection", test_connection_admin_exchange_connection_path(connection), method: :post,
-          class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
-          form: { data: { turbo: false } }, data: { testid: "test-connection" } %>
-    <%= link_to "Edit", edit_admin_exchange_connection_path(connection),
-          class: "sparc-action sparc-action--primary sparc-action--outline sparc-action--sm" %>
-    <%= button_to "Delete", admin_exchange_connection_path(connection), method: :delete,
-          class: "sparc-action sparc-action--danger sparc-action--outline sparc-action--sm",
-          data: { turbo_confirm: "Delete this connection? Versions it already delivered stay on the boundary." } %>
-    <%= link_to "Back", admin_exchange_connections_path, class: "sparc-action sparc-action--neutral sparc-action--ghost sparc-action--sm" %>
-  </div>
-</div>
+<%# 1.18.0-rf — the shared page header (#1346), as every Settings page. Discover
+    and Test connection keep their form's Turbo opt-out, so they ride `extra`. %>
+<% probes = capture do %>
+  <%= button_to "Discover", discover_admin_exchange_connection_path(connection), method: :post,
+        class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+        form: { class: "sparc-d-inline", data: { turbo: false } }, data: { testid: "discover" } %>
+  <%= button_to "Test connection", test_connection_admin_exchange_connection_path(connection), method: :post,
+        class: "sparc-action sparc-action--info sparc-action--outline sparc-action--sm",
+        form: { class: "sparc-d-inline", data: { turbo: false } }, data: { testid: "test-connection" } %>
+<% end %>
+<%= render "shared/page_header", title: connection.name,
+      crumbs: [ [ "Connections", admin_exchange_connections_path ], [ connection.name, nil ] ],
+      meta: [ safe_join([ "Documents land in ", link_to(connection.authorization_boundary.name, authorization_boundary_path(connection.authorization_boundary)) ]),
+              link_to("Received documents", authorization_boundary_received_documents_path(connection.authorization_boundary)) ],
+      extra: probes,
+      primary: { label: "Pull now", path: pull_admin_exchange_connection_path(connection), method: :post, look: "primary solid",
+                 confirm: "Pull every enabled document of this connection now?", data: { testid: "pull-now" } },
+      secondary: [
+        { label: "Edit", path: edit_admin_exchange_connection_path(connection), look: "primary outline" },
+        { label: "Delete", path: admin_exchange_connection_path(connection), method: :delete, look: "danger outline",
+          confirm: "Delete this connection? Versions it already delivered stay on the boundary." }
+      ] %>
 
 <% if @discovery || @discovery_error %>
   <div class="card mb-4" data-testid="discover-result">
