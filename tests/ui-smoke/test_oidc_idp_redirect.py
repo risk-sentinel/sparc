@@ -33,7 +33,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import pytest
 
-from helpers import csp_violations, record_csp
+from helpers import accept_consent_banner, csp_violations, record_csp
 
 ISSUER = os.environ.get("SPARC_SMOKE_OIDC_ISSUER", "").rstrip("/")
 
@@ -62,6 +62,9 @@ def test_oidc_sign_in_redirects_to_the_issuers_authorize_endpoint(page):
     page.route(lambda url: urlparse(url).hostname == idp_host, lambda route: route.abort())
     record_csp(page)
     page.goto("/login")
+    # A configured consent banner hides the sign-in card until Proceed, as it
+    # does for a real user.
+    accept_consent_banner(page)
 
     # The harness declared an issuer, so a missing button is the target
     # disagreeing with the harness — a failure, never a skip.
