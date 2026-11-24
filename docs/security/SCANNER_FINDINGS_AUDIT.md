@@ -1,8 +1,23 @@
 # Scanner Findings Audit
 
-**Last reviewed:** 2026-11-23 (v1.17.11 as tagged — connections for FedRAMP, OSCAL, HDF and XCCDF)
+**Last reviewed:** 2026-11-24 (v2.0.0, the first v2 release, carrying v1.17.11)
 **Cadence:** every major SPARC release (enforced by `docs/dev/issue_rules.md`),
 or whenever a new suppression is added.
+
+> **v2.0.0 rescan (2026-11-24).** Real rescan of the v2.0.0 image (arm64,
+> `sparc:v2.0.0` `d7e6c1d04fec`, built from `chore/rf_carry_11711`), not an
+> SBOM, with grype 0.114.0 (DB built 2026-11-23 06:28 UTC) and Trivy 0.74.0.
+> v2.0.0 carries all of v1.17.11 and the same `Gemfile.lock`.
+>
+> | Scanner | Critical | High | Medium | Low |
+> |---|---|---|---|---|
+> | Grype, v2.0.0 image | **0** | **8** | 50 | 37 |
+> | Trivy 0.74.0, v2.0.0 image | 0 | 0 | 0 | 1 |
+>
+> - Identical to the v1.17.11 release rescan on the same database: the same 8
+>   Highs (all approved deviations) and Trivy's one Low (the recorded on-disk
+>   `json` residual).
+> - **bundle-audit:** no vulnerabilities.
 
 > **v1.17.11 release rescan (2026-11-23).** Real rescan of the image built from
 > the tagged code (arm64, `sparc:v1.17.11` `1e66b856e942`, the tree of
