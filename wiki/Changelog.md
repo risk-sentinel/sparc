@@ -28,7 +28,7 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 
 ---
 
-## v1.17.11 -- Connections for FedRAMP, OSCAL, HDF and XCCDF (2026-11-22)
+## v1.17.11 -- Connections for FedRAMP, OSCAL, HDF and XCCDF (2026-11-23)
 
 SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF or XCCDF documents, and writes FedRAMP's vulnerability reports ([#1354](https://github.com/risk-sentinel/sparc/issues/1354), [#1384](https://github.com/risk-sentinel/sparc/issues/1384)).
 
@@ -64,6 +64,11 @@ SPARC connects, for automation, to any system that publishes FedRAMP, OSCAL, HDF
   - SPARC writes the boundary's **Certification Package Overview** (FRC-CSO-PKG) from new FedRAMP fields and contacts on the boundary's Edit page, validated before it is returned, from the triage page, the API and the exchange index.
 - **A FedRAMP sample package** in `samples/fedramp-package-demo/`: one valid document of each type and invalid variants. A demo instance loads it into a boundary.
 - **Security:** the triage page's OSCAL POA&M download now requires `evidence.read` on the boundary. From v1.17.9 to v1.17.10, any signed-in user could download any boundary's POA&M.
+- **Dependencies (security):** seven advisories against v1.17.10's gems are fixed.
+  - `rack-protection` 4.2.2: GHSA-pf75-2v58-7mxg (High: one request could make cookie-tossing protection reject or drop every later session), GHSA-r29j-38x9-qr26 (Medium: host authorization allowed unrelated hosts) and GHSA-vvhm-j6m8-64cw (Low: a missing Referer was treated as same-origin).
+  - `puma` 8.1.2: GHSA-4v6q-hvv7-49h9 (memory exhaustion with SSL connections) and GHSA-rhww-p99c-hgj9 (JRuby's HTTP parser only; SPARC runs CRuby).
+  - `net-ssh` 7.3.10: GHSA-hjwv-j52r-xcg7 (High: a revoked known-hosts key was accepted) and GHSA-qcf4-j55x-72hv (Medium: its HTTPS proxy skipped certificate verification).
+  - Also `rack` 3.2.9, `omniauth` 2.4.2, the AWS SDK gems, `kramdown` 2.6.1, `pagy` 43.8.5, `bootsnap` 1.26.2 and `websocket-driver` 0.9.0.
 
 **Upgrading:** an image swap from v1.17.10. Eight migrations run at startup, and seed sections refresh the KSI crosswalk and the built-in roles' new permissions. See [Upgrading](Upgrading).
 
