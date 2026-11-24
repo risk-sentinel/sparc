@@ -4,9 +4,9 @@ All notable changes to SPARC are documented here. Versions follow semantic versi
 
 ---
 
-## v1.18.0 -- A New Navigation (in testing as v1.18.0-rf)
+## v2.0.0 -- A New Navigation (2026-11-24)
 
-A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it ships is still to be decided; until then this entry describes the prerelease.
+A new way around SPARC, the first release of the **v2** line, tested by early adopters as the v1.18.0-rf prereleases. The **v1** line (v1.17.x) keeps the earlier navigation and receives fixes until v1 support ends; Docker Hub's `latest` stays on v1 until then. Not to be confused with the pre-reset v2.0.0 of March 2026 at the end of this page.
 
 - **One header** with where you are (organization and boundary, with a boundary switcher), and the **Create**, **Library** and **Help** menus, the review queue, the theme toggle and your account menu. The old layer menus are gone. See [Getting Oriented](User-Guide-Getting-Oriented).
 - **Tabs** under the header: the organization's (Overview, Boundaries, Baselines, SSPs, CDEFs, SAPs, SARs, Evidence, POA&Ms, People, Settings), and a boundary's own when you are inside one, each list filtered to that boundary. See [Authorization Boundaries](User-Guide-Authorization-Boundaries).
@@ -24,7 +24,7 @@ A new way around SPARC, in testing as the v1.18.0-rf prereleases. Whether it shi
 - **One button system:** the Settings detail pages use the shared page header, the remaining Bootstrap buttons use SPARC's button roles, and a test keeps it that way ([#1346](https://github.com/risk-sentinel/sparc/issues/1346)).
 - **Settings fit and colour:** every Settings list fits beside the settings menu at 1024px, and the Settings overview's sections carry the home page's group colours ([#1349](https://github.com/risk-sentinel/sparc/issues/1349)).
 - **Login consent banner** behaviour covered by its own browser test ([#1341](https://github.com/risk-sentinel/sparc/issues/1341)).
-- **Includes v1.17.10** and every release before it: Ruby 3.4.13 and every build download pinned, control priority is optional, the UBI 10.3 base, the November dependency updates and Rails 8.1.4.1.
+- **Includes v1.17.11** and every release before it: connections for FedRAMP, OSCAL, HDF and XCCDF, the FedRAMP documents SPARC writes, the received-document viewer, the dependency security fixes, Ruby 3.4.13 and every build download pinned, control priority is optional, the UBI 10.3 base and Rails 8.1.4.1. Connections are in Settings (the account menu's Administration list and the Settings menu); a boundary's FedRAMP page is on its **More** menu; its received documents are in its Evidence section.
 
 ---
 

@@ -10,11 +10,14 @@ Welcome to the official SPARC wiki. SPARC is a Rails 8.1 application for managin
 | Releases | [All releases](https://github.com/risk-sentinel/sparc/releases) |
 | Issues | [Open issues](https://github.com/risk-sentinel/sparc/issues) |
 | Documentation index | [`docs/MAP.md`](https://github.com/risk-sentinel/sparc/blob/main/docs/MAP.md) — full `docs/` inventory |
-| Current Version | **v1.18.0** |
+| Current Version | **v2.0.0** (and **v1.17.11** on the v1 line) |
 
-> **Versioning note:** SPARC's public release line is **v1.x** (current: v1.18.0).
-> Older `v2.x`–`v3.x` entries in the [Changelog](Changelog) are the project's
-> pre-reset numbering, retained for historical traceability.
+> **Versioning note:** SPARC ships two release lines. **v2.x** (current: v2.0.0)
+> is the new navigation. **v1.x** (current: v1.17.11) keeps the earlier
+> navigation and receives fixes until v1 support ends; Docker Hub's `latest`
+> stays on v1 until then. The `v2.x`–`v3.x` entries at the end of the
+> [Changelog](Changelog), dated March 2026 and earlier, are the project's
+> pre-reset numbering, unrelated to v2.0.0, kept for historical traceability.
 
 ## Wiki Sections
 
