@@ -381,7 +381,7 @@ def _open_boundary_triage(page, base_url, boundary) -> None:
     page.goto(
         f"{base_url}/authorization_boundaries/{boundary['slug']}/triage", wait_until="networkidle"
     )
-    page.get_by_role("heading", name="HDF Amendment Triage").wait_for(timeout=10000)
+    page.get_by_role("heading", name="Findings Triage").wait_for(timeout=10000)
 
 
 def test_fedramp_hidden_until_enabled(authed_page, base_url):

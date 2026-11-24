@@ -394,7 +394,9 @@ def test_push_key_and_class_a_are_set_on_edit(authed_page):
 
         click_and_assert_clean(
             page,
-            f"a[href$='/admin/exchange_connections/{connection_id}/edit']",
+            # `:visible` — the page header also lists Edit in its folded
+            # "More actions" menu, hidden until a narrow window.
+            f"a[href$='/admin/exchange_connections/{connection_id}/edit']:visible",
             during="opening Edit",
         )
         page.wait_for_url(f"**/admin/exchange_connections/{connection_id}/edit", timeout=15000)

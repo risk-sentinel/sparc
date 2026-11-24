@@ -47,7 +47,8 @@ def test_settings_tab_lists_and_opens_every_admin_screen(authed_page):
     items = page.locator(ITEM).evaluate_all(
         "els => els.map(e => ({href: e.getAttribute('href'), item: e.dataset.item}))"
     )
-    assert len(items) == 10, f"the settings page lists {len(items)} screens"
+    # 11 since Connections (#1354) joined the Organization section.
+    assert len(items) == 11, f"the settings page lists {len(items)} screens"
     for entry in items:
         _open(page, "/admin")
         click_and_assert_clean(
