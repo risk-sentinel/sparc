@@ -7,11 +7,10 @@
 # enforced CSP, which only a real browser surfaces.
 #
 # Browser dependency:
-#   - CI: .github/workflows/ci.yml installs google-chrome-stable
-#         alongside the Ruby toolchain, so system specs run there.
-#   - Local dev: Chrome / Chromium must be on PATH. Specs auto-skip with
-#         a clear message when no browser is found, so the rest of the
-#         suite stays runnable without the heavy browser dep.
+#   - Specs run the pinned Chrome for Testing build (SPARC_TEST_CHROME_VERSION,
+#         below), which Selenium Manager downloads, in CI and locally alike.
+#   - Specs still auto-skip with a clear message on a machine with no Chrome
+#         installed, so the rest of the suite stays runnable there.
 #
 # CSP-in-tests:
 #   - config/initializers/content_security_policy.rb has no env guards,
@@ -23,6 +22,7 @@
 require "capybara/rails"
 require "capybara/rspec"
 require "selenium/webdriver"
+require "capybara/selenium/driver"
 
 # Detect a usable Chrome / Chromium binary. nil → skip system specs.
 def sparc_chrome_binary
@@ -36,6 +36,13 @@ def sparc_chrome_binary
     ].find { |b| system("command -v #{Shellwords.escape(b)} >/dev/null 2>&1") || File.executable?(b) }
 end
 
+# #1396 — every run uses the same Chrome. Selenium Manager downloads this
+# Chrome for Testing build (and its matching chromedriver) on first use, so CI
+# and a workstation run the same browser, and a new Chrome release never
+# changes the suite overnight. Raise it on purpose, with a passing run of the
+# full suite. SPARC_TEST_CHROME_BIN still runs a local binary instead.
+SPARC_TEST_CHROME_VERSION = "158.0.8127.88"
+
 Capybara.register_driver :sparc_headless_chrome do |app|
   options = Selenium::WebDriver::Chrome::Options.new
   options.add_argument("--headless=new")
@@ -43,11 +50,36 @@ Capybara.register_driver :sparc_headless_chrome do |app|
   options.add_argument("--no-sandbox")
   options.add_argument("--disable-dev-shm-usage")
   options.add_argument("--window-size=1280,1024")
-  bin = sparc_chrome_binary
-  options.binary = bin if bin && File.executable?(bin)
+  if (bin = ENV["SPARC_TEST_CHROME_BIN"].presence)
+    options.binary = bin
+  else
+    options.browser_version = SPARC_TEST_CHROME_VERSION
+  end
 
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
 end
+
+# #1396 — Capybara 3.40.0 (the latest release) ends each reset with
+# Storage.clearDataForOrigin for origin "*". Chrome 158 rejects "*" as
+# "not a valid URL", so the reset raises before clearing anything, and the
+# next example starts with the previous example's session cookie: a spec can
+# then pass signed in as someone it never signed in as. This keeps what that
+# call was meant to do, in two calls Chrome accepts: cookies for every origin
+# (Network.clearBrowserCookies, which Capybara itself uses to delete cookies),
+# and local storage for the app's own origin, the only origin specs visit.
+# spec/system/system_test_isolation_spec.rb proves the reset.
+module SparcChromeReset
+  def execute_cdp(cmd, params = {})
+    return super unless cmd == "Storage.clearDataForOrigin" && params[:origin] == "*"
+
+    super("Network.clearBrowserCookies")
+    origin = Capybara.current_session.server&.base_url
+    return unless origin && params[:storageTypes].to_s.split(",").include?("local_storage")
+
+    super("Storage.clearDataForOrigin", origin: origin, storageTypes: "local_storage")
+  end
+end
+Capybara::Selenium::Driver::ChromeDriver.prepend(SparcChromeReset)
 
 Capybara.configure do |config|
   config.javascript_driver = :sparc_headless_chrome
